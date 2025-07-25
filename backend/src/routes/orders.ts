@@ -1,13 +1,20 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { query } from '../database.js';
 import { generateOrderHash, verifyEIP712Signature } from '../utils/crypto.js';
+import type { 
+  OrdersQueryParams, 
+  OrdersResponse, 
+  OrderWithSignature, 
+  DatabaseOrder,
+  ApiError 
+} from '../types/index.js';
 
 const router = express.Router();
 
 // GET /orders - Retrieve all orders with optional filtering
-router.get('/orders', async (req, res) => {
+router.get('/orders', async (req: Request<{}, OrdersResponse | ApiError, {}, OrdersQueryParams>, res: Response<OrdersResponse | ApiError>) => {
   try {
-    const { status, maker, limit = 50, offset = 0 } = req.query;
+    const { status, maker, limit = '50', offset = '0' } = req.query;
     
     let queryText = `
       SELECT order_hash, maker_asset, taker_asset, making_amount, taking_amount,
@@ -40,8 +47,8 @@ router.get('/orders', async (req, res) => {
     const result = await query(queryText, params);
     
     res.json({
-      orders: result.rows,
-      total: result.rowCount,
+      orders: result.rows as DatabaseOrder[],
+      total: result.rowCount || 0,
       limit: parseInt(limit),
       offset: parseInt(offset)
     });
@@ -52,7 +59,7 @@ router.get('/orders', async (req, res) => {
 });
 
 // GET /order/:orderHash - Get individual order by hash
-router.get('/order/:orderHash', async (req, res) => {
+router.get('/order/:orderHash', async (req: Request<{ orderHash: string }>, res: Response<DatabaseOrder | ApiError>): Promise<void> => {
   try {
     const { orderHash } = req.params;
     
@@ -73,7 +80,7 @@ router.get('/order/:orderHash', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
     
-    res.json(result.rows[0]);
+    res.json(result.rows[0] as DatabaseOrder);
   } catch (error) {
     console.error('Error fetching order:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -81,7 +88,7 @@ router.get('/order/:orderHash', async (req, res) => {
 });
 
 // POST /limit-order - Create a new limit order
-router.post('/limit-order', async (req, res) => {
+router.post('/limit-order', async (req: Request<{}, DatabaseOrder | ApiError, OrderWithSignature>, res: Response<DatabaseOrder | ApiError>): Promise<void> => {
   try {
     const {
       makerAsset,
@@ -164,8 +171,8 @@ router.post('/limit-order', async (req, res) => {
       ]
     );
     
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
+    res.status(201).json(result.rows[0] as DatabaseOrder);
+  } catch (error: any) {
     console.error('Error creating order:', error);
     if (error.code === '23505') { // Unique constraint violation
       res.status(409).json({ error: 'Order already exists' });

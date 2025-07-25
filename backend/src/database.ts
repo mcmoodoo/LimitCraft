@@ -6,13 +6,13 @@ dotenv.config({ path: '../.env' });
 const { Pool } = pg;
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env['DATABASE_URL'],
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
 
-export const query = async (text, params) => {
+export const query = async (text: string, params?: any[]): Promise<pg.QueryResult<any>> => {
   const start = Date.now();
   try {
     const res = await pool.query(text, params);
@@ -25,26 +25,27 @@ export const query = async (text, params) => {
   }
 };
 
-export const getClient = async () => {
+export const getClient = async (): Promise<pg.PoolClient> => {
   const client = await pool.connect();
-  const query = client.query;
-  const release = client.release;
+  const originalQuery = client.query;
+  const originalRelease = client.release;
   
   const timeout = setTimeout(() => {
     console.error('A client has been checked out for more than 5 seconds!');
   }, 5000);
   
-  client.query = (...args) => {
-    client.lastQuery = args;
-    return query.apply(client, args);
-  };
+  // Add type-safe query wrapper
+  (client as any).query = ((...args: any[]) => {
+    (client as any).lastQuery = args;
+    return originalQuery.apply(client, args);
+  });
   
-  client.release = () => {
+  client.release = ((releaseConnection?: boolean) => {
     clearTimeout(timeout);
-    client.query = query;
-    client.release = release;
-    return release.apply(client);
-  };
+    client.query = originalQuery;
+    client.release = originalRelease;
+    return originalRelease.call(client, releaseConnection);
+  }) as typeof client.release;
   
   return client;
 };

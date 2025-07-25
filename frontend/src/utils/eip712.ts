@@ -1,11 +1,13 @@
-export const EIP712_DOMAIN = {
+import type { EIP712Domain, EIP712Types, EIP712TypedData, OrderData } from '../types/index.ts';
+
+export const EIP712_DOMAIN: EIP712Domain = {
   name: 'Orderly',
   version: '1',
   chainId: 1,
   verifyingContract: '0x0000000000000000000000000000000000000000'
 };
 
-export const EIP712_TYPES = {
+export const EIP712_TYPES: EIP712Types = {
   Order: [
     { name: 'makerAsset', type: 'address' },
     { name: 'takerAsset', type: 'address' },
@@ -18,7 +20,7 @@ export const EIP712_TYPES = {
   ]
 };
 
-export const createOrderTypedData = (orderData) => {
+export const createOrderTypedData = (orderData: OrderData): EIP712TypedData => {
   const value = {
     makerAsset: orderData.makerAsset,
     takerAsset: orderData.takerAsset,

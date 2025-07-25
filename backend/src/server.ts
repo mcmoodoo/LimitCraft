@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
@@ -7,7 +7,7 @@ import ordersRouter from './routes/orders.js';
 dotenv.config({ path: '../.env' });
 
 const app = express();
-const PORT = process.env.API_PORT || 3000;
+const PORT = process.env['API_PORT'] || 3000;
 
 // Rate limiting
 const limiter = rateLimit({
@@ -28,13 +28,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Logging middleware
-app.use((req, res, next) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
@@ -46,16 +46,16 @@ app.get('/health', (req, res) => {
 app.use('/api', ordersRouter);
 
 // Error handling middleware
-app.use((error, req, res, next) => {
+app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Unhandled error:', error);
   res.status(500).json({ 
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    message: process.env['NODE_ENV'] === 'development' ? error.message : 'Something went wrong'
   });
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (_req: Request, res: Response) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
