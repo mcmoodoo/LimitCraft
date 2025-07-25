@@ -1,0 +1,24 @@
+{
+  "name": "orderly-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Orderly order book system",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "build": "echo 'No build step required for backend'"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5",
+    "crypto": "^1.0.1",
+    "ethers": "^6.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
