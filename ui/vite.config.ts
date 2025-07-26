@@ -15,9 +15,10 @@ export default defineConfig({
       crypto: 'crypto-browserify',
       stream: 'stream-browserify',
       util: 'util',
+      process: 'process/browser',
     },
   },
   optimizeDeps: {
-    include: ['buffer', 'crypto-browserify', 'stream-browserify', 'util', 'assert'],
+    include: ['buffer', 'crypto-browserify', 'stream-browserify', 'util', 'assert', 'process/browser'],
   },
 })
