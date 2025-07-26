@@ -1,12 +1,12 @@
-import { Elysia } from 'elysia';
-import { cors } from '@elysiajs/cors';
 import { Address, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
-import { JsonRpcProvider, Wallet } from 'ethers';
-import { config } from './config';
-import { SimpleHttpConnector } from './simpleHttpConnector';
-import { createOrder, getAllOrders, getOrderByHash } from '../../db/src/index.js';
+import { cors } from '@elysiajs/cors';
 import axios from 'axios';
-import { createOrderExt } from './lib';
+import { Elysia } from 'elysia';
+import { JsonRpcProvider, Wallet } from 'ethers';
+import { createOrder, getAllOrders, getOrderByHash } from '../../db/src/index.js';
+import { config } from './config';
+import { buildOrderExt, createOrderExt } from './lib';
+import { SimpleHttpConnector } from './simpleHttpConnector';
 
 interface LimitOrderRequest {
   makerAsset: string;
@@ -196,14 +196,8 @@ const app = new Elysia()
         .allowMultipleFills()
         .withExtension();
 
-      const sdk = new Sdk({
-        authKey: config.apiKey,
-        networkId: config.networkId,
-        httpConnector: new SimpleHttpConnector(),
-      });
-
-      // use our own createOrder() with extension
-      const order = await createOrderExt(
+      // use our own buildOrderExt() to set extension
+      const order = await buildOrderExt(
         {
           makerAsset: new Address(body.makerAsset),
           takerAsset: new Address(body.takerAsset),
@@ -222,9 +216,7 @@ const app = new Elysia()
         typedData.message
       );
 
-      console.log('🔍 Token addresses being saved to database:');
-      console.log('  - makerAsset:', body.makerAsset);
-      console.log('  - takerAsset:', body.takerAsset);
+      console.log('  - extension:', order.extension.encode());
 
       const savedOrder = await createOrder({
         orderHash,

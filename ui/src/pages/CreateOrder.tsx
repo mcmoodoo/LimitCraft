@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import { USDC, WETH, USDT, USDC_E } from '../tokens';
+import { USDC, USDC_E, USDT, WETH } from '../tokens';
 
 interface CreateOrderForm {
   makerAsset: string;

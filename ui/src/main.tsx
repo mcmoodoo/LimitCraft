@@ -5,14 +5,14 @@ import './index.css';
 
 import '@rainbow-me/rainbowkit/styles.css';
 import {
-  RainbowKitProvider,
+  darkTheme,
   getDefaultConfig,
   lightTheme,
-  darkTheme,
+  RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, createConfig, http } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mainnet, polygon, arbitrum } from 'wagmi/chains';
+import { createConfig, http, WagmiProvider } from 'wagmi';
+import { arbitrum, mainnet, polygon } from 'wagmi/chains';
 
 const config = getDefaultConfig({
   appName: 'My RainbowKit App',

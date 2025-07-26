@@ -5,7 +5,9 @@
 # Dependencies
 node_modules/
 
-# Bun (keep bun.lock committed for reproducible builds)
+# Bun lockfiles - keep text format for team collaboration
+bun.lockb
+# bun.lock files should be committed for reproducible builds
 
 # Build output
 dist/

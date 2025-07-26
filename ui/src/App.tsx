@@ -1,9 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-import Orders from './pages/Orders';
-import OrderDetails from './pages/OrderDetails';
 import CreateOrder from './pages/CreateOrder';
+import OrderDetails from './pages/OrderDetails';
+import Orders from './pages/Orders';
 
 function Navigation() {
   const location = useLocation();

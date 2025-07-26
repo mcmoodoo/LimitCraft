@@ -1,5 +1,5 @@
-import { db, client } from './connection.js';
 import { sql } from 'drizzle-orm';
+import { client, db } from './connection.js';
 
 async function main() {
   console.log('Creating orders table and enum...');

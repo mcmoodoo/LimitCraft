@@ -66,11 +66,11 @@ export const formatAddress = (address: string): string => {
 
 export const formatAmount = (amount: string): string => {
   const num = BigInt(amount);
-  const divisor = Math.pow(10, config.formatting.tokenDecimals);
+  const divisor = 10 ** config.formatting.tokenDecimals;
   return (Number(num) / divisor).toFixed(config.formatting.displayDecimals);
 };
 
 export const toWei = (amount: number): string => {
-  const multiplier = Math.pow(10, config.formatting.tokenDecimals);
+  const multiplier = 10 ** config.formatting.tokenDecimals;
   return (amount * multiplier).toString();
 };

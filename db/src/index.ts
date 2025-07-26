@@ -1,3 +1,3 @@
-export { db, client } from './connection.js';
-export * from './schema.js';
+export { client, db } from './connection.js';
 export * from './orders.js';
+export * from './schema.js';

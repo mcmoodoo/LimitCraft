@@ -1,15 +1,16 @@
 import {
-  FeeTakerExt,
   Address,
-  MakerTraits,
-  OrderInfoData,
-  Interaction,
   Bps,
-  LimitOrder,
   Extension,
+  type FeeTakerExt,
+  Interaction,
+  LimitOrder,
+  MakerTraits,
+  type OrderInfoData,
 } from '@1inch/limit-order-sdk';
+import { ethers } from 'ethers';
 
-export const createOrderExt = async (
+export const buildOrderExt = async (
   orderInfo: OrderInfoData,
   makerTraits = MakerTraits.default(),
   extra: {
@@ -17,28 +18,16 @@ export const createOrderExt = async (
     integratorFee?: FeeTakerExt.IntegratorFee;
   } = {}
 ): Promise<LimitOrder> => {
-  //   const fees = new FeeTakerExt.Fees(
-  //     new FeeTakerExt.ResolverFee(
-  //       new Address(feeParams.protocolFeeReceiver),
-  //       new Bps(BigInt(feeParams.feeBps)),
-  //       Bps.fromPercent(feeParams.whitelistDiscountPercent)
-  //     ),
-  //     extra.integratorFee ?? FeeTakerExt.IntegratorFee.ZERO
-  //   );
+  const ourContractAddress = '0x1111111254EEB25477B68fb85Ed929f73A960582'; // sample address
 
-  //   const feeExt = FeeTakerExt.FeeTakerExtension.new(
-  //     new Address(feeParams.extensionAddress),
-  //     fees,
-  //     Object.values(feeParams.whitelist).map((w) => new Address(w as string)),
-  //     {
-  //       ...extra,
-  //       customReceiver: orderInfo.receiver,
-  //     }
-  //   );
+  const abiCoder = new ethers.AbiCoder();
+  const callData = abiCoder.encode(['uint256'], [1]);
+
+  const postInteraction = new Interaction(new Address(ourContractAddress), callData);
 
   const extensions = new Extension({
     ...Extension.EMPTY,
-    predicate: '0xabcdef1234567890',
+    postInteraction: postInteraction.encode(),
   });
 
   return new LimitOrder(orderInfo, makerTraits, extensions);

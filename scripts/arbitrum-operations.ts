@@ -1,4 +1,4 @@
-import { ethers, parseEther, formatEther } from 'ethers';
+import { ethers, formatEther, parseEther } from 'ethers';
 
 // Arbitrum mainnet configuration
 const ARBITRUM_RPC = 'http://localhost:8545';

@@ -45,13 +45,16 @@ contract InteractionMock is IPreInteraction, IPostInteraction {
         uint256 /* remainingMakingAmount */,
         bytes calldata extraData
     ) external pure {
-        if (extraData.length < 32) revert InvalidExtraDataLength();
+        // if (extraData.length < 32) revert InvalidExtraDataLength();
 
-        uint256 threshold;
-        assembly ("memory-safe") { // solhint-disable-line no-inline-assembly
-            threshold := calldataload(extraData.offset)
-        }
+        // uint256 threshold;
+        // assembly ("memory-safe") { // solhint-disable-line no-inline-assembly
+        //     threshold := calldataload(extraData.offset)
+        // }
 
-        if (takingAmount > threshold) revert TakingAmountTooHigh();
+        // if (takingAmount > threshold) revert TakingAmountTooHigh();
+
+        // For testing: emit an event to confirm this function is called
+        emit PostInteractionCalled(takingAmount, extraData);
     }
 }

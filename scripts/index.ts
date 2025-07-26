@@ -1,16 +1,16 @@
 import {
   Address,
-  LimitOrder,
-  LimitOrderWithFee,
-  OrderInfoData,
+  Api,
+  Bps,
   Extension,
   FeeTakerExt,
-  Bps,
+  Interaction,
+  type LimitOrder,
+  LimitOrderWithFee,
   MakerTraits,
+  type OrderInfoData,
   randBigInt,
   Sdk,
-  Api,
-  Interaction,
 } from '@1inch/limit-order-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
 import { config } from './config';
