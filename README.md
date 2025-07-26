@@ -29,10 +29,13 @@ The `contracts/` folder contains Foundry-based smart contracts that integrate wi
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 
+# Initialize git submodules (if not done in main setup)
+git submodule update --init --recursive
+
 # Navigate to contracts directory
 cd contracts
 
-# Install dependencies (automatically pulls git submodules)
+# Install local dependencies (forge-std, etc.)
 forge install
 
 # Build contracts
@@ -53,63 +56,7 @@ The contracts folder includes these key dependencies:
 🌟 **OpenZeppelin Contracts** - Standard secure contract implementations  
 🌟 **1inch Solidity Utils** - Utility libraries for 1inch integration
 
-Dependencies are managed as git submodules in the **root** `lib/` directory:
-
-```
-lib/                           # ✅ GIT SUBMODULES (committed to git)
-├── limit-order-protocol/      # 1inch Limit Order Protocol
-├── openzeppelin-contracts/    # OpenZeppelin standard contracts
-└── solidity-utils/           # 1inch utility libraries
-
-contracts/lib/                 # ❌ LOCAL DEPENDENCIES (ignored by git)
-└── forge-std/                # Foundry standard library (auto-installed)
-```
-
-**Important:** The root `lib/` contains git submodules that are committed, while `contracts/lib/` contains local Foundry dependencies that are ignored by git.
-
-### 🏗️ Contracts Structure
-
-```
-contracts/
-├── src/                      # Smart contract source files
-│   ├── InteractionMock.sol   # Mock contract for pre/post interactions
-│   └── Counter.sol           # Example contract
-├── test/                     # Contract tests
-│   ├── InteractionMock.t.sol # Comprehensive tests for InteractionMock
-│   └── Counter.t.sol         # Example test
-├── script/                   # Deployment scripts
-├── lib/                      # ❌ Local Foundry deps (gitignored)
-│   └── forge-std/           # Testing framework
-├── foundry.toml             # Foundry configuration
-└── README.md                # Contracts-specific documentation
-```
-
-### 🧪 Testing
-
-The contracts include comprehensive tests using Foundry's testing framework:
-
-```bash
-cd contracts
-
-# Run all tests
-forge test
-
-# Run specific test contract
-forge test --match-contract InteractionMockTest
-
-# Run with gas reporting
-forge test --gas-report
-
-# Run with coverage
-forge coverage
-```
-
-**InteractionMock Tests Include:**
-
-- ✅ Function validation tests
-- ✅ Error condition testing
-- ✅ Fuzz testing for edge cases
-- ✅ Integration with 1inch types
+Dependencies are managed as git submodules in `lib/`:
 
 ## 📋 Prerequisites
 
@@ -145,6 +92,13 @@ bun run setup
 ```
 
 ### 2️⃣ Application Setup ⚙️
+
+Initialize git submodules (required for smart contracts):
+
+```bash
+# Initialize and update all git submodules
+git submodule update --init --recursive
+```
 
 Install dependencies:
 
@@ -199,27 +153,6 @@ bun run start
 ### 🏭 Infrastructure
 
 🔧 `bun run redis` - Start Redis container via Podman
-
-### 🏗️ Smart Contracts
-
-```bash
-cd contracts
-
-# Build contracts
-forge build
-
-# Run all tests
-forge test
-
-# Run tests with verbose output
-forge test -vv
-
-# Run specific test
-forge test --match-contract InteractionMockTest
-
-# Deploy (after configuring network in foundry.toml)
-forge script script/Deploy.s.sol --rpc-url <RPC_URL> --private-key <PRIVATE_KEY>
-```
 
 ## 🗃️ Database Management
 
