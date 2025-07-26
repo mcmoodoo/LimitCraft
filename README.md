@@ -1,207 +1,194 @@
-# Orderly - Decentralized Order Book System
+# 1inch Limit Order - Arbitrum
 
-A complete decentralized order book application built for the hackathon, featuring React frontend, Node.js backend API, and PostgreSQL database to manage limit orders with EIP712 signature verification.
+A complete orderbook application for creating and managing 1inch limit orders on Arbitrum. Features include order creation, automated order filling, and a React frontend with Web3 wallet integration.
 
-## 🏗️ Architecture
+## Project Structure
 
-- **Frontend**: React + Vite + TailwindCSS + RainbowKit + Wagmi
-- **Backend**: Node.js + Express.js + PostgreSQL
-- **Database**: PostgreSQL with order management schema
-- **Authentication**: EIP712 signature verification
+- **`api/`** - Elysia.js backend API for order management
+- **`ui/`** - React frontend with RainbowKit wallet integration
+- **`db/`** - PostgreSQL database layer with Drizzle ORM
+- **`resolver/`** - Automated order resolver and filler
+- **`scripts/`** - Utility scripts
 
-## 🚀 Quick Start
+## Prerequisites
 
-### Prerequisites
+- Bun runtime
+- Node.js (for package compatibility)
+- Podman or Docker (for PostgreSQL)
+- Just command runner (optional, for database recipes)
 
-- Node.js 18+
-- PostgreSQL (or Podman/Docker)
-- Just command runner (optional but recommended)
+## Quick Start
 
-### Setup with Just (Recommended)
+### 1. Database Setup
+
+Create and start a local PostgreSQL container:
 
 ```bash
-# Install Just command runner if not installed
-curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+# Using Just recipes (recommended)
+just run-postgres-container
 
-# Setup entire project
-just setup
-
-# Start development servers
-just dev
+# Or manually with Podman
+podman run --name our-limit-order-db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=our-limit-order-db \
+  -p 5432:5432 \
+  -d postgres:16
 ```
 
-### Manual Setup
+Initialize the database:
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   cd frontend && npm install
-   cd ../backend && npm install
-   ```
-
-2. **Start PostgreSQL database**:
-   ```bash
-   podman run --name orderbook-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=orderbook -p 5432:5432 -d postgres
-   ```
-
-3. **Run database migrations**:
-   ```bash
-   PGPASSWORD=password psql -h localhost -U postgres -d orderbook -f database/init.sql
-   ```
-
-4. **Start backend API**:
-   ```bash
-   cd backend && npm run dev
-   ```
-
-5. **Start frontend (in new terminal)**:
-   ```bash
-   cd frontend && npm run dev
-   ```
-
-## 📋 Available Commands
-
-### Just Commands
-
-- `just install` - Install all dependencies
-- `just db-start` - Start PostgreSQL container
-- `just db-stop` - Stop PostgreSQL container
-- `just db-migrate` - Run database migrations
-- `just dev` - Start both frontend and backend
-- `just build` - Build both applications
-- `just setup` - Complete environment setup
-
-### NPM Scripts
-
-- `npm run dev:frontend` - Start frontend only
-- `npm run dev:api` - Start backend only
-- `npm run build:frontend` - Build frontend
-- `npm run build:api` - Build backend
-
-## 🌐 API Endpoints
-
-### GET `/api/orders`
-Retrieve all orders with optional filtering:
-- `status` - Filter by order status (pending, filled, cancelled)
-- `maker` - Filter by maker address
-- `limit` - Limit number of results (default: 50)
-- `offset` - Pagination offset (default: 0)
-
-### GET `/api/order/:orderHash`
-Get individual order details by order hash.
-
-### POST `/api/limit-order`
-Create a new limit order with EIP712 signature.
-
-## 💻 Frontend Features
-
-### Pages
-- **Home**: Welcome page with system overview
-- **Orders**: List all orders with filtering and pagination
-- **Order Details**: Comprehensive view of individual orders
-- **Create Order**: Form to create new orders with wallet integration
-
-### Wallet Integration
-- RainbowKit for wallet connection
-- EIP712 typed data signing
-- Automatic maker address detection
-
-## 🗄️ Database Schema
-
-```sql
-CREATE TYPE order_status AS ENUM ('pending', 'filled', 'cancelled');
-
-CREATE TABLE orders (
-    order_hash VARCHAR(66) PRIMARY KEY,
-    maker_asset VARCHAR(42) NOT NULL,
-    taker_asset VARCHAR(42) NOT NULL,
-    making_amount NUMERIC(78,0) NOT NULL,
-    taking_amount NUMERIC(78,0) NOT NULL,
-    maker_address VARCHAR(42) NOT NULL,
-    expires_in TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    signature BYTEA NOT NULL,
-    maker_traits JSONB NOT NULL,
-    extension JSONB NOT NULL,
-    status order_status NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT now()
-);
+```bash
+cd db
+bun run setup
 ```
 
-## 🔧 Configuration
+### 2. Application Setup
 
-### Environment Variables
+Install dependencies:
 
-Create a `.env` file in the root directory:
-
-```env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/orderbook
-API_PORT=3000
-FRONTEND_PORT=5173
+```bash
+bun install
 ```
 
-### Database Connection
+Start development servers (API + Frontend):
 
-- **Host**: localhost
-- **Port**: 5432
-- **Database**: orderbook
-- **Username**: postgres
-- **Password**: password
-
-## 🧪 Testing
-
-1. **Health Check**: `curl http://localhost:3000/health`
-2. **Orders API**: `curl http://localhost:3000/api/orders`
-3. **Frontend**: Open `http://localhost:5173` in browser
-
-## 🛠️ Development
-
-### Adding New Features
-
-1. **Backend**: Add routes in `backend/src/routes/`
-2. **Frontend**: Add components in `frontend/src/components/` or pages in `frontend/src/pages/`
-3. **Database**: Add migrations in `database/` directory
-
-### Code Structure
-
-```
-orderly/
-├── backend/
-│   ├── src/
-│   │   ├── routes/
-│   │   ├── utils/
-│   │   ├── database.js
-│   │   └── server.js
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── hooks/
-│   │   ├── utils/
-│   │   └── config/
-│   └── package.json
-├── database/
-│   └── init.sql
-├── Justfile
-└── package.json
+```bash
+bun run dev
 ```
 
-## 🚨 Security
+### 3. Order Resolver (Optional)
 
-- EIP712 signature verification for all orders
-- Input validation and sanitization
-- Rate limiting on API endpoints
-- Parameterized database queries to prevent SQL injection
+To enable automated order filling:
 
-## 📝 License
+```bash
+cd resolver
+cp .env.example .env
+# Edit .env with your private key and 1inch API key
+bun install
+bun run start
+```
 
-This project was created for a hackathon and is available for educational and demonstration purposes.
+## Available Scripts
 
-## 🤝 Contributing
+### Main Scripts
 
-This is a hackathon project. Feel free to fork and extend for your own use cases!
+- `bun run dev` - Start both API and frontend concurrently
+- `bun run dev:api` - Start API server only (watch mode)
+- `bun run dev:ui` - Start frontend only
+- `bun run start` - Run production build
+- `bun test` - Run tests
 
----
+### Build & Production
 
-**Built with ❤️ for the Unite Hackathon**
+- `bun run build` - Build TypeScript to dist/
+- `bun run build:prod` - Full production build (install, fix, check, clean, build)
+- `bun run clean` - Remove dist/ directory
+- `bun run rebuild` - Clean everything and rebuild from scratch
+
+### Code Quality
+
+- `bun run typecheck` - TypeScript type checking
+- `bun run lint` - Lint code with Biome
+- `bun run format` - Format code with Biome
+- `bun run lint:fix` - Fix linting issues
+- `bun run check` - Run typecheck + lint
+- `bun run fix` - Run format + lint:fix
+
+### Infrastructure
+
+- `bun run redis` - Start Redis container via Podman
+
+## Database Management
+
+### PostgreSQL Container Management
+
+Using Just recipes:
+
+```bash
+# Start PostgreSQL container
+just run-postgres-container
+
+# Connect to local database
+just psql-connect-local
+
+# Connect to remote database (using env vars)
+just psql-connect-remote
+
+# Stop and remove container
+just rm-postgres-container
+```
+
+### Database Operations
+
+```bash
+cd db
+
+# Initialize database and create tables
+bun run setup
+
+# Create database only
+bun run init
+
+# Create tables only
+bun run create-tables
+
+# Reset database (drop all tables)
+bun run reset
+
+# Open Drizzle Studio
+bun run studio
+```
+
+## Order Resolver
+
+The resolver automatically monitors the database for pending orders and fills profitable ones.
+
+### Setup
+
+```bash
+cd resolver
+cp .env.example .env
+# Configure your private key and API keys
+bun install
+```
+
+### Usage
+
+```bash
+# Start resolver
+bun run start
+
+# Development mode with auto-reload
+bun run dev
+```
+
+### Configuration
+
+Key environment variables:
+
+- `RESOLVER_PRIVATE_KEY` - Private key for resolver wallet
+- `ONE_INCH_API_KEY` - 1inch API key for price data
+- `MIN_PROFIT_WEI` - Minimum profit threshold (default: 0.05 ETH)
+- `POLL_INTERVAL_MS` - How often to check orders (default: 30s)
+
+## Architecture Flow
+
+1. **Order Creation**: User creates order via frontend → API saves to database
+2. **Order Monitoring**: Resolver polls database for pending orders
+3. **Profitability Check**: Resolver checks market prices via 1inch API
+4. **Order Filling**: Profitable orders are filled via 1inch contract
+5. **Status Updates**: Database updated with fill status
+
+## Suggested on discord
+
+You need to make sure you have the proper feeTaker extension when submitting the limit order
+cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di龙小小 @sajal
+
+essentially just use the latest verison of the @1inch/fusion-sdk and the createOrder function should handle building the feeTaker extension. This does require an extra API call to get the fee, but you can also cache the request, if the API rejects the order it's likely the whitelist changed or fee tier changed and you'll have to re-fetch the data anyway
+
+## Journal
+
+API runs and creates orders, allowing reading all my orders and individual orders
+What's next? Let's create a front end, and then try to sign on the front end, right?
+I created a front-end. I know need to sign the order on the front-end. Having lots of issues with signing the EIP 712 style order. The signature turns out to be invalid on the backend...
