@@ -18,7 +18,7 @@ export const config = {
     { value: '0xaf88d065e77c8cc2239327c5edb3a432268e5831', label: 'USDC' },
     { value: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', label: 'WETH' },
     { value: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', label: 'USDT' },
-    { value: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', label: 'USDC.e' }
+    { value: '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', label: 'USDC.e' },
   ],
 
   // Order Configuration
@@ -37,7 +37,7 @@ export const config = {
       { value: 1800, label: '30 minutes' },
       { value: 3600, label: '1 hour' },
       { value: 7200, label: '2 hours' },
-      { value: 86400, label: '24 hours' }
+      { value: 86400, label: '24 hours' },
     ],
   },
 
@@ -55,7 +55,7 @@ export const config = {
   blockchain: {
     networkId: 42161, // Arbitrum
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
-  }
+  },
 } as const;
 
 // Helper functions

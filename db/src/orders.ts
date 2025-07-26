@@ -18,15 +18,12 @@ export async function getOrderByHash(orderHash: string): Promise<Order | null> {
 }
 
 export async function getAllOrders(limit = 100, offset = 0): Promise<Order[]> {
-  return await db
-    .select()
-    .from(orders)
-    .orderBy(desc(orders.createdAt))
-    .limit(limit)
-    .offset(offset);
+  return await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
 }
 
-export async function getOrdersByStatus(status: 'pending' | 'filled' | 'cancelled' | 'expired'): Promise<Order[]> {
+export async function getOrdersByStatus(
+  status: 'pending' | 'filled' | 'cancelled' | 'expired'
+): Promise<Order[]> {
   return await db
     .select()
     .from(orders)
@@ -35,17 +32,17 @@ export async function getOrdersByStatus(status: 'pending' | 'filled' | 'cancelle
 }
 
 export async function updateOrderStatus(
-  id: string, 
+  id: string,
   status: 'pending' | 'filled' | 'cancelled' | 'expired'
 ): Promise<Order | null> {
   const [updatedOrder] = await db
     .update(orders)
-    .set({ 
+    .set({
       status,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     })
     .where(eq(orders.id, id))
     .returning();
-  
+
   return updatedOrder || null;
 }

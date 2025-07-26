@@ -63,7 +63,7 @@ const createLimitOrderUsingApi = async (): Promise<LimitOrder> => {
     ),
     FeeTakerExt.IntegratorFee.ZERO
   );
-  
+
   console.log(`Extension address: ${feeParams.extensionAddress}`);
 
   const feeExt = FeeTakerExt.FeeTakerExtension.new(
@@ -98,18 +98,15 @@ const createLimitOrderUsingApi = async (): Promise<LimitOrder> => {
 
 const order = await createLimitOrderUsingApi().catch(console.error);
 
-
 async function createLimitOrderWithInteraction(): Promise<LimitOrder> {
   // Create preInteraction with specific contract
   const preInteraction = new Interaction(
-      new Address('0x1234567890123456789012345678901234567890'), // Contract to call
-      '0xabcdef01234567890'  // Call data (method + params)
-  )
+    new Address('0x1234567890123456789012345678901234567890'), // Contract to call
+    '0xabcdef01234567890' // Call data (method + params)
+  );
 
   // Add to extension
-  const extension = new ExtensionBuilder()
-      .withPreInteraction(preInteraction)
-      .build()
+  const extension = new ExtensionBuilder().withPreInteraction(preInteraction).build();
 }
 
 async function createLimitOrderUsingSdk(): Promise<LimitOrder> {

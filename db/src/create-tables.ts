@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 
 async function main() {
   console.log('Creating orders table and enum...');
-  
+
   try {
     // Create enum type (with error handling for existing type)
     try {
@@ -39,7 +39,7 @@ async function main() {
       )
     `);
     console.log('✅ Created orders table');
-    
+
     console.log('✅ Database setup completed successfully!');
   } catch (error) {
     console.error('❌ Database setup failed:', error);

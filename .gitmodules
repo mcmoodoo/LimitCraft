@@ -1,0 +1,9 @@
+[submodule "lib/limit-order-protocol"]
+	path = lib/limit-order-protocol
+	url = https://github.com/1inch/limit-order-protocol
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/solidity-utils"]
+	path = lib/solidity-utils
+	url = https://github.com/1inch/solidity-utils

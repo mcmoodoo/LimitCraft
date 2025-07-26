@@ -1,6 +1,11 @@
 import { pgTable, uuid, varchar, timestamp, text, pgEnum, numeric } from 'drizzle-orm/pg-core';
 
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'filled', 'cancelled', 'expired']);
+export const orderStatusEnum = pgEnum('order_status', [
+  'pending',
+  'filled',
+  'cancelled',
+  'expired',
+]);
 
 export const orders = pgTable('orders', {
   id: uuid('id').primaryKey().defaultRandom(),

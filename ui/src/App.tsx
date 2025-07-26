@@ -1,19 +1,19 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
-import Orders from './pages/Orders'
-import OrderDetails from './pages/OrderDetails'
-import CreateOrder from './pages/CreateOrder'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useAccount } from 'wagmi';
+import Orders from './pages/Orders';
+import OrderDetails from './pages/OrderDetails';
+import CreateOrder from './pages/CreateOrder';
 
 function Navigation() {
-  const location = useLocation()
-  const { isConnected } = useAccount()
+  const location = useLocation();
+  const { isConnected } = useAccount();
 
   const navItems = [
     { path: '/', label: 'Home' },
     { path: '/orders', label: 'Orders' },
-    { path: '/create-order', label: 'Create Order' }
-  ]
+    { path: '/create-order', label: 'Create Order' },
+  ];
 
   return (
     <nav className="flex items-center space-x-6">
@@ -22,42 +22,38 @@ function Navigation() {
           key={item.path}
           to={item.path}
           className={`transition-colors ${
-            location.pathname === item.path
-              ? 'text-blue-400'
-              : 'text-gray-300 hover:text-white'
+            location.pathname === item.path ? 'text-blue-400' : 'text-gray-300 hover:text-white'
           }`}
         >
           {item.label}
         </Link>
       ))}
     </nav>
-  )
+  );
 }
 
 function HomePage() {
-  const { address, isConnected } = useAccount()
+  const { address, isConnected } = useAccount();
 
   return (
     <div className="text-center py-20">
       <h2 className="text-4xl font-bold mb-4">Welcome to Orderly</h2>
-      <p className="text-xl text-gray-400 mb-8">
-        Decentralized orderbook trading platform
-      </p>
-      
+      <p className="text-xl text-gray-400 mb-8">Decentralized orderbook trading platform</p>
+
       <div className="max-w-md mx-auto space-y-4">
         {isConnected ? (
           <div className="bg-gray-800 rounded-lg p-6">
             <h3 className="text-lg font-semibold mb-2">Connected Wallet</h3>
             <p className="text-gray-400 mb-4">{address}</p>
             <div className="flex space-x-4">
-              <Link 
-                to="/orders" 
+              <Link
+                to="/orders"
                 className="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors text-center"
               >
                 View Orders
               </Link>
-              <Link 
-                to="/create-order" 
+              <Link
+                to="/create-order"
                 className="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-colors text-center"
               >
                 Create Order
@@ -72,7 +68,7 @@ function HomePage() {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function AppContent() {
@@ -103,7 +99,7 @@ function AppContent() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 function App() {
@@ -111,8 +107,7 @@ function App() {
     <Router>
       <AppContent />
     </Router>
-  )
+  );
 }
 
-export default App
-
+export default App;

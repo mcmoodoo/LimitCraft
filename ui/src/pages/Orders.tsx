@@ -1,79 +1,79 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface Order {
-  orderHash: string
-  createDateTime: string
-  remainingMakerAmount: string
-  makerBalance: string
-  makerAllowance: string
+  orderHash: string;
+  createDateTime: string;
+  remainingMakerAmount: string;
+  makerBalance: string;
+  makerAllowance: string;
   data: {
-    makerAsset: string
-    takerAsset: string
-    makingAmount: string
-    takingAmount: string
-    maker: string
-  }
-  orderInvalidReason?: string
-  signature: string
+    makerAsset: string;
+    takerAsset: string;
+    makingAmount: string;
+    takingAmount: string;
+    maker: string;
+  };
+  orderInvalidReason?: string;
+  signature: string;
 }
 
 export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchOrders()
-  }, [])
+    fetchOrders();
+  }, []);
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('http://localhost:3000/orders')
-      const result = await response.json()
-      
+      const response = await fetch('http://localhost:3000/orders');
+      const result = await response.json();
+
       if (result.success) {
-        setOrders(result.data)
+        setOrders(result.data);
       } else {
-        setError(result.error)
+        setError(result.error);
       }
     } catch (err) {
-      setError('Failed to fetch orders')
+      setError('Failed to fetch orders');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const getStatusText = (order: Order) => {
     if (order.orderInvalidReason) {
-      return order.orderInvalidReason
+      return order.orderInvalidReason;
     }
-    return order.remainingMakerAmount === '0' ? 'Filled' : 'Active'
-  }
+    return order.remainingMakerAmount === '0' ? 'Filled' : 'Active';
+  };
 
   const getStatusColor = (order: Order) => {
     if (order.orderInvalidReason) {
-      if (order.orderInvalidReason.includes('expired')) return 'text-yellow-400'
-      return 'text-red-400'
+      if (order.orderInvalidReason.includes('expired')) return 'text-yellow-400';
+      return 'text-red-400';
     }
-    return order.remainingMakerAmount === '0' ? 'text-blue-400' : 'text-green-400'
-  }
+    return order.remainingMakerAmount === '0' ? 'text-blue-400' : 'text-green-400';
+  };
 
   const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   const formatAmount = (amount: string) => {
-    const num = BigInt(amount)
-    return (Number(num) / 1e18).toFixed(6)
-  }
+    const num = BigInt(amount);
+    return (Number(num) / 1e18).toFixed(6);
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -82,15 +82,15 @@ export default function Orders() {
         <h3 className="text-red-400 font-semibold mb-2">Error</h3>
         <p className="text-red-300">{error}</p>
       </div>
-    )
+    );
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Orders</h1>
-        <Link 
-          to="/create-order" 
+        <Link
+          to="/create-order"
           className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
         >
           Create Order
@@ -100,8 +100,8 @@ export default function Orders() {
       {orders.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 text-lg">No orders found</p>
-          <Link 
-            to="/create-order" 
+          <Link
+            to="/create-order"
             className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition-colors"
           >
             Create Your First Order
@@ -111,7 +111,10 @@ export default function Orders() {
         <div className="space-y-4">
           You have {orders.length} orders
           {orders.map((order) => (
-            <div key={order.orderHash} className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors">
+            <div
+              key={order.orderHash}
+              className="bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
@@ -119,20 +122,18 @@ export default function Orders() {
                   </h3>
                   <div className="flex items-center space-x-4 text-sm text-gray-400">
                     <span>Maker: {formatAddress(order.data.maker)}</span>
-                    <span className={getStatusColor(order)}>
-                      {getStatusText(order)}
-                    </span>
+                    <span className={getStatusColor(order)}>{getStatusText(order)}</span>
                     <span>{new Date(order.createDateTime).toLocaleDateString()}</span>
                   </div>
                 </div>
-                <Link 
+                <Link
                   to={`/order/${order.orderHash}`}
                   className="text-blue-400 hover:text-blue-300 transition-colors"
                 >
                   View Details →
                 </Link>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-400">Making Amount</p>
@@ -150,5 +151,5 @@ export default function Orders() {
         </div>
       )}
     </div>
-  )
+  );
 }
