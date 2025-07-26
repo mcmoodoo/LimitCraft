@@ -1,21 +1,41 @@
 {
-  "name": "orderly",
+  "name": "orderbook",
   "version": "1.0.0",
-  "description": "Decentralized Order Book System",
-  "type": "module",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:api": "cd backend && npm run dev",
-    "build:frontend": "cd frontend && npm run build",
-    "build:api": "cd backend && npm run build",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "start": "concurrently \"npm run dev:api\" \"npm run dev:frontend\""
+    "build": "swc scripts -d dist",
+    "clean": "rm -rf dist",
+    "start": "bun scripts/index.ts",
+    "dev": "concurrently 'bun run dev:api' 'bun run dev:ui'",
+    "dev:api": "bun --watch api/src/index.ts",
+    "dev:ui": "cd ui && bun run dev",
+    "redis": "podman run -d --name redis --rm -p 6379:6379 redis:alpine",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check scripts/",
+    "format": "biome format --write scripts/",
+    "lint:fix": "biome check --write scripts/",
+    "check": "bun run typecheck && bun run lint",
+    "fix": "bun run format && bun run lint:fix",
+    "build:prod": "bun i && bun run fix && bun run check && bun run clean && bun run build",
+    "rebuild": "bun run clean && rm -rf node_modules bun.lock && bun install && bun run build:prod",
+    "test": "bun test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@1inch/byte-utils": "^3.1.0",
+    "@1inch/limit-order-sdk": "v5.0.3",
+    "@types/node": "^24.0.13",
+    "ethers": "^6.15.0",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "workspaces": [
-    "frontend",
-    "backend"
-  ]
+    "@biomejs/biome": "^2.1.1",
+    "@swc/cli": "^0.7.8",
+    "@swc/core": "^1.12.11",
+    "concurrently": "^9.2.0"
+  }
 }
