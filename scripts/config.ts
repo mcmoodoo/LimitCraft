@@ -16,7 +16,7 @@ export const config = {
   rpcUrl: process.env.INFURA_ARBITRUM_MAINNET_RPC || 'https://arb1.arbitrum.io/rpc',
 
   tokens: {
-    USDC: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    USDC: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
     ARB: '0x912ce59144191c1204e64559fe8253a0e49e6548',
     ONE_INCH: '0x6314c31a7a1652ce482cffe247e9cb7c3f4bb9af',
