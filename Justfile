@@ -1,56 +1,85 @@
-# Orderly - Order Book System Commands
+# Justfile for 1inch Limit Order API
 
-# Install all dependencies
-install:
-    npm install
-    cd frontend && npm install
-    cd backend && npm install
+# Configuration
+API_BASE_URL := "https://api.1inch.dev/orderbook/v4.0"
+NETWORK_ID := "42161"
+LOCAL_API_URL := "localhost:3000"
+WALLET_ADDRESS := "0xa53568e4175835369d6F76b93501Dd6789Ab0B41"
+AUTH_HEADER := "Authorization:Bearer $ONE_INCH_API_KEY"
 
-# Database commands
-db-start:
-    podman run --name orderbook-db -e POSTGRES_PASSWORD=password -e POSTGRES_DB=orderbook -p 5432:5432 -d postgres
+# Token addresses
+USDC_ADDRESS := "0xaf88d065e77c8cc2239327c5edb3a432268e5831"
+WETH_ADDRESS := "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
 
-db-stop:
-    podman stop orderbook-db
+# Default amounts
+USDC_AMOUNT := "100000000"
+WETH_AMOUNT := "1000000000000000"
+DEFAULT_EXPIRES := "120"
 
-db-remove:
-    podman rm orderbook-db
+# Show available commands
+default:
+    @just --list
 
-db-restart: db-stop db-remove db-start
+get-order order_hash:
+    xh GET {{LOCAL_API_URL}}/order/{{order_hash}}
 
-db-logs:
-    podman logs -f orderbook-db
+get-orders:
+    xh GET {{LOCAL_API_URL}}/orders
 
-db-shell:
-    podman exec -it orderbook-db psql -U postgres -d orderbook
+create-order:
+    xh POST {{LOCAL_API_URL}}/limit-order \
+        makerAsset={{USDC_ADDRESS}} \
+        takerAsset={{WETH_ADDRESS}} \
+        makingAmount={{USDC_AMOUNT}} \
+        takingAmount={{WETH_AMOUNT}} \
+        expiresIn:={{DEFAULT_EXPIRES}}
 
-db-migrate:
-    podman exec -i orderbook-db psql -U postgres -d orderbook < database/init.sql
+create-reverse-order:
+    xh POST {{LOCAL_API_URL}}/limit-order \
+        makerAsset={{WETH_ADDRESS}} \
+        takerAsset={{USDC_ADDRESS}} \
+        makingAmount={{WETH_AMOUNT}} \
+        takingAmount={{USDC_AMOUNT}} \
+        expiresIn:={{DEFAULT_EXPIRES}}
 
-# Development commands
-dev:
-    concurrently "just dev-api" "just dev-frontend"
+create-custom-order maker_asset taker_asset making_amount taking_amount expires_in=DEFAULT_EXPIRES:
+    xh POST {{LOCAL_API_URL}}/limit-order \
+        makerAsset={{maker_asset}} \
+        takerAsset={{taker_asset}} \
+        makingAmount={{making_amount}} \
+        takingAmount={{taking_amount}} \
+        expiresIn:={{expires_in}}
 
-dev-api:
-    cd backend && npm run dev
+# 1inch API queries
+get-order-by-hash order_hash:
+    xh GET "{{API_BASE_URL}}/{{NETWORK_ID}}/order/{{order_hash}}" \
+        "{{AUTH_HEADER}}"
 
-dev-frontend:
-    cd frontend && npm run dev
+get-my-orders:
+    xh GET "{{API_BASE_URL}}/{{NETWORK_ID}}/address/{{WALLET_ADDRESS}}" \
+        "{{AUTH_HEADER}}" \
+        page==1 limit==100 statuses==1,2,3
 
-# Build commands
-build:
-    cd backend && npm run build
-    cd frontend && npm run build
+get-token-positions-from-moralis:
+    xh https://deep-index.moralis.io/api/v2.2/0xea95d5D5Ef879D50711855Ed9b012d91101780C8/erc20?chain=eth X-API-Key:${MORALIS_API_KEY}
 
-# Setup complete environment
-setup: db-start install db-migrate
-    @echo "Setup complete! Run 'just dev' to start the application"
+# Spin up a local podman container running psql 16
+run-postgres-container:
+    podman run --name our-limit-order-db \
+      -e POSTGRES_USER=postgres \
+      -e POSTGRES_PASSWORD=postgres \
+      -e POSTGRES_DB=our-limit-order-db \
+      -p 5432:5432 \
+      -d postgres:16
 
-# Cleanup
-clean:
-    rm -rf node_modules frontend/node_modules backend/node_modules
-    rm -rf frontend/dist backend/dist
+rm-postgres-container:
+    podman stop our-limit-order-db
+    podman rm our-limit-order-db
 
-# Database status
-db-status:
-    podman ps -a --filter name=orderbook-db
+# Connect to local Postgres running in Podman
+psql-connect-local:
+    psql "host=localhost port=5432 user=postgres password=postgres dbname=our-limit-order-db"
+
+# Connect to the remote Postgres using environment variables
+psql-connect-remote:
+    psql "host=${PGHOST} port=${PGPORT} user=${PGUSER} password=${PGPASSWORD} dbname=${PGDATABASE}"
