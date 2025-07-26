@@ -1,25 +1,27 @@
-# 1inch Limit Order - Arbitrum
+> 純太さんのような優秀なエンジニアとチームを組めて、本当に感謝しています。これから一緒に素晴らしいものを作っていけるのが楽しみです。
+
+# 🏮 1inch Limit Order - Arbitrum 🌸
 
 A complete orderbook application for creating and managing 1inch limit orders on Arbitrum. Features include order creation, automated order filling, and a React frontend with Web3 wallet integration.
 
-## Project Structure
+## 🏯 Project Structure
 
-- **`api/`** - Elysia.js backend API for order management
-- **`ui/`** - React frontend with RainbowKit wallet integration
-- **`db/`** - PostgreSQL database layer with Drizzle ORM
-- **`resolver/`** - Automated order resolver and filler
-- **`scripts/`** - Utility scripts
+⛩️ **`api/`** - Elysia.js backend API for order management
+⛩️ **`ui/`** - React frontend with RainbowKit wallet integration
+⛩️ **`db/`** - PostgreSQL database layer with Drizzle ORM
+⛩️ **`resolver/`** - Automated order resolver and filler
+⛩️ **`scripts/`** - Utility scripts
 
-## Prerequisites
+## 📋 Prerequisites
 
-- Bun runtime
-- Node.js (for package compatibility)
-- Podman or Docker (for PostgreSQL)
-- Just command runner (optional, for database recipes)
+🎋 Bun runtime
+🎋 Node.js (for package compatibility)
+🎋 Podman or Docker (for PostgreSQL)
+🎋 Just command runner (optional, for database recipes)
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Database Setup
+### 1️⃣ Database Setup 🗄️
 
 Create and start a local PostgreSQL container:
 
@@ -43,7 +45,7 @@ cd db
 bun run setup
 ```
 
-### 2. Application Setup
+### 2️⃣ Application Setup ⚙️
 
 Install dependencies:
 
@@ -57,7 +59,7 @@ Start development servers (API + Frontend):
 bun run dev
 ```
 
-### 3. Order Resolver (Optional)
+### 3️⃣ Order Resolver (Optional) 🤖
 
 To enable automated order filling:
 
@@ -69,39 +71,39 @@ bun install
 bun run start
 ```
 
-## Available Scripts
+## 📜 Available Scripts
 
-### Main Scripts
+### 🎯 Main Scripts
 
-- `bun run dev` - Start both API and frontend concurrently
-- `bun run dev:api` - Start API server only (watch mode)
-- `bun run dev:ui` - Start frontend only
-- `bun run start` - Run production build
-- `bun test` - Run tests
+🌟 `bun run dev` - Start both API and frontend concurrently
+🌟 `bun run dev:api` - Start API server only (watch mode)
+🌟 `bun run dev:ui` - Start frontend only
+🌟 `bun run start` - Run production build
+🌟 `bun test` - Run tests
 
-### Build & Production
+### 🏗️ Build & Production
 
-- `bun run build` - Build TypeScript to dist/
-- `bun run build:prod` - Full production build (install, fix, check, clean, build)
-- `bun run clean` - Remove dist/ directory
-- `bun run rebuild` - Clean everything and rebuild from scratch
+🔨 `bun run build` - Build TypeScript to dist/
+🔨 `bun run build:prod` - Full production build (install, fix, check, clean, build)
+🔨 `bun run clean` - Remove dist/ directory
+🔨 `bun run rebuild` - Clean everything and rebuild from scratch
 
-### Code Quality
+### ✨ Code Quality
 
-- `bun run typecheck` - TypeScript type checking
-- `bun run lint` - Lint code with Biome
-- `bun run format` - Format code with Biome
-- `bun run lint:fix` - Fix linting issues
-- `bun run check` - Run typecheck + lint
-- `bun run fix` - Run format + lint:fix
+🎨 `bun run typecheck` - TypeScript type checking
+🎨 `bun run lint` - Lint code with Biome
+🎨 `bun run format` - Format code with Biome
+🎨 `bun run lint:fix` - Fix linting issues
+🎨 `bun run check` - Run typecheck + lint
+🎨 `bun run fix` - Run format + lint:fix
 
-### Infrastructure
+### 🏭 Infrastructure
 
-- `bun run redis` - Start Redis container via Podman
+🔧 `bun run redis` - Start Redis container via Podman
 
-## Database Management
+## 🗃️ Database Management
 
-### PostgreSQL Container Management
+### 🐘 PostgreSQL Container Management
 
 Using Just recipes:
 
@@ -119,7 +121,7 @@ just psql-connect-remote
 just rm-postgres-container
 ```
 
-### Database Operations
+### ⚡ Database Operations
 
 ```bash
 cd db
@@ -140,11 +142,11 @@ bun run reset
 bun run studio
 ```
 
-## Order Resolver
+## 🤖 Order Resolver
 
 The resolver automatically monitors the database for pending orders and fills profitable ones.
 
-### Setup
+### 🛠️ Setup
 
 ```bash
 cd resolver
@@ -153,7 +155,7 @@ cp .env.example .env
 bun install
 ```
 
-### Usage
+### 💫 Usage
 
 ```bash
 # Start resolver
@@ -163,31 +165,31 @@ bun run start
 bun run dev
 ```
 
-### Configuration
+### ⚙️ Configuration
 
-Key environment variables:
+🔑 Key environment variables:
 
-- `RESOLVER_PRIVATE_KEY` - Private key for resolver wallet
-- `ONE_INCH_API_KEY` - 1inch API key for price data
-- `MIN_PROFIT_WEI` - Minimum profit threshold (default: 0.05 ETH)
-- `POLL_INTERVAL_MS` - How often to check orders (default: 30s)
+🎌 `RESOLVER_PRIVATE_KEY` - Private key for resolver wallet
+🎌 `ONE_INCH_API_KEY` - 1inch API key for price data
+🎌 `MIN_PROFIT_WEI` - Minimum profit threshold (default: 0.05 ETH)
+🎌 `POLL_INTERVAL_MS` - How often to check orders (default: 30s)
 
-## Architecture Flow
+## 🌊 Architecture Flow
 
-1. **Order Creation**: User creates order via frontend → API saves to database
-2. **Order Monitoring**: Resolver polls database for pending orders
-3. **Profitability Check**: Resolver checks market prices via 1inch API
-4. **Order Filling**: Profitable orders are filled via 1inch contract
-5. **Status Updates**: Database updated with fill status
+1️⃣ **Order Creation**: User creates order via frontend → API saves to database
+2️⃣ **Order Monitoring**: Resolver polls database for pending orders
+3️⃣ **Profitability Check**: Resolver checks market prices via 1inch API
+4️⃣ **Order Filling**: Profitable orders are filled via 1inch contract
+5️⃣ **Status Updates**: Database updated with fill status
 
-## Suggested on discord
+## 💬 Suggested on discord
 
 You need to make sure you have the proper feeTaker extension when submitting the limit order
 cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di龙小小 @sajal
 
 essentially just use the latest verison of the @1inch/fusion-sdk and the createOrder function should handle building the feeTaker extension. This does require an extra API call to get the fee, but you can also cache the request, if the API rejects the order it's likely the whitelist changed or fee tier changed and you'll have to re-fetch the data anyway
 
-## Journal
+## 📚 Journal
 
 API runs and creates orders, allowing reading all my orders and individual orders
 What's next? Let's create a front end, and then try to sign on the front end, right?
