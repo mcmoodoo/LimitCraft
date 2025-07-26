@@ -1,0 +1,25 @@
+{
+  "name": "orderbook-db",
+  "version": "1.0.0",
+  "description": "Database layer for orderbook application",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "init": "bun src/init-db.ts",
+    "create-tables": "bun src/create-tables.ts",
+    "reset": "bun src/reset-db.ts",
+    "setup": "bun run init && bun run create-tables",
+    "generate": "drizzle-kit generate",
+    "migrate": "bun src/migrate.ts",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.36.4",
+    "postgres": "^3.4.5"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.28.0",
+    "@types/node": "^24.0.13",
+    "typescript": "^5.8.3"
+  }
+}
