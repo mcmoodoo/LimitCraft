@@ -188,9 +188,3 @@ You need to make sure you have the proper feeTaker extension when submitting the
 cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di龙小小 @sajal
 
 essentially just use the latest verison of the @1inch/fusion-sdk and the createOrder function should handle building the feeTaker extension. This does require an extra API call to get the fee, but you can also cache the request, if the API rejects the order it's likely the whitelist changed or fee tier changed and you'll have to re-fetch the data anyway
-
-## 📚 Journal
-
-API runs and creates orders, allowing reading all my orders and individual orders
-What's next? Let's create a front end, and then try to sign on the front end, right?
-I created a front-end. I know need to sign the order on the front-end. Having lots of issues with signing the EIP 712 style order. The signature turns out to be invalid on the backend...
