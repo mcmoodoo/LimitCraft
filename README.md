@@ -11,6 +11,105 @@ A complete orderbook application for creating and managing 1inch limit orders on
 ⛩️ **`db/`** - PostgreSQL database layer with Drizzle ORM
 ⛩️ **`resolver/`** - Automated order resolver and filler
 ⛩️ **`scripts/`** - Utility scripts
+⛩️ **`contracts/`** - Foundry smart contracts with 1inch integration
+
+## 🏗️ Smart Contracts Setup
+
+The `contracts/` folder contains Foundry-based smart contracts that integrate with the 1inch Limit Order Protocol.
+
+### 🔧 Prerequisites for Contracts
+
+🎋 [Foundry](https://book.getfoundry.sh/getting-started/installation) - Ethereum development toolkit
+🎋 Git - For submodule dependencies
+
+### 🚀 Contracts Quick Start
+
+```bash
+# Install Foundry (if not already installed)
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Navigate to contracts directory
+cd contracts
+
+# Install dependencies (automatically pulls git submodules)
+forge install
+
+# Build contracts
+forge build
+
+# Run tests
+forge test
+
+# Run tests with verbose output
+forge test -vv
+```
+
+### 📦 Dependencies
+
+The contracts folder includes these key dependencies:
+
+🌟 **1inch Limit Order Protocol** - Core limit order functionality
+🌟 **OpenZeppelin Contracts** - Standard secure contract implementations  
+🌟 **1inch Solidity Utils** - Utility libraries for 1inch integration
+
+Dependencies are managed as git submodules in the **root** `lib/` directory:
+
+```
+lib/                           # ✅ GIT SUBMODULES (committed to git)
+├── limit-order-protocol/      # 1inch Limit Order Protocol
+├── openzeppelin-contracts/    # OpenZeppelin standard contracts
+└── solidity-utils/           # 1inch utility libraries
+
+contracts/lib/                 # ❌ LOCAL DEPENDENCIES (ignored by git)
+└── forge-std/                # Foundry standard library (auto-installed)
+```
+
+**Important:** The root `lib/` contains git submodules that are committed, while `contracts/lib/` contains local Foundry dependencies that are ignored by git.
+
+### 🏗️ Contracts Structure
+
+```
+contracts/
+├── src/                      # Smart contract source files
+│   ├── InteractionMock.sol   # Mock contract for pre/post interactions
+│   └── Counter.sol           # Example contract
+├── test/                     # Contract tests
+│   ├── InteractionMock.t.sol # Comprehensive tests for InteractionMock
+│   └── Counter.t.sol         # Example test
+├── script/                   # Deployment scripts
+├── lib/                      # ❌ Local Foundry deps (gitignored)
+│   └── forge-std/           # Testing framework
+├── foundry.toml             # Foundry configuration
+└── README.md                # Contracts-specific documentation
+```
+
+### 🧪 Testing
+
+The contracts include comprehensive tests using Foundry's testing framework:
+
+```bash
+cd contracts
+
+# Run all tests
+forge test
+
+# Run specific test contract
+forge test --match-contract InteractionMockTest
+
+# Run with gas reporting
+forge test --gas-report
+
+# Run with coverage
+forge coverage
+```
+
+**InteractionMock Tests Include:**
+
+- ✅ Function validation tests
+- ✅ Error condition testing
+- ✅ Fuzz testing for edge cases
+- ✅ Integration with 1inch types
 
 ## 📋 Prerequisites
 
@@ -101,6 +200,27 @@ bun run start
 
 🔧 `bun run redis` - Start Redis container via Podman
 
+### 🏗️ Smart Contracts
+
+```bash
+cd contracts
+
+# Build contracts
+forge build
+
+# Run all tests
+forge test
+
+# Run tests with verbose output
+forge test -vv
+
+# Run specific test
+forge test --match-contract InteractionMockTest
+
+# Deploy (after configuring network in foundry.toml)
+forge script script/Deploy.s.sol --rpc-url <RPC_URL> --private-key <PRIVATE_KEY>
+```
+
 ## 🗃️ Database Management
 
 ### 🐘 PostgreSQL Container Management
@@ -185,6 +305,6 @@ bun run dev
 ## 💬 Suggested on discord
 
 You need to make sure you have the proper feeTaker extension when submitting the limit order
-cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di龙小小 @sajal
+cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di 龙小小 @sajal
 
 essentially just use the latest verison of the @1inch/fusion-sdk and the createOrder function should handle building the feeTaker extension. This does require an extra API call to get the fee, but you can also cache the request, if the API rejects the order it's likely the whitelist changed or fee tier changed and you'll have to re-fetch the data anyway
