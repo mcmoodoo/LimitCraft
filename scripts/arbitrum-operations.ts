@@ -12,6 +12,7 @@ const UNISWAP_V3_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 // Target addresses
 const WETH_RECIPIENT = '0xa53568e4175835369d6F76b93501Dd6789Ab0B41';
 const USDC_RECIPIENT = '0xe71DB3894A79BeBe377fbD7B601766660Aaea5f9';
+const MAKER_ADDRESS = '0xa53568e4175835369d6F76b93501Dd6789Ab0B41'; // Order maker - needs USDC
 
 // WETH ABI (minimal)
 const WETH_ABI = [
@@ -135,6 +136,16 @@ async function main() {
     });
     await usdcTransferTx.wait();
     console.log(`✓ Sent 5000 USDC to ${USDC_RECIPIENT}. Tx: ${usdcTransferTx.hash}`);
+
+    // Step 5: Send 500 USDC to maker address (for order filling)
+    console.log('\n5. Sending 500 USDC to maker address...');
+    const makerUsdcAmount = ethers.parseUnits('500', 6); // USDC has 6 decimals
+    const makerUsdcTransferTx = await usdcContract.transfer(MAKER_ADDRESS, makerUsdcAmount, {
+      gasLimit: 100000,
+      nonce: nonce++,
+    });
+    await makerUsdcTransferTx.wait();
+    console.log(`✓ Sent 500 USDC to maker ${MAKER_ADDRESS}. Tx: ${makerUsdcTransferTx.hash}`);
 
     console.log('\n✅ All operations completed successfully!');
 
