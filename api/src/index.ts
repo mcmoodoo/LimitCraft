@@ -283,6 +283,7 @@ const app = new Elysia()
       // Save to database
       const savedOrder = await createOrder({
         orderHash: orderHash,
+        salt: body.typedData.message.salt,
         makerAsset: order.makerAsset.toString(),
         takerAsset: order.takerAsset.toString(),
         makingAmount: order.makingAmount.toString(),

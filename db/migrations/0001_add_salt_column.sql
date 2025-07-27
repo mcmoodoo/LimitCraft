@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "salt" text NOT NULL DEFAULT '';--> statement-breakpoint
