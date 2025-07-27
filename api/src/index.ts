@@ -320,7 +320,6 @@ const app = new Elysia()
       console.log('\n=====================================');
       console.log('✅ Signed order successfully received and processed!');
 
-
       const order = new LimitOrder(
         {
           salt: body.typedData.message.salt,
@@ -340,19 +339,34 @@ const app = new Elysia()
       console.log(`📋 Order extension: ${order.extension.encode()}`);
       console.log(`📋 Order maker traits: ${order.makerTraits.asBigInt()}`);
 
-      // const api = new Api({
-      //   baseUrl: 'https://api.1inch.dev/orderbook/v4.0',
-      //   authKey: config.apiKey,
-      //   networkId: body.chainId,
-      //   httpConnector: new SimpleHttpConnector(),
-      // });
-      // await api.submitOrder(order, body.signature);
+      // Extract expiration from the constructed order's makerTraits
+      const expirationTimestamp = order.makerTraits.expiration();
+      const expiresIn = new Date(Number(expirationTimestamp) * 1000);
+
+      console.log('\n💾 Saving to database...');
+      
+      // Save to database using the constructed order's properties
+      const savedOrder = await createOrder({
+        orderHash: orderHash,
+        makerAsset: order.makerAsset.toString(),
+        takerAsset: order.takerAsset.toString(),
+        makingAmount: order.makingAmount.toString(),
+        takingAmount: order.takingAmount.toString(),
+        makerAddress: order.maker.toString(),
+        expiresIn: expiresIn,
+        signature: body.signature,
+        makerTraits: order.makerTraits.asBigInt().toString(),
+        extension: order.extension.encode(),
+      });
+
+      console.log(`✅ Order saved to database with ID: ${savedOrder.id}`);
       
       return {
         success: true,
-        message: 'Signed order received and logged to terminal',
+        message: 'Signed order received, logged, and saved to database',
         data: {
-          orderHash: body.orderHash,
+          orderHash: orderHash,
+          orderId: savedOrder.id,
           chainId: body.chainId,
           processed: true,
         }
