@@ -1,0 +1,12 @@
+{
+  "42161": {
+    "lastUpdated": "2025-07-27T21:21:22Z",
+    "contracts": {
+      "InteractionMock.0.8.28": {
+        "address": "0xd65cef6db48e269d607733950b26cb81bbd27499",
+        "transactionHash": "0x14eef06df4a05da14f38978355573b7480b1aea3e4ae253b8a6247fe41b70705",
+        "blockNumber": null
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
 # Usage: ./scripts/extract-deployments.sh [network]
 # Example: ./scripts/extract-deployments.sh localhost
 
-NETWORK=${1:-localhost}
+CHAIN_ID=${1:-42161}  # Default to Arbitrum mainnet
 BROADCAST_DIR="broadcast"
 OUTPUT_FILE="deployments.json"
 
@@ -14,13 +14,13 @@ if [ ! -d "$BROADCAST_DIR" ]; then
     exit 1
 fi
 
-# Find the latest broadcast file for the network
-LATEST_FILE=$(find "$BROADCAST_DIR" -name "run-latest.json" -path "*/$NETWORK/*" | head -1)
+# Find the latest broadcast file for the chain ID
+LATEST_FILE=$(find "$BROADCAST_DIR" -mindepth 1 -maxdepth 3 -name "run-latest.json" -path "*/$CHAIN_ID/*" | head -1)
 
 if [ -z "$LATEST_FILE" ]; then
-    echo "Error: No broadcast file found for network: $NETWORK"
-    echo "Available networks:"
-    find "$BROADCAST_DIR" -type d -mindepth 1 -maxdepth 1 | sed 's|.*/||'
+    echo "Error: No broadcast file found for chain ID: $CHAIN_ID"
+    echo "Available chain IDs:"
+    find "$BROADCAST_DIR" -mindepth 2 -maxdepth 2 -type d | sed 's|.*/||' | sort -u
     exit 1
 fi
 
@@ -45,7 +45,7 @@ fi
 # Update the deployments file with new data
 echo "$DEPLOYMENTS" | jq -s "
 {
-    \"$NETWORK\": {
+    \"$CHAIN_ID\": {
         \"lastUpdated\": now | strftime(\"%Y-%m-%dT%H:%M:%SZ\"),
         \"contracts\": (. | map({(.contractName): {
             \"address\": .contractAddress,
@@ -61,5 +61,5 @@ mv temp_merge.json "$OUTPUT_FILE"
 rm temp_deployments.json
 
 echo "✅ Deployments extracted to $OUTPUT_FILE"
-echo "📋 Deployed contracts for $NETWORK:"
-jq -r ".\"$NETWORK\".contracts | to_entries[] | \"  \(.key): \(.value.address)\"" "$OUTPUT_FILE"
+echo "📋 Deployed contracts for chain $CHAIN_ID:"
+jq -r ".\"$CHAIN_ID\".contracts | to_entries[] | \"  \(.key): \(.value.address)\"" "$OUTPUT_FILE"
