@@ -1,8 +1,8 @@
-import { Address, Extension, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
+import { Address, Extension, getLimitOrderContract, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { parseUnits } from 'viem';
-import { useAccount, useChainId, useSignTypedData } from 'wagmi';
+import { maxUint256, parseUnits } from 'viem';
+import { useAccount, useChainId, useSignTypedData, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../tokens';
 
 interface CreateOrderForm {
@@ -13,6 +13,29 @@ interface CreateOrderForm {
   expiresIn: number;
 }
 
+const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'allowance',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
+
 export default function CreateOrder() {
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
@@ -21,6 +44,18 @@ export default function CreateOrder() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+
+  const { writeContractAsync } = useWriteContract();
+  const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
+  
+  // Wait for approval transaction confirmation
+  const approvalReceipt = useWaitForTransactionReceipt({
+    hash: approvalTxHash as `0x${string}` | undefined,
+  });
+
+  // Get the limit order contract address for the current chain
+  const limitOrderContractAddress = getLimitOrderContract(chainId);
 
   const [form, setForm] = useState<CreateOrderForm>({
     makerAsset: USDC,
@@ -29,6 +64,47 @@ export default function CreateOrder() {
     takingAmount: '',
     expiresIn: 3600, // 1 hour
   });
+
+  // Check current allowance for makerAsset
+  const allowanceQuery = useReadContract({
+    address: form.makerAsset as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [address as `0x${string}`, limitOrderContractAddress as `0x${string}`],
+    query: {
+      enabled: !!address && !!form.makerAsset,
+    },
+  });
+
+  // Helper function to check if approval is needed
+  const needsApproval = (makingAmountWei: bigint): boolean => {
+    if (!allowanceQuery.data) return true;
+    return allowanceQuery.data < makingAmountWei;
+  };
+
+  // Function to handle approval transaction
+  const handleApproval = async (makingAmountWei: bigint): Promise<boolean> => {
+    try {
+      setApprovalStatus('Sending approval transaction...');
+      
+      const hash = await writeContractAsync({
+        address: form.makerAsset as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [limitOrderContractAddress as `0x${string}`, maxUint256],
+      });
+
+      setApprovalTxHash(hash);
+      setApprovalStatus('Waiting for approval confirmation...');
+      
+      return true;
+    } catch (error) {
+      console.error('Approval failed:', error);
+      setApprovalStatus(null);
+      setError(error instanceof Error ? error.message : 'Approval failed');
+      return false;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +117,36 @@ export default function CreateOrder() {
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setApprovalStatus(null);
 
     try {
       // Convert amounts to wei/smallest units
       const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
       const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
+
+      // Check if approval is needed
+      if (needsApproval(makingAmountWei)) {
+        const approvalSuccess = await handleApproval(makingAmountWei);
+        if (!approvalSuccess) {
+          setLoading(false);
+          return;
+        }
+
+        // Wait for approval confirmation
+        while (approvalTxHash && !approvalReceipt.isSuccess && !approvalReceipt.isError) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        if (approvalReceipt.isError) {
+          setError('Approval transaction failed');
+          setLoading(false);
+          return;
+        }
+
+        setApprovalStatus('Approval confirmed! Creating order...');
+        // Refetch allowance after approval
+        await allowanceQuery.refetch();
+      }
 
       // Create expiration timestamp
       const expiration = BigInt(Math.floor(Date.now() / 1000)) + BigInt(form.expiresIn);
@@ -105,6 +206,7 @@ export default function CreateOrder() {
 
       if (result.success) {
         setSuccess(`Order created successfully! Order hash: ${result.data.orderHash}`);
+        setApprovalStatus(null);
         setTimeout(() => {
           navigate('/orders');
         }, 2000);
@@ -116,6 +218,7 @@ export default function CreateOrder() {
       setError(err instanceof Error ? err.message : 'Failed to create order');
     } finally {
       setLoading(false);
+      setApprovalStatus(null);
     }
   };
 
@@ -259,6 +362,12 @@ export default function CreateOrder() {
               </select>
             </div>
 
+            {approvalStatus && (
+              <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+                <p className="text-blue-400">{approvalStatus}</p>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
                 <p className="text-red-400">{error}</p>
@@ -277,7 +386,10 @@ export default function CreateOrder() {
                 disabled={loading}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors"
               >
-                {loading ? 'Creating Order...' : 'Create Order'}
+                {loading 
+                  ? (approvalStatus ? approvalStatus : 'Creating Order...') 
+                  : 'Create Order'
+                }
               </button>
 
               <Link
@@ -306,6 +418,12 @@ export default function CreateOrder() {
               <span className="text-white font-medium">
                 {expirationOptions.find((opt) => opt.value === form.expiresIn)?.label}
               </span>
+            </p>
+          </div>
+          
+          <div className="mt-3 pt-3 border-t border-gray-700">
+            <p className="text-xs text-gray-500">
+              📝 Note: You may need to approve token spending before creating the order.
             </p>
           </div>
         </div>
