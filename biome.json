@@ -12,6 +12,7 @@
       "api/src/**/*",
       "ui/src/**/*",
       "db/src/**/*",
+      "resolver/src/**/*",
       "*.ts",
       "*.js",
       "*.json"

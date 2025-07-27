@@ -1,8 +1,8 @@
+import { Address, Extension, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAccount, useSignTypedData, useChainId } from 'wagmi';
 import { parseUnits } from 'viem';
-import { MakerTraits, randBigInt, LimitOrder, Address, Extension } from '@1inch/limit-order-sdk';
+import { useAccount, useChainId, useSignTypedData } from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../tokens';
 
 interface CreateOrderForm {
@@ -32,7 +32,7 @@ export default function CreateOrder() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isConnected || !address) {
       setError('Please connect your wallet first');
       return;
@@ -46,10 +46,10 @@ export default function CreateOrder() {
       // Convert amounts to wei/smallest units
       const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
       const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
-      
+
       // Create expiration timestamp
       const expiration = BigInt(Math.floor(Date.now() / 1000)) + BigInt(form.expiresIn);
-      
+
       // Create proper MakerTraits using 1inch SDK
       const UINT_40_MAX = (1n << 40n) - 1n;
       const nonce = randBigInt(UINT_40_MAX);
@@ -79,9 +79,11 @@ export default function CreateOrder() {
       const signature = await signTypedDataAsync(typedData);
 
       // Convert BigInt values to strings for JSON serialization
-      const typedDataForJson = JSON.parse(JSON.stringify(typedData, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value
-      ));
+      const typedDataForJson = JSON.parse(
+        JSON.stringify(typedData, (key, value) =>
+          typeof value === 'bigint' ? value.toString() : value
+        )
+      );
 
       // Submit to backend
       const response = await fetch('http://localhost:3000/submit-signed-order', {

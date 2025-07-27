@@ -1,4 +1,4 @@
-import { JsonRpcProvider, Wallet, Contract } from 'ethers';
+import { Contract, JsonRpcProvider, Wallet } from 'ethers';
 import { config } from './config.js';
 
 export class WalletManager {
@@ -8,7 +8,7 @@ export class WalletManager {
   constructor() {
     this.provider = new JsonRpcProvider(config.chain.rpcUrl);
     this.wallet = new Wallet(config.chain.privateKey, this.provider);
-    
+
     console.log(`🔑 Resolver wallet: ${this.wallet.address}`);
   }
 
@@ -36,13 +36,13 @@ export class WalletManager {
   async checkSufficientBalance(): Promise<boolean> {
     try {
       const balance = await this.getBalance();
-      const minBalance = BigInt('50000000000000000'); // 0.05 ETH for gas
-      
+      const minBalance = BigInt('5000000000000000'); // 0.005 ETH for gas
+
       if (balance < minBalance) {
         console.warn(`⚠️ Low ETH balance: ${this.formatEther(balance)} ETH`);
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Error checking balance:', error);

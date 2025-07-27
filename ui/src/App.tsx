@@ -2,9 +2,9 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import CreateOrder from './pages/CreateOrder';
+import EIP712Demo from './pages/EIP712Demo';
 import OrderDetails from './pages/OrderDetails';
 import Orders from './pages/Orders';
-import EIP712Demo from './pages/EIP712Demo';
 
 function Navigation() {
   const location = useLocation();

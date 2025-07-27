@@ -32,14 +32,14 @@ export const config = {
   tokens: {
     USDC: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-  }
+  },
 } as const;
 
 // Validation
 function validateConfig() {
   const required = ['RESOLVER_PRIVATE_KEY', 'ONE_INCH_API_KEY'];
-  const missing = required.filter(key => !process.env[key]);
-  
+  const missing = required.filter((key) => !process.env[key]);
+
   if (missing.length > 0) {
     console.error(`❌ Missing required environment variables: ${missing.join(', ')}`);
     process.exit(1);

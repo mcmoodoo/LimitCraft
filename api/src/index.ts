@@ -1,11 +1,11 @@
-import { Address, MakerTraits, randBigInt, Sdk, Api, LimitOrder } from '@1inch/limit-order-sdk';
+import { Address, Api, LimitOrder, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
 import { cors } from '@elysiajs/cors';
 import axios from 'axios';
 import { Elysia } from 'elysia';
 import { JsonRpcProvider, Wallet } from 'ethers';
 import { createOrder, getAllOrders, getOrderByHash } from '../../db/src/index.js';
 import { config } from './config';
-import { buildOrderExt, createOrderExt } from './lib';
+import { buildOrderExt } from './lib';
 import { SimpleHttpConnector } from './simpleHttpConnector';
 
 interface LimitOrderRequest {
@@ -165,6 +165,7 @@ const app = new Elysia()
 
       const savedOrder = await createOrder({
         orderHash,
+        salt: order.salt.toString(),
         makerAsset: body.makerAsset,
         takerAsset: body.takerAsset,
         makingAmount: body.makingAmount,
@@ -233,6 +234,7 @@ const app = new Elysia()
 
       const savedOrder = await createOrder({
         orderHash,
+        salt: order.salt.toString(),
         makerAsset: body.makerAsset,
         takerAsset: body.takerAsset,
         makingAmount: body.makingAmount,
@@ -279,7 +281,7 @@ const app = new Elysia()
       const orderHash = order.getOrderHash(config.networkId);
       const expirationTimestamp = order.makerTraits.expiration();
       const expiresIn = new Date(Number(expirationTimestamp) * 1000);
-      
+
       // Save to database
       const savedOrder = await createOrder({
         orderHash: orderHash,
@@ -294,7 +296,7 @@ const app = new Elysia()
         makerTraits: order.makerTraits.asBigInt().toString(),
         extension: order.extension.encode(),
       });
-      
+
       return {
         success: true,
         message: 'Signed order saved successfully',
@@ -302,9 +304,8 @@ const app = new Elysia()
           orderHash: orderHash,
           orderId: savedOrder.id,
           chainId: body.chainId,
-        }
+        },
       };
-      
     } catch (error) {
       console.error('Error processing signed order:', error);
       return {

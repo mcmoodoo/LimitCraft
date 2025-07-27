@@ -1,7 +1,7 @@
+import { Address, Extension, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
 import { useState } from 'react';
-import { useAccount, useSignTypedData, useChainId } from 'wagmi';
 import { parseUnits } from 'viem';
-import { MakerTraits, randBigInt, LimitOrder, Address, Extension } from '@1inch/limit-order-sdk';
+import { useAccount, useChainId, useSignTypedData } from 'wagmi';
 
 interface OrderForm {
   makerAsset: string;
@@ -24,7 +24,7 @@ export default function EIP712Demo() {
   const { address, isConnected } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
   const chainId = useChainId();
-  
+
   // Set default token addresses based on chain
   const getDefaultTokens = (chainId: number) => {
     switch (chainId) {
@@ -52,7 +52,7 @@ export default function EIP712Demo() {
     takingAmount: '0.0005',
     expiresIn: 300, // 5 minutes
   });
-  
+
   const [signedOrder, setSignedOrder] = useState<SignedOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export default function EIP712Demo() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const submitToBackend = async () => {
@@ -75,9 +75,11 @@ export default function EIP712Demo() {
 
     try {
       // Convert BigInt values to strings for JSON serialization
-      const typedDataForJson = JSON.parse(JSON.stringify(signedOrder.typedData, (key, value) =>
-        typeof value === 'bigint' ? value.toString() : value
-      ));
+      const typedDataForJson = JSON.parse(
+        JSON.stringify(signedOrder.typedData, (key, value) =>
+          typeof value === 'bigint' ? value.toString() : value
+        )
+      );
 
       const requestData = {
         orderHash: signedOrder.orderHash,
@@ -89,7 +91,7 @@ export default function EIP712Demo() {
       };
 
       console.log('🚀 Sending complete signed order to backend:', requestData);
-      
+
       const response = await fetch('http://localhost:3000/submit-signed-order', {
         method: 'POST',
         headers: {
@@ -97,19 +99,23 @@ export default function EIP712Demo() {
         },
         body: JSON.stringify(requestData),
       });
-      
+
       console.log('📥 Response status:', response.status);
 
       const result = await response.json();
 
       if (result.success) {
-        setSubmitMessage('✅ Signed order successfully sent to backend! Check the API terminal for complete details.');
+        setSubmitMessage(
+          '✅ Signed order successfully sent to backend! Check the API terminal for complete details.'
+        );
       } else {
         setSubmitMessage(`❌ Backend error: ${result.error}`);
       }
     } catch (error) {
       console.error('Error submitting to backend:', error);
-      setSubmitMessage('❌ Failed to connect to backend. Make sure the API is running on port 3000.');
+      setSubmitMessage(
+        '❌ Failed to connect to backend. Make sure the API is running on port 3000.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -128,10 +134,10 @@ export default function EIP712Demo() {
       // Convert amounts to wei/smallest units
       const makingAmountWei = parseUnits(formData.makingAmount, 6); // USDC has 6 decimals
       const takingAmountWei = parseUnits(formData.takingAmount, 18); // WETH has 18 decimals
-      
+
       // Create expiration timestamp
       const expiration = BigInt(Math.floor(Date.now() / 1000)) + BigInt(formData.expiresIn);
-      
+
       // Create proper MakerTraits using 1inch SDK
       const UINT_40_MAX = (1n << 40n) - 1n;
       const nonce = randBigInt(UINT_40_MAX);
@@ -139,7 +145,7 @@ export default function EIP712Demo() {
         .withExpiration(expiration)
         .withNonce(nonce)
         .allowMultipleFills();
-      
+
       // Create a real LimitOrder using the 1inch SDK
       const limitOrder = new LimitOrder(
         {
@@ -175,7 +181,6 @@ export default function EIP712Demo() {
 
       setSignedOrder(signedOrderData);
       console.log('✅ Order signed successfully:', signedOrderData);
-
     } catch (err) {
       console.error('❌ Error signing order:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign order');
@@ -195,12 +200,18 @@ export default function EIP712Demo() {
 
   const getChainName = (chainId: number) => {
     switch (chainId) {
-      case 1: return 'Ethereum Mainnet';
-      case 42161: return 'Arbitrum One';
-      case 137: return 'Polygon';
-      case 10: return 'Optimism';
-      case 8453: return 'Base';
-      default: return `Chain ${chainId}`;
+      case 1:
+        return 'Ethereum Mainnet';
+      case 42161:
+        return 'Arbitrum One';
+      case 137:
+        return 'Polygon';
+      case 10:
+        return 'Optimism';
+      case 8453:
+        return 'Base';
+      default:
+        return `Chain ${chainId}`;
     }
   };
 
@@ -212,12 +223,12 @@ export default function EIP712Demo() {
           Connected to {getChainName(chainId)} (Chain ID: {chainId})
         </span>
       </div>
-      
+
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Order Form */}
         <div className="bg-gray-800 rounded-lg p-6">
           <h3 className="text-xl font-semibold mb-6">Create Limit Order</h3>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-2">Maker Asset (Selling)</label>
@@ -303,7 +314,7 @@ export default function EIP712Demo() {
         {/* Signed Order Display */}
         <div className="bg-gray-800 rounded-lg p-6">
           <h3 className="text-xl font-semibold mb-6">Signed Order Data</h3>
-          
+
           {!signedOrder ? (
             <div className="text-gray-400 text-center py-8">
               <p>No signed order yet</p>
@@ -332,22 +343,25 @@ export default function EIP712Demo() {
               <div>
                 <label className="block text-sm font-medium mb-2">EIP-712 Domain</label>
                 <pre className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded text-xs font-mono overflow-auto max-h-32">
-{JSON.stringify(signedOrder.typedData.domain, null, 2)}
+                  {JSON.stringify(signedOrder.typedData.domain, null, 2)}
                 </pre>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">EIP-712 Types</label>
                 <pre className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded text-xs font-mono overflow-auto max-h-32">
-{JSON.stringify(signedOrder.typedData.types, null, 2)}
+                  {JSON.stringify(signedOrder.typedData.types, null, 2)}
                 </pre>
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Order Message</label>
                 <pre className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded text-xs font-mono overflow-auto max-h-48">
-{JSON.stringify(signedOrder.typedData.message, (key, value) => 
-  typeof value === 'bigint' ? value.toString() : value, 2)}
+                  {JSON.stringify(
+                    signedOrder.typedData.message,
+                    (key, value) => (typeof value === 'bigint' ? value.toString() : value),
+                    2
+                  )}
                 </pre>
               </div>
 
@@ -362,7 +376,12 @@ export default function EIP712Demo() {
                 <label className="block text-sm font-medium mb-2">Decoded Maker Traits</label>
                 <div className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded text-sm space-y-1">
                   <div>• Nonce: {signedOrder.typedData.message.salt.toString()}</div>
-                  <div>• Expiration: {new Date(Number(BigInt(signedOrder.makerTraits) >> 160n) * 1000).toLocaleString()}</div>
+                  <div>
+                    • Expiration:{' '}
+                    {new Date(
+                      Number(BigInt(signedOrder.makerTraits) >> 160n) * 1000
+                    ).toLocaleString()}
+                  </div>
                   <div>• Multiple Fills: Allowed</div>
                   <div>• Partial Fills: Allowed</div>
                 </div>
@@ -377,13 +396,15 @@ export default function EIP712Demo() {
                 >
                   {isSubmitting ? 'Sending to Backend...' : '📤 Send Signed Order to Backend'}
                 </button>
-                
+
                 {submitMessage && (
-                  <div className={`mt-3 p-3 rounded-lg text-sm ${
-                    submitMessage.startsWith('✅') 
-                      ? 'bg-green-900/50 border border-green-500 text-green-200' 
-                      : 'bg-red-900/50 border border-red-500 text-red-200'
-                  }`}>
+                  <div
+                    className={`mt-3 p-3 rounded-lg text-sm ${
+                      submitMessage.startsWith('✅')
+                        ? 'bg-green-900/50 border border-green-500 text-green-200'
+                        : 'bg-red-900/50 border border-red-500 text-red-200'
+                    }`}
+                  >
                     {submitMessage}
                   </div>
                 )}
@@ -397,7 +418,9 @@ export default function EIP712Demo() {
       <div className="mt-8 bg-blue-900/20 border border-blue-500/30 rounded-lg p-6">
         <h3 className="text-lg font-semibold mb-4 text-blue-300">About EIP-712 Signing</h3>
         <div className="text-sm text-gray-300 space-y-2">
-          <p>• <strong>EIP-712</strong> is a standard for signing typed structured data</p>
+          <p>
+            • <strong>EIP-712</strong> is a standard for signing typed structured data
+          </p>
           <p>• It provides a secure way to sign off-chain messages that can be verified on-chain</p>
           <p>• The signature includes the domain, types, and message data</p>
           <p>• 1inch Limit Orders use EIP-712 to create verifiable order signatures</p>

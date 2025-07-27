@@ -1,11 +1,11 @@
+import { and, eq, gt, lt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { eq, and, lt, gt } from 'drizzle-orm';
 import postgres from 'postgres';
-import { config } from './config.js';
+import type { Order } from '../../db/src/schema.js';
 
 // Import schema from db package
 import { orders } from '../../db/src/schema.js';
-import type { Order } from '../../db/src/schema.js';
+import { config } from './config.js';
 
 const connectionString = `postgresql://${config.db.user}:${config.db.password}@${config.db.host}:${config.db.port}/${config.db.database}`;
 const client = postgres(connectionString, { max: 5 });
@@ -38,13 +38,16 @@ export class OrderMonitor {
     }
   }
 
-  async updateOrderStatus(orderId: string, status: 'filled' | 'cancelled' | 'expired'): Promise<void> {
+  async updateOrderStatus(
+    orderId: string,
+    status: 'filled' | 'cancelled' | 'expired'
+  ): Promise<void> {
     try {
       await db
         .update(orders)
-        .set({ 
+        .set({
           status,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(orders.id, orderId));
 
@@ -59,9 +62,9 @@ export class OrderMonitor {
       const currentTime = new Date();
       const result = await db
         .update(orders)
-        .set({ 
+        .set({
           status: 'expired',
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(
           and(
@@ -73,7 +76,7 @@ export class OrderMonitor {
       if (result.length > 0) {
         console.log(`⏰ Marked ${result.length} orders as expired`);
       }
-      
+
       return result.length;
     } catch (error) {
       console.error('❌ Error marking expired orders:', error);

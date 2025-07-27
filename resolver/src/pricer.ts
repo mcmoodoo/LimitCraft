@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { config } from './config.js';
 import type { Order } from '../../db/src/schema.js';
+import { config } from './config.js';
 
 interface TokenPrice {
   price: string; // Price in USD
@@ -32,7 +32,7 @@ export class PriceChecker {
         `https://api.1inch.dev/price/v1.1/${config.chain.networkId}/${tokenAddress}`,
         {
           headers: {
-            'Authorization': `Bearer ${config.oneInch.apiKey}`,
+            Authorization: `Bearer ${config.oneInch.apiKey}`,
           },
           timeout: 5000,
         }
@@ -75,19 +75,13 @@ export class PriceChecker {
       }
 
       // Calculate USD values
-      const makingAmountUSD = this.calculateUSDValue(
-        BigInt(order.makingAmount),
-        makerAssetPrice
-      );
-      
-      const takingAmountUSD = this.calculateUSDValue(
-        BigInt(order.takingAmount),
-        takerAssetPrice
-      );
+      const makingAmountUSD = this.calculateUSDValue(BigInt(order.makingAmount), makerAssetPrice);
+
+      const takingAmountUSD = this.calculateUSDValue(BigInt(order.takingAmount), takerAssetPrice);
 
       // Simple profitability: taking amount > making amount (in USD)
       const profitUSD = takingAmountUSD - makingAmountUSD;
-      
+
       // Convert profit back to Wei (assuming we want profit in ETH)
       // This is simplified - in reality you'd need to account for gas costs
       const profitWei = this.usdToWei(profitUSD);
@@ -103,8 +97,8 @@ export class PriceChecker {
         estimatedProfitWei: netProfitWei,
         makerAssetPrice,
         takerAssetPrice,
-        reason: isProfitable 
-          ? undefined 
+        reason: isProfitable
+          ? undefined
           : `Net profit ${this.formatWei(netProfitWei)} below minimum ${this.formatWei(BigInt(config.resolver.minProfitWei))}`,
       };
     } catch (error) {
@@ -120,7 +114,7 @@ export class PriceChecker {
   }
 
   private calculateUSDValue(amount: bigint, tokenPrice: TokenPrice): number {
-    const amountInTokens = Number(amount) / Math.pow(10, tokenPrice.decimals);
+    const amountInTokens = Number(amount) / 10 ** tokenPrice.decimals;
     return amountInTokens * parseFloat(tokenPrice.price);
   }
 

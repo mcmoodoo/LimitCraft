@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import { config } from './config.js';
+import { orderFiller } from './filler.js';
 import { orderMonitor } from './monitor.js';
 import { priceChecker } from './pricer.js';
-import { orderFiller } from './filler.js';
 import { walletManager } from './wallet.js';
 
 class OrderResolver {
@@ -25,7 +25,8 @@ class OrderResolver {
     const balance = await walletManager.getBalance();
     console.log(`👛 Wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`);
 
-    if (balance < BigInt('10000000000000000')) { // 0.01 ETH
+    if (balance < BigInt('10000000000000000')) {
+      // 0.01 ETH
       console.warn('⚠️ Low wallet balance - may not be able to fill orders');
     }
 
@@ -33,7 +34,7 @@ class OrderResolver {
 
     // Start polling
     this.intervalId = setInterval(() => {
-      this.processOrders().catch(error => {
+      this.processOrders().catch((error) => {
         console.error('❌ Error in polling cycle:', error);
       });
     }, config.resolver.pollIntervalMs);
@@ -50,7 +51,7 @@ class OrderResolver {
     }
 
     console.log('🛑 Stopping Order Resolver...');
-    
+
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
@@ -72,7 +73,7 @@ class OrderResolver {
 
       // 2. Get pending orders
       const pendingOrders = await orderMonitor.getPendingOrders();
-      
+
       if (pendingOrders.length === 0) {
         console.log('📭 No pending orders found');
         return;
@@ -82,7 +83,6 @@ class OrderResolver {
       for (const order of pendingOrders) {
         await this.processOrder(order);
       }
-
     } catch (error) {
       console.error('❌ Error processing orders:', error);
     }
@@ -94,13 +94,15 @@ class OrderResolver {
 
       // Check profitability
       const profitability = await priceChecker.calculateProfitability(order);
-      
+
       if (!profitability.isProfitable) {
         console.log(`💸 Order ${order.orderHash} not profitable: ${profitability.reason}`);
         return;
       }
 
-      console.log(`💰 Order ${order.orderHash} is profitable! Estimated profit: ${(Number(profitability.estimatedProfitWei) / 1e18).toFixed(4)} ETH`);
+      console.log(
+        `💰 Order ${order.orderHash} is profitable! Estimated profit: ${(Number(profitability.estimatedProfitWei) / 1e18).toFixed(4)} ETH`
+      );
 
       // Attempt to fill the order
       const fillResult = await orderFiller.fillOrder(order);
@@ -110,7 +112,6 @@ class OrderResolver {
       } else {
         console.error(`❌ Failed to fill order ${order.orderHash}: ${fillResult.error}`);
       }
-
     } catch (error) {
       console.error(`❌ Error processing order ${order.orderHash}:`, error);
     }
@@ -133,7 +134,7 @@ process.on('SIGTERM', async () => {
 });
 
 // Start the resolver
-resolver.start().catch(error => {
+resolver.start().catch((error) => {
   console.error('❌ Failed to start resolver:', error);
   process.exit(1);
 });

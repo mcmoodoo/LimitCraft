@@ -96,7 +96,6 @@ const createLimitOrderUsingApi = async (): Promise<LimitOrder> => {
   return order;
 };
 
-
 async function createLimitOrderWithInteraction(): Promise<LimitOrder> {
   // Create preInteraction with specific contract
   const preInteraction = new Interaction(
@@ -128,7 +127,9 @@ async function createLimitOrderUsingSdk(): Promise<LimitOrder> {
     .allowMultipleFills()
     .withExtension();
 
-  console.log(`dummy makerTraits: ${MakerTraits.default().withExpiration(expiration).withNonce(nonce).allowMultipleFills().withExtension().asBigInt()}`);
+  console.log(
+    `dummy makerTraits: ${MakerTraits.default().withExpiration(expiration).withNonce(nonce).allowMultipleFills().withExtension().asBigInt()}`
+  );
   console.log(`makeTraits var = ${makerTraits.asBigInt()}`);
 
   const sdk = new Sdk({
