@@ -24,6 +24,7 @@ async function main() {
       CREATE TABLE IF NOT EXISTS orders (
         id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
         order_hash varchar(66) NOT NULL UNIQUE,
+        salt text NOT NULL,
         maker_asset varchar(42) NOT NULL,
         taker_asset varchar(42) NOT NULL,
         making_amount numeric NOT NULL,

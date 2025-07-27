@@ -10,6 +10,7 @@ export const orderStatusEnum = pgEnum('order_status', [
 export const orders = pgTable('orders', {
   id: uuid('id').primaryKey().defaultRandom(),
   orderHash: varchar('order_hash', { length: 66 }).notNull().unique(),
+  salt: text('salt').notNull(),
   makerAsset: varchar('maker_asset', { length: 42 }).notNull(),
   takerAsset: varchar('taker_asset', { length: 42 }).notNull(),
   makingAmount: numeric('making_amount').notNull(),

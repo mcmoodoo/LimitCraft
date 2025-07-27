@@ -156,41 +156,40 @@ export class OrderFiller {
 
   private reconstructOrderStruct(order: Order) {
     try {
-      // Recreate the MakerTraits and Extension from stored data
-      const makerTraits = new MakerTraits(BigInt(order.makerTraits));
-      const extension = Extension.decode(order.extension);
-      
-      // Create the order info data object
-      const orderInfo = {
-        makerAsset: new Address(order.makerAsset),
-        takerAsset: new Address(order.takerAsset),
-        makingAmount: BigInt(order.makingAmount),
-        takingAmount: BigInt(order.takingAmount),
-        maker: new Address(order.makerAddress),
-      };
-      
-      // Reconstruct the LimitOrder using the SDK
-      const limitOrder = new LimitOrder(orderInfo, makerTraits, extension);
+      // Recreate the LimitOrder using the SDK with all original data
+      const limitOrder = this.reconstructLimitOrder(order);
       
       // Use the SDK's build method to get the proper struct
       const orderStruct = limitOrder.build();
       
-      // Convert the SDK struct to the format expected by ethers contract calls
+      console.log('🔍 SDK order struct fields:', {
+        salt: orderStruct.salt,
+        makerAsset: orderStruct.makerAsset,
+        takerAsset: orderStruct.takerAsset,
+        maker: orderStruct.maker,
+        receiver: orderStruct.receiver,
+        allowedSender: orderStruct.allowedSender,
+        makingAmount: orderStruct.makingAmount,
+        takingAmount: orderStruct.takingAmount,
+        makerTraits: orderStruct.makerTraits,
+        interactions: orderStruct.interactions,
+      });
+      
+      // Return the struct exactly as the SDK provides it
       return {
         salt: BigInt(orderStruct.salt),
         makerAsset: orderStruct.makerAsset,
         takerAsset: orderStruct.takerAsset,
         maker: orderStruct.maker,
         receiver: orderStruct.receiver,
-        allowedSender: makerTraits.allowedSender(),
+        allowedSender: orderStruct.allowedSender,
         makingAmount: BigInt(orderStruct.makingAmount),
         takingAmount: BigInt(orderStruct.takingAmount),
-        offsets: BigInt(orderStruct.makerTraits), // The makerTraits field contains the encoded offsets
-        interactions: order.extension, // Use the raw extension data
+        offsets: BigInt(orderStruct.makerTraits),
+        interactions: orderStruct.interactions,
       };
     } catch (error) {
       console.error('Error reconstructing order struct with SDK:', error);
-      // More detailed fallback with proper error logging
       throw new Error(`Failed to reconstruct order struct: ${error.message}`);
     }
   }
@@ -201,14 +200,27 @@ export class OrderFiller {
       const makerTraits = new MakerTraits(BigInt(order.makerTraits));
       const extension = Extension.decode(order.extension);
       
-      // Create the order info data object
+      // Use the salt saved in the database
+      const salt = BigInt(order.salt);
+      
+      // Create the order info data object with the saved salt
       const orderInfo = {
+        salt: salt,
         makerAsset: new Address(order.makerAsset),
         takerAsset: new Address(order.takerAsset),
         makingAmount: BigInt(order.makingAmount),
         takingAmount: BigInt(order.takingAmount),
         maker: new Address(order.makerAddress),
       };
+      
+      console.log('🔍 Reconstructing LimitOrder with saved salt:', {
+        salt: salt.toString(),
+        makerAsset: orderInfo.makerAsset.toString(),
+        takerAsset: orderInfo.takerAsset.toString(),
+        maker: orderInfo.maker.toString(),
+        makingAmount: orderInfo.makingAmount.toString(),
+        takingAmount: orderInfo.takingAmount.toString(),
+      });
       
       // Reconstruct the LimitOrder using the SDK
       return new LimitOrder(orderInfo, makerTraits, extension);
