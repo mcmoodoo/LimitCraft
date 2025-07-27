@@ -96,7 +96,6 @@ const createLimitOrderUsingApi = async (): Promise<LimitOrder> => {
   return order;
 };
 
-const order = await createLimitOrderUsingApi().catch(console.error);
 
 async function createLimitOrderWithInteraction(): Promise<LimitOrder> {
   // Create preInteraction with specific contract
@@ -119,12 +118,18 @@ async function createLimitOrderUsingSdk(): Promise<LimitOrder> {
   const expiresIn = 120n; // 2 minutes
   const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
   const UINT_40_MAX = (1n << 40n) - 1n;
+  const nonce = randBigInt(UINT_40_MAX);
+
+  console.log(`Generated a nonce of ${nonce}`);
 
   const makerTraits = MakerTraits.default()
     .withExpiration(expiration)
-    .withNonce(randBigInt(UINT_40_MAX))
+    .withNonce(nonce)
     .allowMultipleFills()
     .withExtension();
+
+  console.log(`dummy makerTraits: ${MakerTraits.default().withExpiration(expiration).withNonce(nonce).allowMultipleFills().withExtension().asBigInt()}`);
+  console.log(`makeTraits var = ${makerTraits.asBigInt()}`);
 
   const sdk = new Sdk({
     authKey: config.apiKey,
@@ -145,6 +150,8 @@ async function createLimitOrderUsingSdk(): Promise<LimitOrder> {
 
   const orderHash = order.getOrderHash(config.networkId);
   console.log(`📋 Order hash: ${orderHash}`);
+
+  console.log(`📋 Order build(): ${JSON.stringify(order.build(), null, 2)}`);
   console.log(`📋 Order extension: ${order.extension.encode()}`);
   console.log(`📋 Order maker traits: ${order.makerTraits.asBigInt()}`);
 
@@ -155,11 +162,14 @@ async function createLimitOrderUsingSdk(): Promise<LimitOrder> {
     typedData.message
   );
 
-  await sdk.submitOrder(order, signature);
-  console.log('✅ Order submitted successfully!');
-  console.log(`🔍 Order Hash: ${orderHash}`);
+  console.log(`📋 typeData: ${JSON.stringify(typedData)}`);
+  console.log(`📋 Signature: ${signature}`);
+
+  // await sdk.submitOrder(order, signature);
+  // console.log('✅ Order submitted successfully!');
 
   return order;
 }
 
-// createLimitOrderUsingSdk().catch(console.error);
+// const order = await createLimitOrderUsingApi().catch(console.error);
+createLimitOrderUsingSdk().catch(console.error);

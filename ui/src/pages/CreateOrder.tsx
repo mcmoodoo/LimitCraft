@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignTypedData, useChainId } from 'wagmi';
+import { parseUnits } from 'viem';
+import { MakerTraits, randBigInt, LimitOrder, Address, Extension } from '@1inch/limit-order-sdk';
 import { USDC, USDC_E, USDT, WETH } from '../tokens';
 
 interface CreateOrderForm {
@@ -13,7 +15,9 @@ interface CreateOrderForm {
 
 export default function CreateOrder() {
   const navigate = useNavigate();
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { signTypedDataAsync } = useSignTypedData();
+  const chainId = useChainId();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -28,33 +32,77 @@ export default function CreateOrder() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!isConnected || !address) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      // Convert to wei (multiply by 1e18)
-      const makingAmountWei = (parseFloat(form.makingAmount) * 1e18).toString();
-      const takingAmountWei = (parseFloat(form.takingAmount) * 1e18).toString();
+      // Convert amounts to wei/smallest units
+      const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
+      const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
+      
+      // Create expiration timestamp
+      const expiration = BigInt(Math.floor(Date.now() / 1000)) + BigInt(form.expiresIn);
+      
+      // Create proper MakerTraits using 1inch SDK
+      const UINT_40_MAX = (1n << 40n) - 1n;
+      const nonce = randBigInt(UINT_40_MAX);
+      const makerTraits = MakerTraits.default()
+        .withExpiration(expiration)
+        .withNonce(nonce)
+        .allowMultipleFills();
 
-      const response = await fetch('http://localhost:3000/limit-order', {
+      // Create a real LimitOrder using the 1inch SDK
+      const limitOrder = new LimitOrder(
+        {
+          makerAsset: new Address(form.makerAsset),
+          takerAsset: new Address(form.takerAsset),
+          makingAmount: makingAmountWei,
+          takingAmount: takingAmountWei,
+          maker: new Address(address),
+        },
+        makerTraits,
+        Extension.default()
+      );
+
+      // Get the real EIP-712 order hash and typed data
+      const orderHash = limitOrder.getOrderHash(chainId);
+      const typedData = limitOrder.getTypedData(chainId);
+
+      // Sign the typed data using wagmi
+      const signature = await signTypedDataAsync(typedData);
+
+      // Convert BigInt values to strings for JSON serialization
+      const typedDataForJson = JSON.parse(JSON.stringify(typedData, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      ));
+
+      // Submit to backend
+      const response = await fetch('http://localhost:3000/submit-signed-order', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          makerAsset: form.makerAsset,
-          takerAsset: form.takerAsset,
-          makingAmount: makingAmountWei,
-          takingAmount: takingAmountWei,
-          expiresIn: form.expiresIn,
+          orderHash: orderHash,
+          signature: signature,
+          makerTraits: makerTraits.asBigInt().toString(),
+          chainId: chainId,
+          typedData: typedDataForJson,
+          extension: limitOrder.extension.encode(),
         }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        setSuccess(`Order created successfully! Order hash: ${result.orderHash}`);
+        setSuccess(`Order created successfully! Order hash: ${result.data.orderHash}`);
         setTimeout(() => {
           navigate('/orders');
         }, 2000);
@@ -62,7 +110,8 @@ export default function CreateOrder() {
         setError(result.error);
       }
     } catch (err) {
-      setError('Failed to create order');
+      console.error('Error creating order:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create order');
     } finally {
       setLoading(false);
     }
