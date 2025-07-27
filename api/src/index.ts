@@ -334,23 +334,6 @@ const app = new Elysia()
         new MakerTraits(BigInt(body.makerTraits))
       );
 
-      // const sdk = new Sdk({
-      //   authKey: config.apiKey,
-      //   networkId: body.chainId,
-      //   httpConnector: new SimpleHttpConnector(),
-      // });
-
-      // const order = await sdk.createOrder(
-      //   {
-      //     makerAsset: new Address(body.typedData.message.makerAsset),
-      //     takerAsset: new Address(body.typedData.message.takerAsset),
-      //     makingAmount: BigInt(body.typedData.message.makingAmount),
-      //     takingAmount: BigInt(body.typedData.message.takingAmount),
-      //     maker: new Address(body.typedData.message.maker),
-      //   },
-      //   new MakerTraits(BigInt(body.makerTraits))
-      // );
-
       const orderHash = order.getOrderHash(config.networkId);
       console.log(`📋 Order hash: ${orderHash}`);
       console.log(`📋 Order build(): ${JSON.stringify(order.build(), null, 2)}`);

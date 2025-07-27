@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAccount, useSignTypedData, useChainId } from 'wagmi';
-import { parseUnits, keccak256, encodePacked } from 'viem';
-import { MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
+import { parseUnits } from 'viem';
+import { MakerTraits, randBigInt, LimitOrder, Address, Extension } from '@1inch/limit-order-sdk';
 
 interface OrderForm {
   makerAsset: string;
@@ -140,72 +140,37 @@ export default function EIP712Demo() {
         .withNonce(nonce)
         .allowMultipleFills();
       
-      // Extract the salt (nonce) from makerTraits
-      const salt = makerTraits.nonceOrEpoch();
+      // Create a real LimitOrder using the 1inch SDK
+      const limitOrder = new LimitOrder(
+        {
+          makerAsset: new Address(formData.makerAsset),
+          takerAsset: new Address(formData.takerAsset),
+          makingAmount: makingAmountWei,
+          takingAmount: takingAmountWei,
+          maker: new Address(address),
+        },
+        makerTraits,
+        Extension.default() // Use default extension for demo
+      );
 
-      // Create the order data structure for EIP-712
-      const orderData = {
-        salt: salt,
-        maker: address,
-        receiver: '0x0000000000000000000000000000000000000000',
-        makerAsset: formData.makerAsset,
-        takerAsset: formData.takerAsset,
-        makingAmount: makingAmountWei,
-        takingAmount: takingAmountWei,
-        makerTraits: makerTraits.asBigInt(),
-      };
+      // Get the real EIP-712 order hash using the SDK
+      const orderHash = limitOrder.getOrderHash(chainId);
 
-      // EIP-712 domain for 1inch Limit Order Protocol v4 on current chain
-      const domain = {
-        name: 'Limit Order Protocol',
-        version: '4',
-        chainId: chainId,
-        verifyingContract: '0x111111125421ca6dc452d289314280a0f8842a65' as `0x${string}`,
-      };
-
-      // EIP-712 types
-      const types = {
-        Order: [
-          { name: 'salt', type: 'uint256' },
-          { name: 'maker', type: 'address' },
-          { name: 'receiver', type: 'address' },
-          { name: 'makerAsset', type: 'address' },
-          { name: 'takerAsset', type: 'address' },
-          { name: 'makingAmount', type: 'uint256' },
-          { name: 'takingAmount', type: 'uint256' },
-          { name: 'makerTraits', type: 'uint256' },
-        ],
-      };
-
-      // Create the typed data structure
-      const typedData = {
-        domain,
-        types,
-        primaryType: 'Order' as const,
-        message: orderData,
-      };
+      // Get the proper EIP-712 typed data from the SDK
+      const typedData = limitOrder.getTypedData(chainId);
 
       console.log('🔍 About to sign typed data:', typedData);
 
       // Sign the typed data using wagmi
       const signature = await signTypedDataAsync(typedData);
 
-      // Create a simple order hash for demo purposes
-      // In a real implementation, this would be calculated properly using EIP-712 encoding
-      const orderHash = keccak256(
-        encodePacked(
-          ['address', 'uint256', 'uint256'],
-          [address as `0x${string}`, salt, BigInt(Date.now())]
-        )
-      );
-
       const signedOrderData: SignedOrderData = {
         orderHash,
         signature,
         typedData,
-        orderStruct: orderData,
+        orderStruct: typedData.message, // Use the real order struct from SDK
         makerTraits: makerTraits.asBigInt().toString(),
-        extension: '0x', // Empty extension for demo
+        extension: limitOrder.extension.encode(), // Real extension from SDK
       };
 
       setSignedOrder(signedOrderData);
