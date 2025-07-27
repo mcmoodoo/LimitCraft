@@ -67,8 +67,9 @@ export class OrderFiller {
         };
       }
 
-      // Reconstruct the order struct for 1inch contract
-      const orderStruct = this.reconstructOrderStruct(order);
+      const limitOrder = this.reconstructLimitOrder(order);
+      const orderStruct = this.reconstructOrderStruct(limitOrder);
+      
       console.log('📋 Reconstructed order struct:', {
         salt: orderStruct.salt.toString(),
         maker: orderStruct.maker,
@@ -112,8 +113,7 @@ export class OrderFiller {
         }
       }
 
-      // Use the SDK to generate the fill order calldata
-      const limitOrder = this.reconstructLimitOrder(order);
+      // Use the same limitOrder instance for SDK calldata generation
       const orderStructForSDK = limitOrder.build();
 
       const takerTraits = TakerTraits.default();
@@ -176,11 +176,8 @@ export class OrderFiller {
     }
   }
 
-  private reconstructOrderStruct(order: Order) {
+  private reconstructOrderStruct(limitOrder: LimitOrder) {
     try {
-      // Recreate the LimitOrder using the SDK with all original data
-      const limitOrder = this.reconstructLimitOrder(order);
-
       // Use the SDK's build method to get the proper struct
       const orderStruct = limitOrder.build();
 
