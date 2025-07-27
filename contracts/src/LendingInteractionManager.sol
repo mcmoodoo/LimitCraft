@@ -1,43 +1,43 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.23;
-
+pragma solidity ^0.8.23;
+import {IPoolV3} from "./interfaces/aaveV3/IPoolV3.sol";
+import {IERC20} from "./interfaces/IERC20.sol";
+import {DataTypes} from "./interfaces/aaveV3/DataTypes.sol";
+import {IAaveProtocolDataProvider} from "./interfaces/aaveV3/IAaveProtocolDataProvider.sol";
 import "@1inch/limit-order-protocol/interfaces/IOrderMixin.sol";
 import "@1inch/limit-order-protocol/interfaces/IPreInteraction.sol";
 import "@1inch/limit-order-protocol/interfaces/IPostInteraction.sol";
+import "@1inch/solidity-utils/contracts/libraries/AddressLib.sol";
 
 /**
  * @title LendingInteractionManager
  * @notice Manages pre and post interactions for limit orders with Aave v3 integration
  */
 
-interface IAaveV3Pool {
-    function withdraw(
-        address asset,
-        uint256 amount,
-        address to
-    ) external returns (uint256);
-}
-
 contract LendingInteractionManager is IPreInteraction, IPostInteraction {
+    using AddressLib for Address;
+
     error InvalidExtraDataLength();
     error TakingAmountTooHigh();
     error IncorrectTakingAmount();
     error AaveWithdrawalFailed();
 
-    // Events
     event AaveWithdrawal(address indexed asset, uint256 amount, address indexed to);
     event PostInteractionCalled(uint256 takingAmount, bytes extraData);
+    
+    IPoolV3 public immutable AAVE_POOL;
 
-    // Aave v3 Pool address (this should be set to the correct address for the network)
-    IAaveV3Pool public constant AAVE_POOL = IAaveV3Pool(0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2); // Mainnet address
+    constructor(address _aavePool) {
+        AAVE_POOL = IPoolV3(_aavePool);
+    }
 
     function copyArg(uint256 arg) external pure returns (uint256) {
         return arg;
     }
 
     function preInteraction(
-        IOrderMixin.Order calldata /* order */,
+        IOrderMixin.Order calldata order,
         bytes calldata /* extension */,
         bytes32 /* orderHash */,
         address taker,
@@ -46,12 +46,12 @@ contract LendingInteractionManager is IPreInteraction, IPostInteraction {
         uint256 /* remainingMakingAmount */,
         bytes calldata extraData
     ) external {
-            address asset = address(0xaf88d065e77c8cC2239327C5EDb3A432268e5831);
-            address maker = address(0x25AD56912553dF68EA0a6889fDC3BC109e7C7D74);
-
-            try AAVE_POOL.withdraw(asset, makingAmount, maker) returns (uint256 withdrawnAmount) {
+        DataTypes.ReserveData memory reserveData = AAVE_POOL.getReserveData(order.makerAsset.get());
+        require(reserveData.aTokenAddress != address(0), "Asset not supported by Aave");
+        IERC20(reserveData.aTokenAddress).transferFrom(order.maker.get(), address(this), makingAmount);
+        try AAVE_POOL.withdraw(order.makerAsset.get(), makingAmount, order.maker.get()) returns (uint256 withdrawnAmount) {
                 // Withdrawal successful - emit event for tracking
-                emit AaveWithdrawal(asset, withdrawnAmount, maker);
+                emit AaveWithdrawal(order.makerAsset.get(), withdrawnAmount, order.maker.get());
             } catch {
                 revert AaveWithdrawalFailed();
             }
@@ -59,7 +59,7 @@ contract LendingInteractionManager is IPreInteraction, IPostInteraction {
     }
 
     function postInteraction(
-        IOrderMixin.Order calldata /* order */,
+        IOrderMixin.Order calldata order,
         bytes calldata /* extension */,
         bytes32 /* orderHash */,
         address /* taker */,
@@ -68,6 +68,10 @@ contract LendingInteractionManager is IPreInteraction, IPostInteraction {
         uint256 /* remainingMakingAmount */,
         bytes calldata extraData
     ) external {
+        IERC20(order.takerAsset.get()).transferFrom(order.maker.get(), address(this), takingAmount);
+        IERC20(order.takerAsset.get()).approve(address(AAVE_POOL), takingAmount);
+        AAVE_POOL.supply(order.takerAsset.get(), takingAmount, order.maker.get(), 0);
+
         emit PostInteractionCalled(takingAmount, extraData);
     }
 }
