@@ -260,66 +260,8 @@ const app = new Elysia()
     }
   })
   .post('/submit-signed-order', async ({ body }: { body: SignedOrderRequest }) => {
-    console.log('🌐 POST /submit-signed-order endpoint hit!');
-    console.log('📦 Full Request Data:');
-    console.log('=====================================');
-    
     try {
-      // Print all order details
-      console.log('🔍 Order Details:');
-      console.log('  - Order Hash:', body.orderHash);
-      console.log('  - Chain ID:', body.chainId);
-      console.log('  - Extension:', body.extension || 'None');
-      
-      console.log('\n📝 EIP-712 Signature:');
-      console.log('  - Signature:', body.signature);
-      console.log('  - Length:', body.signature.length);
-      
-      console.log('\n🏗️ EIP-712 Domain:');
-      console.log('  - Name:', body.typedData.domain.name);
-      console.log('  - Version:', body.typedData.domain.version);
-      console.log('  - Chain ID:', body.typedData.domain.chainId);
-      console.log('  - Verifying Contract:', body.typedData.domain.verifyingContract);
-      
-      console.log('\n📋 EIP-712 Types:');
-      console.log('  - Order Fields:', body.typedData.types.Order.map(field => `${field.name}: ${field.type}`).join(', '));
-      
-      console.log('\n💼 Order Message Data:');
-      console.log('  - Salt:', body.typedData.message.salt);
-      console.log('  - Maker:', body.typedData.message.maker);
-      console.log('  - Receiver:', body.typedData.message.receiver);
-      console.log('  - Maker Asset:', body.typedData.message.makerAsset);
-      console.log('  - Taker Asset:', body.typedData.message.takerAsset);
-      console.log('  - Making Amount:', body.typedData.message.makingAmount);
-      console.log('  - Taking Amount:', body.typedData.message.takingAmount);
-      console.log('  - Maker Traits (raw):', body.typedData.message.makerTraits);
-      
-      // Parse and decode the makerTraits using 1inch SDK
-      console.log('\n📊 Decoded MakerTraits:');
-      try {
-        const makerTraits = new MakerTraits(BigInt(body.makerTraits));
-        
-        console.log('  - Nonce/Epoch:', makerTraits.nonceOrEpoch().toString());
-        console.log('  - Expiration:', makerTraits.expiration());
-        console.log('  - Is Private:', makerTraits.isPrivate());
-        console.log('  - Multiple Fills Allowed:', makerTraits.isMultipleFillsAllowed());
-        console.log('  - Partial Fills Allowed:', makerTraits.isPartialFillAllowed());
-        console.log('  - Has Extension:', makerTraits.hasExtension());
-        console.log('  - Allowed Sender:', makerTraits.allowedSender());
-        
-        if (makerTraits.expiration()) {
-          const expirationDate = new Date(Number(makerTraits.expiration()) * 1000);
-          console.log('  - Expiration Date:', expirationDate.toISOString());
-          console.log('  - Time Until Expiry:', Math.round((expirationDate.getTime() - Date.now()) / 1000), 'seconds');
-        }
-        
-      } catch (parseError) {
-        console.error('❌ Error parsing MakerTraits:', parseError);
-      }
-      
-      console.log('\n=====================================');
-      console.log('✅ Signed order successfully received and processed!');
-
+      // Reconstruct the LimitOrder from the signed data
       const order = new LimitOrder(
         {
           salt: body.typedData.message.salt,
@@ -333,19 +275,12 @@ const app = new Elysia()
         new MakerTraits(BigInt(body.makerTraits))
       );
 
+      // Calculate order hash and expiration
       const orderHash = order.getOrderHash(config.networkId);
-      console.log(`📋 Order hash: ${orderHash}`);
-      console.log(`📋 Order build(): ${JSON.stringify(order.build(), null, 2)}`);
-      console.log(`📋 Order extension: ${order.extension.encode()}`);
-      console.log(`📋 Order maker traits: ${order.makerTraits.asBigInt()}`);
-
-      // Extract expiration from the constructed order's makerTraits
       const expirationTimestamp = order.makerTraits.expiration();
       const expiresIn = new Date(Number(expirationTimestamp) * 1000);
-
-      console.log('\n💾 Saving to database...');
       
-      // Save to database using the constructed order's properties
+      // Save to database
       const savedOrder = await createOrder({
         orderHash: orderHash,
         makerAsset: order.makerAsset.toString(),
@@ -358,22 +293,19 @@ const app = new Elysia()
         makerTraits: order.makerTraits.asBigInt().toString(),
         extension: order.extension.encode(),
       });
-
-      console.log(`✅ Order saved to database with ID: ${savedOrder.id}`);
       
       return {
         success: true,
-        message: 'Signed order received, logged, and saved to database',
+        message: 'Signed order saved successfully',
         data: {
           orderHash: orderHash,
           orderId: savedOrder.id,
           chainId: body.chainId,
-          processed: true,
         }
       };
       
     } catch (error) {
-      console.error('❌ Error processing signed order:', error);
+      console.error('Error processing signed order:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
