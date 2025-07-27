@@ -360,6 +360,17 @@ export default function OrderDetails() {
                 <p className="text-sm text-gray-400">
                   Analysis for resolver: 0xf39F...2266
                 </p>
+                <div className="mt-2 p-2 bg-blue-900/20 rounded border border-blue-500/30">
+                  <p className="text-xs text-blue-300 font-medium">
+                    🔗 Using Interaction Contract
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    0xd65c...7499 (InteractionMock)
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    fillOrderArgs() with custom interactions
+                  </p>
+                </div>
               </div>
               {canFillOrder(order) && (
                 <div className="flex space-x-3">
