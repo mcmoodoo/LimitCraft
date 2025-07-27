@@ -1,4 +1,4 @@
-import { Address, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
+import { Address, MakerTraits, randBigInt, Sdk, Api, LimitOrder } from '@1inch/limit-order-sdk';
 import { cors } from '@elysiajs/cors';
 import axios from 'axios';
 import { Elysia } from 'elysia';
@@ -16,10 +16,23 @@ interface LimitOrderRequest {
   expiresIn?: number;
 }
 
+interface SignedOrderRequest {
+  orderHash: string;
+  signature: string;
+  makerTraits: string;
+  chainId: number;
+  typedData: {
+    domain: any;
+    types: any;
+    message: any;
+  };
+  extension?: string;
+}
+
 const app = new Elysia()
   .use(
     cors({
-      origin: 'http://localhost:5173',
+      origin: true, // Allow all origins for debugging
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true, // for cookies or Authorization headers
@@ -240,6 +253,130 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error creating limit order:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .post('/submit-signed-order', async ({ body }: { body: SignedOrderRequest }) => {
+    console.log('🌐 POST /submit-signed-order endpoint hit!');
+    console.log('📦 Full Request Data:');
+    console.log('=====================================');
+    
+    try {
+      // Print all order details
+      console.log('🔍 Order Details:');
+      console.log('  - Order Hash:', body.orderHash);
+      console.log('  - Chain ID:', body.chainId);
+      console.log('  - Extension:', body.extension || 'None');
+      
+      console.log('\n📝 EIP-712 Signature:');
+      console.log('  - Signature:', body.signature);
+      console.log('  - Length:', body.signature.length);
+      
+      console.log('\n🏗️ EIP-712 Domain:');
+      console.log('  - Name:', body.typedData.domain.name);
+      console.log('  - Version:', body.typedData.domain.version);
+      console.log('  - Chain ID:', body.typedData.domain.chainId);
+      console.log('  - Verifying Contract:', body.typedData.domain.verifyingContract);
+      
+      console.log('\n📋 EIP-712 Types:');
+      console.log('  - Order Fields:', body.typedData.types.Order.map(field => `${field.name}: ${field.type}`).join(', '));
+      
+      console.log('\n💼 Order Message Data:');
+      console.log('  - Salt:', body.typedData.message.salt);
+      console.log('  - Maker:', body.typedData.message.maker);
+      console.log('  - Receiver:', body.typedData.message.receiver);
+      console.log('  - Maker Asset:', body.typedData.message.makerAsset);
+      console.log('  - Taker Asset:', body.typedData.message.takerAsset);
+      console.log('  - Making Amount:', body.typedData.message.makingAmount);
+      console.log('  - Taking Amount:', body.typedData.message.takingAmount);
+      console.log('  - Maker Traits (raw):', body.typedData.message.makerTraits);
+      
+      // Parse and decode the makerTraits using 1inch SDK
+      console.log('\n📊 Decoded MakerTraits:');
+      try {
+        const makerTraits = new MakerTraits(BigInt(body.makerTraits));
+        
+        console.log('  - Nonce/Epoch:', makerTraits.nonceOrEpoch().toString());
+        console.log('  - Expiration:', makerTraits.expiration());
+        console.log('  - Is Private:', makerTraits.isPrivate());
+        console.log('  - Multiple Fills Allowed:', makerTraits.isMultipleFillsAllowed());
+        console.log('  - Partial Fills Allowed:', makerTraits.isPartialFillAllowed());
+        console.log('  - Has Extension:', makerTraits.hasExtension());
+        console.log('  - Allowed Sender:', makerTraits.allowedSender());
+        
+        if (makerTraits.expiration()) {
+          const expirationDate = new Date(Number(makerTraits.expiration()) * 1000);
+          console.log('  - Expiration Date:', expirationDate.toISOString());
+          console.log('  - Time Until Expiry:', Math.round((expirationDate.getTime() - Date.now()) / 1000), 'seconds');
+        }
+        
+      } catch (parseError) {
+        console.error('❌ Error parsing MakerTraits:', parseError);
+      }
+      
+      console.log('\n=====================================');
+      console.log('✅ Signed order successfully received and processed!');
+
+
+      const order = new LimitOrder(
+        {
+          salt: body.typedData.message.salt,
+          receiver: new Address(body.typedData.message.receiver),
+          makerAsset: new Address(body.typedData.message.makerAsset),
+          takerAsset: new Address(body.typedData.message.takerAsset),
+          makingAmount: BigInt(body.typedData.message.makingAmount),
+          takingAmount: BigInt(body.typedData.message.takingAmount),
+          maker: new Address(body.typedData.message.maker),
+        },
+        new MakerTraits(BigInt(body.makerTraits))
+      );
+
+      // const sdk = new Sdk({
+      //   authKey: config.apiKey,
+      //   networkId: body.chainId,
+      //   httpConnector: new SimpleHttpConnector(),
+      // });
+
+      // const order = await sdk.createOrder(
+      //   {
+      //     makerAsset: new Address(body.typedData.message.makerAsset),
+      //     takerAsset: new Address(body.typedData.message.takerAsset),
+      //     makingAmount: BigInt(body.typedData.message.makingAmount),
+      //     takingAmount: BigInt(body.typedData.message.takingAmount),
+      //     maker: new Address(body.typedData.message.maker),
+      //   },
+      //   new MakerTraits(BigInt(body.makerTraits))
+      // );
+
+      const orderHash = order.getOrderHash(config.networkId);
+      console.log(`📋 Order hash: ${orderHash}`);
+      console.log(`📋 Order build(): ${JSON.stringify(order.build(), null, 2)}`);
+      console.log(`📋 Order extension: ${order.extension.encode()}`);
+      console.log(`📋 Order maker traits: ${order.makerTraits.asBigInt()}`);
+
+      // const api = new Api({
+      //   baseUrl: 'https://api.1inch.dev/orderbook/v4.0',
+      //   authKey: config.apiKey,
+      //   networkId: body.chainId,
+      //   httpConnector: new SimpleHttpConnector(),
+      // });
+      // await api.submitOrder(order, body.signature);
+      
+      return {
+        success: true,
+        message: 'Signed order received and logged to terminal',
+        data: {
+          orderHash: body.orderHash,
+          chainId: body.chainId,
+          processed: true,
+        }
+      };
+      
+    } catch (error) {
+      console.error('❌ Error processing signed order:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

@@ -56,10 +56,63 @@ export default function EIP712Demo() {
   const [signedOrder, setSignedOrder] = useState<SignedOrderData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const submitToBackend = async () => {
+    if (!signedOrder) {
+      setSubmitMessage('❌ No signed order to submit. Please sign an order first.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+
+    try {
+      // Convert BigInt values to strings for JSON serialization
+      const typedDataForJson = JSON.parse(JSON.stringify(signedOrder.typedData, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      ));
+
+      const requestData = {
+        orderHash: signedOrder.orderHash,
+        signature: signedOrder.signature,
+        makerTraits: signedOrder.makerTraits,
+        chainId: chainId,
+        typedData: typedDataForJson,
+        extension: signedOrder.extension,
+      };
+
+      console.log('🚀 Sending complete signed order to backend:', requestData);
+      
+      const response = await fetch('http://localhost:3000/submit-signed-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+      
+      console.log('📥 Response status:', response.status);
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSubmitMessage('✅ Signed order successfully sent to backend! Check the API terminal for complete details.');
+      } else {
+        setSubmitMessage(`❌ Backend error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error submitting to backend:', error);
+      setSubmitMessage('❌ Failed to connect to backend. Make sure the API is running on port 3000.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const createAndSignOrder = async () => {
@@ -348,6 +401,27 @@ export default function EIP712Demo() {
                   <div>• Multiple Fills: Allowed</div>
                   <div>• Partial Fills: Allowed</div>
                 </div>
+              </div>
+
+              {/* Submit to Backend Button */}
+              <div className="pt-4 border-t border-gray-600">
+                <button
+                  onClick={submitToBackend}
+                  disabled={isSubmitting || !signedOrder}
+                  className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-4 py-3 rounded-lg font-medium transition-colors"
+                >
+                  {isSubmitting ? 'Sending to Backend...' : '📤 Send Signed Order to Backend'}
+                </button>
+                
+                {submitMessage && (
+                  <div className={`mt-3 p-3 rounded-lg text-sm ${
+                    submitMessage.startsWith('✅') 
+                      ? 'bg-green-900/50 border border-green-500 text-green-200' 
+                      : 'bg-red-900/50 border border-red-500 text-red-200'
+                  }`}>
+                    {submitMessage}
+                  </div>
+                )}
               </div>
             </div>
           )}
