@@ -1,15 +1,27 @@
 [profile.default]
 src = "src"
 out = "out"
-libs = ["lib", "../lib"]
+libs = ["lib"]
 via_ir = true
 optimizer = true
 optimizer_runs = 200
+ignored_error_codes = [
+    "license",
+    "code-size"
+]
+exclude = [
+    "lib/openzeppelin-contracts/test",
+    "lib/openzeppelin-contracts/certora",
+    "lib/limit-order-protocol/test",
+    "lib/solidity-utils/test"
+]
 
 remappings = [
-    "@1inch/limit-order-protocol/=../lib/limit-order-protocol/contracts/",
-    "@openzeppelin/contracts/=../lib/openzeppelin-contracts/contracts/",
-    "@1inch/solidity-utils/=../lib/solidity-utils/"
+    "@1inch/limit-order-protocol/=lib/limit-order-protocol/contracts/",
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@1inch/solidity-utils/=lib/solidity-utils/",
+    "forge-std/=lib/forge-std/src/",
+    "@chainlink/contracts/=lib/openzeppelin-contracts/lib/chainlink/contracts/"
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

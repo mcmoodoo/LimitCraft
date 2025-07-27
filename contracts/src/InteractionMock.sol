@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.23;
+pragma solidity ^0.8.23;
 
 import "@1inch/limit-order-protocol/interfaces/IOrderMixin.sol";
 import "@1inch/limit-order-protocol/interfaces/IPreInteraction.sol";
