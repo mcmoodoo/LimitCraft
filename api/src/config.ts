@@ -12,8 +12,8 @@ validateConfig();
 
 export const config = {
   apiKey: process.env.ONE_INCH_API_KEY || '',
-  networkId: 42161,
-  rpcUrl: process.env.INFURA_ARBITRUM_MAINNET_RPC || 'https://arb1.arbitrum.io/rpc',
+  networkId: 42161, // Keep Arbitrum network ID since we forked it
+  rpcUrl: 'http://localhost:8545', // Hardcoded to use local Anvil
 
   tokens: {
     USDC: '0x55730859aa4204834e132c704090057924db4b2c',

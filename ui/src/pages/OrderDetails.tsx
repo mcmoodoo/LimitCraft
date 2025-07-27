@@ -7,6 +7,7 @@ interface OrderDetails {
   remainingMakerAmount: string;
   makerBalance: string;
   makerAllowance: string;
+  status: 'pending' | 'filled' | 'cancelled' | 'expired';
   data: {
     makerAsset: string;
     takerAsset: string;
@@ -29,6 +30,10 @@ export default function OrderDetails() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filling, setFilling] = useState(false);
+  const [fillResult, setFillResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (orderHash) {
@@ -54,20 +59,33 @@ export default function OrderDetails() {
   };
 
   const getStatusText = (order: OrderDetails) => {
-    if (order.orderInvalidReason) {
-      return order.orderInvalidReason;
+    switch (order.status) {
+      case 'pending':
+        return 'Pending';
+      case 'filled':
+        return 'Filled';
+      case 'cancelled':
+        return 'Cancelled';
+      case 'expired':
+        return 'Expired';
+      default:
+        return 'Unknown';
     }
-    return order.remainingMakerAmount === '0' ? 'Filled' : 'Active';
   };
 
   const getStatusColor = (order: OrderDetails) => {
-    if (order.orderInvalidReason) {
-      if (order.orderInvalidReason.includes('expired')) return 'text-yellow-400 bg-yellow-900/20';
-      return 'text-red-400 bg-red-900/20';
+    switch (order.status) {
+      case 'pending':
+        return 'text-green-400 bg-green-900/20';
+      case 'filled':
+        return 'text-blue-400 bg-blue-900/20';
+      case 'cancelled':
+        return 'text-red-400 bg-red-900/20';
+      case 'expired':
+        return 'text-yellow-400 bg-yellow-900/20';
+      default:
+        return 'text-gray-400 bg-gray-900/20';
     }
-    return order.remainingMakerAmount === '0'
-      ? 'text-blue-400 bg-blue-900/20'
-      : 'text-green-400 bg-green-900/20';
   };
 
   const formatAddress = (address: string) => {
@@ -81,6 +99,85 @@ export default function OrderDetails() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const fillOrder = async () => {
+    if (!orderHash) return;
+    
+    setFilling(true);
+    setFillResult(null);
+    
+    try {
+      const response = await fetch(`http://localhost:3000/order/${orderHash}/fill`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      console.log('Fill result:', result); // Debug log
+      setFillResult({
+        success: result.success,
+        message: result.success ? result.message : result.error,
+        txHash: result.txHash
+      });
+      
+      // If successful, refresh the order to update status
+      if (result.success) {
+        setTimeout(() => {
+          fetchOrder();
+        }, 1000);
+      }
+    } catch (err) {
+      setFillResult({
+        success: false,
+        message: 'Failed to fill order: Network error'
+      });
+    } finally {
+      setFilling(false);
+    }
+  };
+
+  const canFillOrder = (order: OrderDetails) => {
+    return order.status === 'pending';
+  };
+
+  const cancelOrder = async () => {
+    if (!orderHash) return;
+    
+    setCancelling(true);
+    setCancelResult(null);
+    
+    try {
+      const response = await fetch(`http://localhost:3000/order/${orderHash}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      console.log('Cancel result:', result); // Debug log
+      setCancelResult({
+        success: result.success,
+        message: result.success ? result.message : result.error,
+      });
+      
+      // If successful, refresh the order to update status
+      if (result.success) {
+        setTimeout(() => {
+          fetchOrder();
+        }, 1000);
+      }
+    } catch (err) {
+      setCancelResult({
+        success: false,
+        message: 'Failed to cancel order: Network error'
+      });
+    } finally {
+      setCancelling(false);
+    }
   };
 
   if (loading) {
@@ -248,6 +345,161 @@ export default function OrderDetails() {
           <h3 className="text-lg font-semibold mb-3">Signature</h3>
           <div className="bg-gray-900 rounded-lg p-4">
             <p className="font-mono text-sm break-all text-gray-300">{order.signature}</p>
+          </div>
+        </div>
+
+        {/* Resolver Profitability Section */}
+        <div className="mt-6 pt-6 border-t border-gray-700">
+          <h3 className="text-lg font-semibold mb-3">Resolver Analysis</h3>
+          <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg p-6 border border-purple-500/20">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h4 className="text-lg font-medium text-purple-300 mb-1">
+                  🤖 Resolver Profitability
+                </h4>
+                <p className="text-sm text-gray-400">
+                  Analysis for resolver: 0xf39F...2266
+                </p>
+              </div>
+              {canFillOrder(order) && (
+                <div className="flex space-x-3">
+                  <button
+                    onClick={fillOrder}
+                    disabled={filling || cancelling}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      filling || cancelling
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    {filling ? '⏳ Filling...' : '🚀 Fill Order'}
+                  </button>
+                  
+                  <button
+                    onClick={cancelOrder}
+                    disabled={filling || cancelling}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      filling || cancelling
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-red-600 hover:bg-red-700 text-white'
+                    }`}
+                  >
+                    {cancelling ? '⏳ Cancelling...' : '❌ Cancel Order'}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-sm text-gray-400 mb-1">Estimated Profit</div>
+                <div className="text-xl font-bold text-green-400">
+                  +0.0245 ETH
+                </div>
+                <div className="text-xs text-gray-500">~$82.50 USD</div>
+              </div>
+              
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-sm text-gray-400 mb-1">Gas Cost</div>
+                <div className="text-xl font-bold text-yellow-400">
+                  ~0.0021 ETH
+                </div>
+                <div className="text-xs text-gray-500">~$7.10 USD</div>
+              </div>
+              
+              <div className="bg-gray-800/50 rounded-lg p-4">
+                <div className="text-sm text-gray-400 mb-1">Net Profit</div>
+                <div className="text-xl font-bold text-blue-400">
+                  +0.0224 ETH
+                </div>
+                <div className="text-xs text-gray-500">~$75.40 USD</div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 text-sm">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                <span className="text-green-400">Profitable</span>
+              </div>
+              <div className="text-gray-400">
+                ROI: <span className="text-white font-medium">1,067%</span>
+              </div>
+              <div className="text-gray-400">
+                Profit Margin: <span className="text-white font-medium">91.4%</span>
+              </div>
+            </div>
+
+            {!canFillOrder(order) && (
+              <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-yellow-400">⚠️</span>
+                  <span className="text-yellow-200 text-sm">
+                    Order cannot be filled - Status: {getStatusText(order)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {fillResult && (
+              <div className={`mt-4 p-4 rounded-lg border ${
+                fillResult.success 
+                  ? 'bg-green-900/30 border-green-500/50' 
+                  : 'bg-red-900/30 border-red-500/50'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  <span className={`text-xl ${fillResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                    {fillResult.success ? '✅' : '❌'}
+                  </span>
+                  <div className="flex-1">
+                    <p className={`font-medium ${fillResult.success ? 'text-green-100' : 'text-red-100'}`}>
+                      {fillResult.success ? 'Fill Successful!' : 'Fill Failed'}
+                    </p>
+                    <p className={`text-sm mt-1 ${fillResult.success ? 'text-green-200' : 'text-red-200'}`}>
+                      {fillResult.message}
+                    </p>
+                    {fillResult.txHash && (
+                      <div className="mt-3 p-2 bg-gray-800/50 rounded border">
+                        <span className="text-gray-300 text-xs block mb-1">Transaction Hash:</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-blue-300 text-xs font-mono break-all">
+                            {fillResult.txHash}
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(fillResult.txHash!)}
+                            className="text-blue-400 hover:text-blue-300 text-sm"
+                            title="Copy transaction hash"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {cancelResult && (
+              <div className={`mt-4 p-4 rounded-lg border ${
+                cancelResult.success 
+                  ? 'bg-orange-900/30 border-orange-500/50' 
+                  : 'bg-red-900/30 border-red-500/50'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  <span className={`text-xl ${cancelResult.success ? 'text-orange-400' : 'text-red-400'}`}>
+                    {cancelResult.success ? '🚫' : '❌'}
+                  </span>
+                  <div className="flex-1">
+                    <p className={`font-medium ${cancelResult.success ? 'text-orange-100' : 'text-red-100'}`}>
+                      {cancelResult.success ? 'Order Cancelled!' : 'Cancel Failed'}
+                    </p>
+                    <p className={`text-sm mt-1 ${cancelResult.success ? 'text-orange-200' : 'text-red-200'}`}>
+                      {cancelResult.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

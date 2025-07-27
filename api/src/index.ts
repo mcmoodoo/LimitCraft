@@ -3,10 +3,15 @@ import { cors } from '@elysiajs/cors';
 import axios from 'axios';
 import { Elysia } from 'elysia';
 import { JsonRpcProvider, Wallet } from 'ethers';
-import { createOrder, getAllOrders, getOrderByHash } from '../../db/src/index.js';
+import { createOrder, getAllOrders, getOrderByHash, updateOrderStatus } from '../../db/src/index.js';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import { and, eq, lt } from 'drizzle-orm';
+import postgres from 'postgres';
+import { orders } from '../../db/src/schema.js';
 import { config } from './config';
 import { buildOrderExt } from './lib';
 import { SimpleHttpConnector } from './simpleHttpConnector';
+import { APIOrderFiller } from './filler.js';
 
 interface LimitOrderRequest {
   makerAsset: string;
@@ -27,6 +32,46 @@ interface SignedOrderRequest {
     message: any;
   };
   extension?: string;
+}
+
+// Database connection for order refresh functionality
+const connectionString = `postgresql://postgres:postgres@localhost:5432/our-limit-order-db`;
+const dbClient = postgres(connectionString, { max: 5 });
+const db = drizzle(dbClient);
+
+// Function to refresh expired orders
+async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: string }> {
+  try {
+    const currentTime = new Date();
+    
+    // Update all pending orders that have expired
+    const result = await db
+      .update(orders)
+      .set({
+        status: 'expired',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(orders.status, 'pending'),
+          lt(orders.expiresIn, currentTime) // Expiration time < current time
+        )
+      );
+
+    const expiredCount = result.length || 0;
+    
+    console.log(`⏰ Refreshed ${expiredCount} expired orders`);
+    
+    return {
+      expiredCount,
+      message: expiredCount > 0 
+        ? `Successfully marked ${expiredCount} orders as expired`
+        : 'No expired orders found'
+    };
+  } catch (error) {
+    console.error('❌ Error refreshing expired orders:', error);
+    throw new Error(`Failed to refresh orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }
 
 const app = new Elysia()
@@ -57,6 +102,7 @@ const app = new Elysia()
         remainingMakerAmount: order.makingAmount,
         makerBalance: '999999999999999999999',
         makerAllowance: '999999999999999999999',
+        status: order.status, // Add actual database status
         data: {
           makerAsset: order.makerAsset,
           takerAsset: order.takerAsset,
@@ -82,6 +128,13 @@ const app = new Elysia()
   })
   .get('/orders', async ({ query }) => {
     try {
+
+      try {
+        await refreshExpiredOrders();
+      } catch (error) {
+        console.error('Error refreshing orders:', error);
+      }
+
       const limit = parseInt(query.limit || '100');
       const offset = (parseInt(query.page || '1') - 1) * limit;
 
@@ -94,6 +147,7 @@ const app = new Elysia()
         remainingMakerAmount: order.makingAmount, // Simplified - could be calculated based on fills
         makerBalance: '999999999999999999999', // Placeholder - would need to query blockchain
         makerAllowance: '999999999999999999999', // Placeholder - would need to query blockchain
+        status: order.status, // Add actual database status
         data: {
           makerAsset: order.makerAsset,
           takerAsset: order.takerAsset,
@@ -308,6 +362,107 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error processing signed order:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .post('/order/:orderHash/fill', async ({ params }) => {
+    try {
+      const { orderHash } = params;
+      
+      // Get order from database
+      const order = await getOrderByHash(orderHash);
+      
+      if (!order) {
+        return {
+          success: false,
+          error: 'Order not found',
+        };
+      }
+      
+      if (order.status !== 'pending') {
+        return {
+          success: false,
+          error: `Order is not pending. Current status: ${order.status}`,
+        };
+      }
+      
+      // Create OrderFiller instance for this request
+      const orderFiller = new APIOrderFiller();
+      
+      // Attempt to fill the order using the resolver logic
+      const fillResult = await orderFiller.fillOrder(order);
+      
+      if (fillResult.success) {
+        return {
+          success: true,
+          message: 'Order filled successfully',
+          txHash: fillResult.txHash,
+        };
+      } else {
+        return {
+          success: false,
+          error: fillResult.error || 'Failed to fill order',
+        };
+      }
+      
+    } catch (error) {
+      console.error('Error filling order:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .post('/order/:orderHash/cancel', async ({ params }) => {
+    try {
+      const { orderHash } = params;
+      
+      // Get order from database
+      const order = await getOrderByHash(orderHash);
+      
+      if (!order) {
+        return {
+          success: false,
+          error: 'Order not found',
+        };
+      }
+      
+      if (order.status !== 'pending') {
+        return {
+          success: false,
+          error: `Cannot cancel order. Current status: ${order.status}`,
+        };
+      }
+      
+      // Update order status to cancelled
+      await updateOrderStatus(order.id, 'cancelled');
+      
+      return {
+        success: true,
+        message: 'Order cancelled successfully',
+      };
+      
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .post('/refresh-orders', async () => {
+    try {
+      const result = await refreshExpiredOrders();
+      
+      return {
+        success: true,
+        ...result,
+      };
+    } catch (error) {
+      console.error('Error refreshing orders:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

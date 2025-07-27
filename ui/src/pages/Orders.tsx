@@ -7,6 +7,7 @@ interface Order {
   remainingMakerAmount: string;
   makerBalance: string;
   makerAllowance: string;
+  status: 'pending' | 'filled' | 'cancelled' | 'expired';
   data: {
     makerAsset: string;
     takerAsset: string;
@@ -45,18 +46,33 @@ export default function Orders() {
   };
 
   const getStatusText = (order: Order) => {
-    if (order.orderInvalidReason) {
-      return order.orderInvalidReason;
+    switch (order.status) {
+      case 'pending':
+        return 'Pending';
+      case 'filled':
+        return 'Filled';
+      case 'cancelled':
+        return 'Cancelled';
+      case 'expired':
+        return 'Expired';
+      default:
+        return 'Unknown';
     }
-    return order.remainingMakerAmount === '0' ? 'Filled' : 'Active';
   };
 
   const getStatusColor = (order: Order) => {
-    if (order.orderInvalidReason) {
-      if (order.orderInvalidReason.includes('expired')) return 'text-yellow-400';
-      return 'text-red-400';
+    switch (order.status) {
+      case 'pending':
+        return 'text-green-400';
+      case 'filled':
+        return 'text-blue-400';
+      case 'cancelled':
+        return 'text-red-400';
+      case 'expired':
+        return 'text-yellow-400';
+      default:
+        return 'text-gray-400';
     }
-    return order.remainingMakerAmount === '0' ? 'text-blue-400' : 'text-green-400';
   };
 
   const formatAddress = (address: string) => {
