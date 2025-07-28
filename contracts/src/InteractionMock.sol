@@ -14,6 +14,9 @@ contract InteractionMock is IPreInteraction, IPostInteraction {
     // Events
     event PreInteractionCalled(uint256 makingAmount, bytes extraData);
     event PostInteractionCalled(uint256 takingAmount, bytes extraData);
+    event DummyEvent(uint256 dummy);
+
+    uint256 dummyNumber;
 
     function copyArg(uint256 arg) external pure returns (uint256) {
         return arg;
@@ -38,6 +41,11 @@ contract InteractionMock is IPreInteraction, IPostInteraction {
 
         // if (takingAmount != targetAmount) revert IncorrectTakingAmount();
         emit PreInteractionCalled(makingAmount, extraData);
+    }
+
+    function dummy() external {
+        dummyNumber = 44;
+        emit DummyEvent(44);
     }
 
     function postInteraction(

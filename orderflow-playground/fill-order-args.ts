@@ -1,13 +1,12 @@
 import {
   getLimitOrderContract,
   LimitOrder,
-  LimitOrderContract,
   MakerTraits,
   TakerTraits,
   Address,
   Extension,
 } from '@1inch/limit-order-sdk';
-import { Contract, ethers, parseUnits } from 'ethers';
+import { Contract, parseUnits } from 'ethers';
 import { JsonRpcProvider, Wallet } from 'ethers';
 import { getOrderByHash, updateOrderStatus } from '../db/src/index.js';
 
@@ -16,9 +15,6 @@ const config = {
   rpcUrl: 'http://localhost:8545',
   networkId: 42161, // Keep Arbitrum network ID since we forked it
 };
-
-// Type definitions
-type FillMethod = 'fillOrder' | 'fillOrderArgs';
 
 interface FillResult {
   success: boolean;
@@ -46,7 +42,6 @@ interface Order {
 
 // Simple ABI for the limit order contract
 const LIMIT_ORDER_ABI = [
-  'function fillOrder(tuple(uint256 salt, address makerAsset, address takerAsset, address maker, address receiver, uint256 makingAmount, uint256 takingAmount, uint256 offsets, bytes interactions) order, bytes signature, uint256 makingAmount, uint256 takingAmount, uint256 skipPermitAndThresholdAmount) external returns (uint256, uint256, bytes32)',
   'function fillOrderArgs(tuple(uint256 salt, address makerAsset, address takerAsset, address maker, address receiver, uint256 makingAmount, uint256 takingAmount, uint256 offsets, bytes interactions) order, bytes32 r, bytes32 vs, uint256 amount, uint256 takerTraits, bytes calldata args) external payable returns(uint256 makingAmount, uint256 takingAmount, bytes32 orderHash)',
 ];
 
@@ -112,7 +107,7 @@ class OrderFiller {
       const amount = BigInt(order.takingAmount);
       const args = '0x'; // Empty args
 
-      console.log(`📋 Using amount: ${amount}, takerTraits: ${takerTraits.encode()}`);
+      console.log(`📋 Using amount: ${amount}, takerTraits: ${takerTraits.encode().trait}`);
 
       // Call fillOrderArgs directly on contract
       const tx = await this.limitOrderContract.fillOrderArgs(
@@ -120,7 +115,7 @@ class OrderFiller {
         r,
         vs,
         amount,
-        takerTraits.encode(),
+        takerTraits.encode().trait,
         args,
         {
           gasLimit: 1_000_000,
@@ -154,98 +149,6 @@ class OrderFiller {
       }
     } catch (error: any) {
       console.error(`❌ Error filling order ${order.orderHash} with fillOrderArgs:`, error);
-
-      let errorMessage = 'Unknown error';
-      if (error.reason) {
-        errorMessage = error.reason;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    }
-  }
-
-  async fillOrder(order: Order): Promise<FillResult> {
-    try {
-      console.log(`🔄 Attempting to fill order ${order.orderHash}`);
-
-      // Check wallet has sufficient balance
-      const balance = await this.provider.getBalance(this.wallet.address);
-      console.log(`👛 Wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`);
-      
-      if (balance < parseUnits('0.001', 'ether')) { // Reduced threshold to 0.001 ETH
-        return {
-          success: false,
-          error: `Insufficient wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`,
-        };
-      }
-
-      // Reconstruct the limit order
-      const limitOrder = this.reconstructLimitOrder(order);
-      const orderStruct = this.reconstructOrderStruct(limitOrder);
-
-      console.log("--- Reconstructed Limit Order BEGIN ---");
-      console.log(limitOrder);
-      console.log("--- Reconstructed Limit Order END -----");
-      
-      // Generate calldata using the SDK
-      const takerTraits = TakerTraits.default();
-      
-      // Since we forked Arbitrum, the 1inch contract exists - proceed with real transaction
-      
-      const calldata = LimitOrderContract.getFillOrderCalldata(
-        limitOrder.build(),
-        order.signature,
-        takerTraits,
-        BigInt(order.takingAmount) // Fill full amount
-      );
-      
-      console.log(`📋 Generated calldata: ${calldata}`);
-      console.log(`📋 Calldata length: ${calldata.length}`);
-
-      // Debug transaction parameters
-      const txParams = {
-        to: this.limitOrderContract.target,
-        data: calldata,
-        gasLimit: 1_000_000,
-        maxFeePerGas: parseUnits('50', 'gwei'),
-        maxPriorityFeePerGas: parseUnits('2', 'gwei'),
-      };
-      console.log(`🔍 Transaction params:`, JSON.stringify(txParams, (key, value) => 
-        typeof value === 'bigint' ? value.toString() : value, 2));
-
-      // Send the transaction
-      const tx = await this.wallet.sendTransaction(txParams);
-
-      console.log(`📤 Fill transaction sent: ${tx.hash}`);
-
-      // Wait for confirmation
-      const receipt = await tx.wait();
-
-      if (receipt && receipt.status === 1) {
-        console.log(`✅ Order filled successfully!`);
-        
-        try {
-          // Mark order as filled in database
-          await updateOrderStatus(order.id, 'filled');
-        } catch (dbError) {
-          console.error('⚠️ Transaction succeeded but failed to update database:', dbError);
-          // Still return success since blockchain transaction worked
-        }
-
-        return {
-          success: true,
-          txHash: tx.hash,
-        };
-      } else {
-        throw new Error('Transaction failed');
-      }
-    } catch (error: any) {
-      console.error(`❌ Error filling order ${order.orderHash}:`, error);
 
       let errorMessage = 'Unknown error';
       if (error.reason) {
@@ -319,10 +222,8 @@ function validateOrderForFilling(order: Order): { canFill: boolean; reason?: str
   return { canFill: true };
 }
 
-async function fillOrder(orderHash: string, useFillOrderArgs: boolean = false): Promise<void> {
-  console.log(`🎯 Filling order: ${orderHash}`);
-  const method = useFillOrderArgs ? 'fillOrderArgs' : 'fillOrder';
-  console.log(`📋 Method: ${method}`);
+async function fillOrderWithArgs(orderHash: string): Promise<void> {
+  console.log(`🎯 Filling order using fillOrderArgs: ${orderHash}`);
 
   try {
     // Step 1: Get order from database
@@ -340,24 +241,12 @@ async function fillOrder(orderHash: string, useFillOrderArgs: boolean = false): 
       return;
     }
 
-    // Step 3: Execute the fill
+    // Step 3: Execute the fill using fillOrderArgs
     const orderFiller = new OrderFiller();
-    let result: FillResult;
-
-    switch (method) {
-      case 'fillOrder':
-        result = await orderFiller.fillOrder(order);
-        break;
-      case 'fillOrderArgs':
-        result = await orderFiller.fillOrderArgs(order);
-        break;
-      default:
-        throw new Error(`Unknown fill method: ${method}`);
-    }
+    const result = await orderFiller.fillOrderArgs(order);
     
     if (result.success) {
-      const methodText = method === 'fillOrderArgs' ? 'using fillOrderArgs' : '';
-      console.log(`✅ Order filled successfully ${methodText}`.trim());
+      console.log(`✅ Order filled successfully using fillOrderArgs`);
       console.log(`📋 Transaction Hash: ${result.txHash}`);
     } else {
       console.error('❌ Fill failed:', result.error);
@@ -370,11 +259,10 @@ async function fillOrder(orderHash: string, useFillOrderArgs: boolean = false): 
 // Get command line arguments
 const args = process.argv.slice(2);
 const orderHash = args[0];
-const useFillOrderArgs = args.includes('--fillOrderArgs');
 
 if (!orderHash) {
-  console.error('❌ Usage: bun run fill-order.ts <orderHash> [--fillOrderArgs]');
+  console.error('❌ Usage: bun run fill-order-args.ts <orderHash>');
   process.exit(1);
 }
 
-fillOrder(orderHash, useFillOrderArgs).catch(console.error);
+fillOrderWithArgs(orderHash).catch(console.error);

@@ -133,7 +133,7 @@ function reconstructFromSignedData(signedOrderRequest: SignedOrderRequest) {
 
     const order = new LimitOrder(
       {
-        salt: signedOrderRequest.typedData.message.salt,
+        salt: BigInt(signedOrderRequest.typedData.message.salt),
         receiver: new Address(signedOrderRequest.typedData.message.receiver),
         makerAsset: new Address(signedOrderRequest.typedData.message.makerAsset),
         takerAsset: new Address(signedOrderRequest.typedData.message.takerAsset),
@@ -146,8 +146,6 @@ function reconstructFromSignedData(signedOrderRequest: SignedOrderRequest) {
     );
 
     printLimitOrderDetails(order);
-
-    process.exit(0);
 
     const orderHash = order.getOrderHash(config.networkId);
     const expirationTimestamp = order.makerTraits.expiration();
@@ -208,8 +206,8 @@ async function createAndSaveOrder(): Promise<string> {
     .allowMultipleFills();
 
   const preInteraction = new Interaction(
-    new Address('0xd65cef6db48e269d607733950b26cb81bbd27499'), // target contract
-    '0xabcdef', // optional extraData only (NO selector here)
+    new Address('0xb6cc00b69bff1d88747a15ab39bf811ed7118f17'), // target contract
+    '0x32e43a11', // optional extraData only (NO selector here)
     // '0xabcdef01234567890',
   )
 
