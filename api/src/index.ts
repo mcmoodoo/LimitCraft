@@ -416,6 +416,54 @@ const app = new Elysia()
       };
     }
   })
+  .post('/order/:orderHash/fill-args', async ({ params }) => {
+    try {
+      const { orderHash } = params;
+      
+      // Get order from database
+      const order = await getOrderByHash(orderHash);
+      
+      if (!order) {
+        return {
+          success: false,
+          error: 'Order not found',
+        };
+      }
+      
+      if (order.status !== 'pending') {
+        return {
+          success: false,
+          error: `Order is not pending. Current status: ${order.status}`,
+        };
+      }
+      
+      // Create OrderFiller instance for this request
+      const orderFiller = new APIOrderFiller();
+      
+      // Attempt to fill the order using fillOrderArgs
+      const fillResult = await orderFiller.fillOrderArgs(order);
+      
+      if (fillResult.success) {
+        return {
+          success: true,
+          message: 'Order filled successfully using fillOrderArgs',
+          txHash: fillResult.txHash,
+        };
+      } else {
+        return {
+          success: false,
+          error: fillResult.error || 'Failed to fill order with fillOrderArgs',
+        };
+      }
+      
+    } catch (error) {
+      console.error('Error filling order with fillOrderArgs:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
   .post('/order/:orderHash/cancel', async ({ params }) => {
     try {
       const { orderHash } = params;

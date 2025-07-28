@@ -31,7 +31,9 @@ export default function OrderDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filling, setFilling] = useState(false);
+  const [fillingArgs, setFillingArgs] = useState(false);
   const [fillResult, setFillResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
+  const [fillArgsResult, setFillArgsResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
 
@@ -136,6 +138,44 @@ export default function OrderDetails() {
       });
     } finally {
       setFilling(false);
+    }
+  };
+
+  const fillOrderArgs = async () => {
+    if (!orderHash) return;
+    
+    setFillingArgs(true);
+    setFillArgsResult(null);
+    
+    try {
+      const response = await fetch(`http://localhost:3000/order/${orderHash}/fill-args`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const result = await response.json();
+      console.log('Fill args result:', result); // Debug log
+      setFillArgsResult({
+        success: result.success,
+        message: result.success ? result.message : result.error,
+        txHash: result.txHash
+      });
+      
+      // If successful, refresh the order to update status
+      if (result.success) {
+        setTimeout(() => {
+          fetchOrder();
+        }, 1000);
+      }
+    } catch (err) {
+      setFillArgsResult({
+        success: false,
+        message: 'Failed to fill order with args: Network error'
+      });
+    } finally {
+      setFillingArgs(false);
     }
   };
 
@@ -365,9 +405,9 @@ export default function OrderDetails() {
                 <div className="flex space-x-3">
                   <button
                     onClick={fillOrder}
-                    disabled={filling || cancelling}
+                    disabled={filling || fillingArgs || cancelling}
                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                      filling || cancelling
+                      filling || fillingArgs || cancelling
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                         : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
@@ -376,10 +416,22 @@ export default function OrderDetails() {
                   </button>
                   
                   <button
-                    onClick={cancelOrder}
-                    disabled={filling || cancelling}
+                    onClick={fillOrderArgs}
+                    disabled={filling || fillingArgs || cancelling}
                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                      filling || cancelling
+                      filling || fillingArgs || cancelling
+                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
+                  >
+                    {fillingArgs ? '⏳ Filling...' : '⚡ Fill with Args'}
+                  </button>
+                  
+                  <button
+                    onClick={cancelOrder}
+                    disabled={filling || fillingArgs || cancelling}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      filling || fillingArgs || cancelling
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                         : 'bg-red-600 hover:bg-red-700 text-white'
                     }`}
@@ -466,6 +518,45 @@ export default function OrderDetails() {
                           </span>
                           <button
                             onClick={() => copyToClipboard(fillResult.txHash!)}
+                            className="text-blue-400 hover:text-blue-300 text-sm"
+                            title="Copy transaction hash"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {fillArgsResult && (
+              <div className={`mt-4 p-4 rounded-lg border ${
+                fillArgsResult.success 
+                  ? 'bg-purple-900/30 border-purple-500/50' 
+                  : 'bg-red-900/30 border-red-500/50'
+              }`}>
+                <div className="flex items-start space-x-3">
+                  <span className={`text-xl ${fillArgsResult.success ? 'text-purple-400' : 'text-red-400'}`}>
+                    {fillArgsResult.success ? '⚡' : '❌'}
+                  </span>
+                  <div className="flex-1">
+                    <p className={`font-medium ${fillArgsResult.success ? 'text-purple-100' : 'text-red-100'}`}>
+                      {fillArgsResult.success ? 'Fill with Args Successful!' : 'Fill with Args Failed'}
+                    </p>
+                    <p className={`text-sm mt-1 ${fillArgsResult.success ? 'text-purple-200' : 'text-red-200'}`}>
+                      {fillArgsResult.message}
+                    </p>
+                    {fillArgsResult.txHash && (
+                      <div className="mt-3 p-2 bg-gray-800/50 rounded border">
+                        <span className="text-gray-300 text-xs block mb-1">Transaction Hash:</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-blue-300 text-xs font-mono break-all">
+                            {fillArgsResult.txHash}
+                          </span>
+                          <button
+                            onClick={() => copyToClipboard(fillArgsResult.txHash!)}
                             className="text-blue-400 hover:text-blue-300 text-sm"
                             title="Copy transaction hash"
                           >

@@ -22,6 +22,7 @@ interface FillResult {
 // Simple ABI for the limit order contract
 const LIMIT_ORDER_ABI = [
   'function fillOrder(tuple(uint256 salt, address makerAsset, address takerAsset, address maker, address receiver, uint256 makingAmount, uint256 takingAmount, uint256 offsets, bytes interactions) order, bytes signature, uint256 makingAmount, uint256 takingAmount, uint256 skipPermitAndThresholdAmount) external returns (uint256, uint256, bytes32)',
+  'function fillOrderArgs(tuple(uint256 salt, address makerAsset, address takerAsset, address maker, address receiver, uint256 makingAmount, uint256 takingAmount, uint256 offsets, bytes interactions) order, bytes32 r, bytes32 vs, uint256 amount, uint256 takerTraits, bytes calldata args) external payable returns(uint256 makingAmount, uint256 takingAmount, bytes32 orderHash)',
 ];
 
 export class APIOrderFiller {
@@ -51,6 +52,98 @@ export class APIOrderFiller {
     );
   }
 
+  async fillOrderArgs(order: Order): Promise<FillResult> {
+    try {
+      console.log(`🔄 Attempting to fill order ${order.orderHash} using fillOrderArgs`);
+
+      // Check wallet has sufficient balance
+      const balance = await this.provider.getBalance(this.wallet.address);
+      console.log(`👛 Wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`);
+      
+      if (balance < parseUnits('0.001', 'ether')) {
+        return {
+          success: false,
+          error: `Insufficient wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`,
+        };
+      }
+
+      // Reconstruct the limit order
+      const limitOrder = this.reconstructLimitOrder(order);
+      const orderStruct = this.reconstructOrderStruct(limitOrder);
+
+      console.log("--- Reconstructed Limit Order BEGIN ---");
+      console.log(limitOrder);
+      console.log("--- Reconstructed Limit Order END -----");
+
+      // Split signature into r and vs components
+      const signature = order.signature.startsWith('0x') ? order.signature.slice(2) : order.signature;
+      const r = '0x' + signature.slice(0, 64);
+      const vs = '0x' + signature.slice(64, 128);
+      
+      console.log(`🔑 Signature components - r: ${r}, vs: ${vs}`);
+
+      // Use default taker traits and full taking amount
+      const takerTraits = TakerTraits.default();
+      const amount = BigInt(order.takingAmount);
+      const args = '0x'; // Empty args
+
+      console.log(`📋 Using amount: ${amount}, takerTraits: ${takerTraits.encode()}`);
+
+      // Call fillOrderArgs directly on contract
+      const tx = await this.limitOrderContract.fillOrderArgs(
+        orderStruct,
+        r,
+        vs,
+        amount,
+        takerTraits.encode(),
+        args,
+        {
+          gasLimit: 1_000_000,
+          maxFeePerGas: parseUnits('50', 'gwei'),
+          maxPriorityFeePerGas: parseUnits('2', 'gwei'),
+        }
+      );
+
+      console.log(`📤 FillOrderArgs transaction sent: ${tx.hash}`);
+
+      // Wait for confirmation
+      const receipt = await tx.wait();
+
+      if (receipt && receipt.status === 1) {
+        console.log(`✅ Order filled successfully using fillOrderArgs!`);
+        
+        try {
+          // Mark order as filled in database
+          await updateOrderStatus(order.id, 'filled');
+        } catch (dbError) {
+          console.error('⚠️ Transaction succeeded but failed to update database:', dbError);
+          // Still return success since blockchain transaction worked
+        }
+
+        return {
+          success: true,
+          txHash: tx.hash,
+        };
+      } else {
+        throw new Error('Transaction failed');
+      }
+    } catch (error: any) {
+      console.error(`❌ Error filling order ${order.orderHash} with fillOrderArgs:`, error);
+
+      let errorMessage = 'Unknown error';
+      if (error.reason) {
+        errorMessage = error.reason;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+  }
+
   async fillOrder(order: Order): Promise<FillResult> {
     try {
       console.log(`🔄 Attempting to fill order ${order.orderHash}`);
@@ -69,6 +162,10 @@ export class APIOrderFiller {
       // Reconstruct the limit order
       const limitOrder = this.reconstructLimitOrder(order);
       const orderStruct = this.reconstructOrderStruct(limitOrder);
+
+      console.log("--- Reconstructed Limit Order BEGIN ---");
+      console.log(limitOrder);
+      console.log("--- Reconstructed Limit Order END -----");
       
       // Generate calldata using the SDK
       const takerTraits = TakerTraits.default();
