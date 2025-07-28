@@ -4,6 +4,8 @@ import {
   LimitOrder,
   MakerTraits,
   randBigInt,
+  Interaction,
+  ExtensionBuilder,
 } from '@1inch/limit-order-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
 import { createOrder } from '../db/src/index.js';
@@ -80,6 +82,30 @@ function validateSignedOrder(reconstructedOrder: any, signedOrderRequest: Signed
   }
 }
 
+const printLimitOrderDetails = async (limitOrder: LimitOrder) => {
+
+  console.log('📋 LimitOrder Analysis:');
+  console.log('- Order Hash:', limitOrder.getOrderHash(config.networkId));
+  console.log('- Maker:', limitOrder.maker.toString());
+  console.log('- Receiver:', limitOrder.receiver.toString());
+  console.log('- MakerAsset:', limitOrder.makerAsset.toString());
+  console.log('- TakerAsset:', limitOrder.takerAsset.toString());
+  console.log('- MakingAmount:', limitOrder.makingAmount.toString());
+  console.log('- TakingAmount:', limitOrder.takingAmount.toString());
+  console.log('- Salt:', limitOrder.salt.toString());
+  console.log('- MakerTraits:', limitOrder.makerTraits.asBigInt().toString());
+  console.log('- Extension encoded:', limitOrder.extension.encode());
+  console.log('- Extension details:', {
+    isEmpty: limitOrder.extension.isEmpty(),
+    preInteraction: limitOrder.extension.preInteraction,
+    postInteraction: limitOrder.extension.postInteraction,
+    predicate: limitOrder.extension.predicate,
+    makerPermit: limitOrder.extension.makerPermit,
+    customData: limitOrder.extension.customData,
+  });
+
+}
+
 // Order reconstruction extracted from SignatureService
 function reconstructFromSignedData(signedOrderRequest: SignedOrderRequest) {
   try {
@@ -88,6 +114,22 @@ function reconstructFromSignedData(signedOrderRequest: SignedOrderRequest) {
     if (signedOrderRequest.extension) {
       extension = Extension.decode(signedOrderRequest.extension);
     }
+
+    // Print extension details and exit
+    console.log('🔍 Extension Analysis:');
+    console.log('- Extension encoded:', extension.encode());
+    console.log('- Extension isEmpty:', extension.isEmpty());
+    console.log('- Extension details:', {
+      makerAssetSuffix: extension.makerAssetSuffix,
+      takerAssetSuffix: extension.takerAssetSuffix,
+      makingAmountData: extension.makingAmountData,
+      takingAmountData: extension.takingAmountData,
+      predicate: extension.predicate,
+      makerPermit: extension.makerPermit,
+      preInteraction: extension.preInteraction,
+      postInteraction: extension.postInteraction,
+      customData: extension.customData,
+    });
 
     const order = new LimitOrder(
       {
@@ -100,8 +142,12 @@ function reconstructFromSignedData(signedOrderRequest: SignedOrderRequest) {
         maker: new Address(signedOrderRequest.typedData.message.maker),
       },
       new MakerTraits(BigInt(signedOrderRequest.makerTraits)),
-      extension // Include the extension!
+      extension
     );
+
+    printLimitOrderDetails(order);
+
+    process.exit(0);
 
     const orderHash = order.getOrderHash(config.networkId);
     const expirationTimestamp = order.makerTraits.expiration();
@@ -157,8 +203,18 @@ async function createAndSaveOrder(): Promise<string> {
   // Create MakerTraits exactly like UI does
   const makerTraits = MakerTraits.default()
     .withExpiration(expiration)
+    .enablePreInteraction()
     .withNonce(nonce)
     .allowMultipleFills();
+
+  const preInteraction = new Interaction(
+    new Address('0xd65cef6db48e269d607733950b26cb81bbd27499'), // target contract
+    '0xabcdef', // optional extraData only (NO selector here)
+    // '0xabcdef01234567890',
+  )
+
+  // const extension = Extension.default(); // This is key - matches UI exactly
+  const ext = new ExtensionBuilder().withPreInteraction(preInteraction).build();
 
   // Create LimitOrder exactly like UI does (with Extension.default())
   const limitOrder = new LimitOrder(
@@ -170,8 +226,11 @@ async function createAndSaveOrder(): Promise<string> {
       maker: new Address(maker.address),
     },
     makerTraits,
-    Extension.default() // This is key - matches UI exactly
+    ext
   );
+
+  // Print limitOrder details
+  printLimitOrderDetails(limitOrder);
 
   // Get order hash and typed data exactly like UI
   const orderHash = limitOrder.getOrderHash(config.networkId);
