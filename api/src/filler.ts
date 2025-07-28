@@ -234,6 +234,13 @@ export class APIOrderFiller {
   private reconstructLimitOrder(order: Order): LimitOrder {
     const makerTraits = new MakerTraits(BigInt(order.makerTraits));
     const extension = Extension.decode(order.extension);
+
+    // TODO: create the extension here
+    //
+    //
+    //
+
+
     const salt = BigInt(order.salt);
 
     const orderInfo = {
