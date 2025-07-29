@@ -41,7 +41,7 @@ export class OrderFiller {
     try {
       console.log(`🔄 Attempting to fill order ${order.orderHash}`);
 
-      // Check wallet has sufficient balance
+      // Check wallet has sufficient ETH balance
       if (!(await walletManager.checkSufficientBalance())) {
         return {
           success: false,
@@ -116,19 +116,30 @@ export class OrderFiller {
       // Use the same limitOrder instance for SDK calldata generation
       const orderStructForSDK = limitOrder.build();
 
-      const extension = Extension.decode(order.extension);
-      console.log('🔍 Extension:', extension);
-      const takerTraits = TakerTraits.default().setExtension(extension);
-      console.log('🔍 TakerTraits:', takerTraits);
+      let calldata: string;
+      // When no extension 
+      if (order.extension === "0x") {
+        // Use getFillOrderCalldata for orders without extensions
+        calldata = LimitOrderContract.getFillOrderCalldata(
+          orderStructForSDK,
+          order.signature,
+          TakerTraits.default(),
+          BigInt(order.takingAmount) // Fill full amount
+        );
+      } else {
+        const extension = Extension.decode(order.extension);
+        console.log('🔍 Extension:', extension);
+        const takerTraits = TakerTraits.default().setExtension(extension);
+        console.log('🔍 TakerTraits:', takerTraits);
 
-      // Generate calldata using the SDK
-      // TODO: replace this to get fillOrderArgs() callData
-      const calldata = LimitOrderContract.getFillOrderArgsCalldata(
-        orderStructForSDK,
-        order.signature,
-        takerTraits,
-        BigInt(order.takingAmount) // Fill full amount
-      );
+        // Use getFillOrderArgsCalldata for orders with extensions
+        calldata = LimitOrderContract.getFillOrderArgsCalldata(
+          orderStructForSDK,
+          order.signature,
+          takerTraits,
+          BigInt(order.takingAmount) // Fill full amount
+        );
+      }
 
       console.log('📋 Generated calldata length:', calldata.length);
 

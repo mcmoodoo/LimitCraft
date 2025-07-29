@@ -48,6 +48,10 @@ interface CreateOrderForm {
   makingAmount: string;
   takingAmount: string;
   expiresIn: number;
+  useLendingProtocol: boolean;
+  lendingProtocol: string;
+  supplyToLendingProtocol: boolean;
+  supplyLendingProtocol: string;
 }
 
 const ERC20_ABI = [
@@ -136,6 +140,10 @@ export default function CreateOrder() {
     makingAmount: '',
     takingAmount: '',
     expiresIn: 3600, // 1 hour
+    useLendingProtocol: false,
+    lendingProtocol: 'aave',
+    supplyToLendingProtocol: false,
+    supplyLendingProtocol: 'aave',
   });
 
   // Get aToken address for the makerAsset
@@ -166,7 +174,7 @@ export default function CreateOrder() {
 
   // Generate approval items
   const approvalItems = useMemo((): ApprovalItem[] => {
-    if (!requiredAmounts || !aaveReserveDataQuery.data) return [];
+    if (!requiredAmounts) return [];
 
     const items: ApprovalItem[] = [
       {
@@ -177,19 +185,23 @@ export default function CreateOrder() {
         needsApproval: makerApproval.needsApproval(requiredAmounts.makingAmountWei),
         currentAllowance: makerApproval.allowance,
       },
-      {
+    ];
+
+    // Add taker asset approval only if "Supply to Lending Protocol" is toggled on
+    if (form.supplyToLendingProtocol) {
+      items.push({
         tokenAddress: form.takerAsset,
         tokenName: 'taker asset',
         spender: ourContractAddress,
         requiredAmount: requiredAmounts.takingAmountWei,
         needsApproval: takerApproval.needsApproval(requiredAmounts.takingAmountWei),
         currentAllowance: takerApproval.allowance,
-      },
-    ];
+      });
+    }
 
-    // Add aToken if available
-    const aTokenAddress = aaveReserveDataQuery.data?.aTokenAddress;
-    if (aTokenAddress) {
+    // Add aToken approval only if "Use Lending Position" is toggled on
+    if (form.useLendingProtocol && aaveReserveDataQuery.data?.aTokenAddress) {
+      const aTokenAddress = aaveReserveDataQuery.data.aTokenAddress;
       items.push({
         tokenAddress: aTokenAddress,
         tokenName: 'aToken',
@@ -206,6 +218,8 @@ export default function CreateOrder() {
     aaveReserveDataQuery.data,
     form.makerAsset,
     form.takerAsset,
+    form.useLendingProtocol,
+    form.supplyToLendingProtocol,
     limitOrderContractAddress,
     ourContractAddress,
     makerApproval,
@@ -326,27 +340,30 @@ export default function CreateOrder() {
       // Create proper MakerTraits using 1inch SDK
       const UINT_40_MAX = (1n << 40n) - 1n;
       const nonce = randBigInt(UINT_40_MAX);
-      const makerTraits = MakerTraits.default()
-        .enablePreInteraction()
-        .enablePostInteraction()
-        .withExtension()
+      let makerTraits = MakerTraits.default()
         .withExpiration(expiration)
         .withNonce(nonce)
         .allowMultipleFills();
 
-      
-
-      // const abiCoder = new ethers.AbiCoder();
-      // const callData = abiCoder.encode(['uint256'], [1]);
-
-      const preInteraction = new Interaction(new Address(ourContractAddress), "0x00");
-      const postInteraction = new Interaction(new Address(ourContractAddress), "0x00");
-
-      const extensions = new Extension({
+      const extensionData: any = {
         ...Extension.EMPTY,
-        preInteraction: preInteraction.encode(),
-        postInteraction: postInteraction.encode(),
-      });
+      };
+
+      // Only enable pre-interaction if "Use Lending Position" is toggled on
+      if (form.useLendingProtocol) {
+        makerTraits = makerTraits.enablePreInteraction().withExtension();
+        const preInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+        extensionData.preInteraction = preInteraction.encode();
+      }
+
+      // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
+      if (form.supplyToLendingProtocol) {
+        makerTraits = makerTraits.enablePostInteraction().withExtension();
+        const postInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+        extensionData.postInteraction = postInteraction.encode();
+      }
+      
+      const extensions = new Extension(extensionData);
 
       // Create a real LimitOrder using the 1inch SDK
       const limitOrder = new LimitOrder(
@@ -412,8 +429,11 @@ export default function CreateOrder() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    setForm((prev) => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   const tokenOptions = [
@@ -493,6 +513,56 @@ export default function CreateOrder() {
                       required
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300">
+                      Use Lending Position
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, useLendingProtocol: !prev.useLendingProtocol }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                        form.useLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          form.useLendingProtocol ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {form.useLendingProtocol && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium mb-2">Protocol</label>
+                      <div className="relative">
+                        <select
+                          name="lendingProtocol"
+                          value={form.lendingProtocol}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        >
+                          <option value="aave">Aave</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <img 
+                            src="https://app.aave.com/icons/tokens/aave.svg" 
+                            alt="Aave" 
+                            className="w-5 h-5"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = document.createElement('div');
+                              fallback.className = 'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                              fallback.textContent = 'A';
+                              target.parentNode?.appendChild(fallback);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -531,6 +601,56 @@ export default function CreateOrder() {
                       required
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300">
+                      Supply to Lending Protocol
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, supplyToLendingProtocol: !prev.supplyToLendingProtocol }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                        form.supplyToLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          form.supplyToLendingProtocol ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {form.supplyToLendingProtocol && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium mb-2">Protocol</label>
+                      <div className="relative">
+                        <select
+                          name="supplyLendingProtocol"
+                          value={form.supplyLendingProtocol}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        >
+                          <option value="aave">Aave</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <img 
+                            src="https://app.aave.com/icons/tokens/aave.svg" 
+                            alt="Aave" 
+                            className="w-5 h-5"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = document.createElement('div');
+                              fallback.className = 'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                              fallback.textContent = 'A';
+                              target.parentNode?.appendChild(fallback);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
