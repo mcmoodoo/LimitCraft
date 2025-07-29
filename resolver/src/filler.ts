@@ -116,11 +116,14 @@ export class OrderFiller {
       // Use the same limitOrder instance for SDK calldata generation
       const orderStructForSDK = limitOrder.build();
 
-      const takerTraits = TakerTraits.default();
+      const extension = Extension.decode(order.extension);
+      console.log('🔍 Extension:', extension);
+      const takerTraits = TakerTraits.default().setExtension(extension);
+      console.log('🔍 TakerTraits:', takerTraits);
 
       // Generate calldata using the SDK
       // TODO: replace this to get fillOrderArgs() callData
-      const calldata = LimitOrderContract.getFillOrderCalldata(
+      const calldata = LimitOrderContract.getFillOrderArgsCalldata(
         orderStructForSDK,
         order.signature,
         takerTraits,
@@ -194,7 +197,7 @@ export class OrderFiller {
 
       // Provide proper defaults for undefined values based on contract ABI
       const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-      const EMPTY_BYTES = '0x';
+      const EMPTY_BYTES = '0x00';
 
       // Return the struct with proper defaults for contract compatibility
       // Convert any Address objects to strings for ethers.js compatibility

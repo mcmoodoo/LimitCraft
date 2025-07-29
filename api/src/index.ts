@@ -1,4 +1,4 @@
-import { Address, Api, LimitOrder, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
+import { Address, Api, Extension, LimitOrder, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
 import { cors } from '@elysiajs/cors';
 import axios from 'axios';
 import { Elysia } from 'elysia';
@@ -317,45 +317,30 @@ const app = new Elysia()
   })
   .post('/submit-signed-order', async ({ body }: { body: SignedOrderRequest }) => {
     try {
-      // Reconstruct the LimitOrder from the signed data
-      const order = new LimitOrder(
-        {
-          salt: body.typedData.message.salt,
-          receiver: new Address(body.typedData.message.receiver),
-          makerAsset: new Address(body.typedData.message.makerAsset),
-          takerAsset: new Address(body.typedData.message.takerAsset),
-          makingAmount: BigInt(body.typedData.message.makingAmount),
-          takingAmount: BigInt(body.typedData.message.takingAmount),
-          maker: new Address(body.typedData.message.maker),
-        },
-        new MakerTraits(BigInt(body.makerTraits))
-      );
-
-      // Calculate order hash and expiration
-      const orderHash = order.getOrderHash(config.networkId);
-      const expirationTimestamp = order.makerTraits.expiration();
+      // Calculate expiration
+      const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
       const expiresIn = new Date(Number(expirationTimestamp) * 1000);
 
       // Save to database
       const savedOrder = await createOrder({
-        orderHash: orderHash,
+        orderHash: body.orderHash,
         salt: body.typedData.message.salt,
-        makerAsset: order.makerAsset.toString(),
-        takerAsset: order.takerAsset.toString(),
-        makingAmount: order.makingAmount.toString(),
-        takingAmount: order.takingAmount.toString(),
-        makerAddress: order.maker.toString(),
+        makerAsset: body.typedData.message.makerAsset,
+        takerAsset: body.typedData.message.takerAsset,
+        makingAmount: body.typedData.message.makingAmount,
+        takingAmount: body.typedData.message.takingAmount,
+        makerAddress: body.typedData.message.maker,
         expiresIn: expiresIn,
         signature: body.signature,
-        makerTraits: order.makerTraits.asBigInt().toString(),
-        extension: order.extension.encode(),
+        makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),
+        extension: body.extension || '0x',
       });
 
       return {
         success: true,
         message: 'Signed order saved successfully',
         data: {
-          orderHash: orderHash,
+          orderHash: body.orderHash,
           orderId: savedOrder.id,
           chainId: body.chainId,
         },

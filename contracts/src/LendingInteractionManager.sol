@@ -21,9 +21,8 @@ contract LendingInteractionManager is IPreInteraction, IPostInteraction {
     error InvalidExtraDataLength();
     error TakingAmountTooHigh();
     error IncorrectTakingAmount();
-    error AaveWithdrawalFailed();
 
-    event AaveWithdrawal(address indexed asset, uint256 amount, address indexed to);
+    event PreInteractionCalled(uint256 makingAmount, bytes extraData); 
     event PostInteractionCalled(uint256 takingAmount, bytes extraData);
     
     IPoolV3 public immutable AAVE_POOL;
@@ -49,13 +48,9 @@ contract LendingInteractionManager is IPreInteraction, IPostInteraction {
         DataTypes.ReserveData memory reserveData = AAVE_POOL.getReserveData(order.makerAsset.get());
         require(reserveData.aTokenAddress != address(0), "Asset not supported by Aave");
         IERC20(reserveData.aTokenAddress).transferFrom(order.maker.get(), address(this), makingAmount);
-        try AAVE_POOL.withdraw(order.makerAsset.get(), makingAmount, order.maker.get()) returns (uint256 withdrawnAmount) {
-                // Withdrawal successful - emit event for tracking
-                emit AaveWithdrawal(order.makerAsset.get(), withdrawnAmount, order.maker.get());
-            } catch {
-                revert AaveWithdrawalFailed();
-            }
-        
+        AAVE_POOL.withdraw(order.makerAsset.get(), makingAmount, order.maker.get());
+             
+        emit PreInteractionCalled(makingAmount, extraData);
     }
 
     function postInteraction(

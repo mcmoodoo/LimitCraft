@@ -1,9 +1,46 @@
-import { Address, Extension, getLimitOrderContract, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
-import { useState } from 'react';
+import { Address, Extension, getLimitOrderContract, Interaction, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
+import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { maxUint256, parseUnits } from 'viem';
 import { useAccount, useChainId, useSignTypedData, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../tokens';
+import { ethers } from 'ethers';
+
+// Aave V3 Pool address on Arbitrum
+const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
+
+// Aave V3 Pool ABI for getReserveData function
+const AAVE_V3_POOL_ABI = [
+  {
+    type: 'function',
+    name: 'getReserveData',
+    stateMutability: 'view',
+    inputs: [{ name: 'asset', type: 'address' }],
+    outputs: [
+      {
+        name: '',
+        type: 'tuple',
+        components: [
+          { name: 'configuration', type: 'uint256' },
+          { name: 'liquidityIndex', type: 'uint128' },
+          { name: 'currentLiquidityRate', type: 'uint128' },
+          { name: 'variableBorrowIndex', type: 'uint128' },
+          { name: 'currentVariableBorrowRate', type: 'uint128' },
+          { name: 'currentStableBorrowRate', type: 'uint128' },
+          { name: 'lastUpdateTimestamp', type: 'uint40' },
+          { name: 'id', type: 'uint16' },
+          { name: 'aTokenAddress', type: 'address' },
+          { name: 'stableDebtTokenAddress', type: 'address' },
+          { name: 'variableDebtTokenAddress', type: 'address' },
+          { name: 'interestRateStrategyAddress', type: 'address' },
+          { name: 'accruedToTreasury', type: 'uint128' },
+          { name: 'unbacked', type: 'uint128' },
+          { name: 'isolationModeTotalDebt', type: 'uint128' },
+        ],
+      },
+    ],
+  },
+] as const;
 
 interface CreateOrderForm {
   makerAsset: string;
@@ -36,7 +73,43 @@ const ERC20_ABI = [
   },
 ] as const;
 
+// Custom hook for token approval management
+const useTokenApproval = (tokenAddress: string | undefined, spender: string, owner: string | undefined) => {
+  const allowanceQuery = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [owner as `0x${string}`, spender as `0x${string}`],
+    query: {
+      enabled: !!tokenAddress && !!owner && !!spender,
+    },
+  });
+
+  const needsApproval = (requiredAmount: bigint): boolean => {
+    if (!allowanceQuery.data) return true;
+    return allowanceQuery.data < requiredAmount;
+  };
+
+  return {
+    allowance: allowanceQuery.data,
+    needsApproval,
+    refetch: allowanceQuery.refetch,
+  };
+};
+
+// Approval item interface
+interface ApprovalItem {
+  tokenAddress: string;
+  tokenName: string;
+  spender: string;
+  requiredAmount: bigint;
+  needsApproval: boolean;
+  currentAllowance?: bigint;
+}
+
 export default function CreateOrder() {
+  const ourContractAddress = '0x3195796c0999cee134ad7e957ad9767f89869b2c';
+
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
   const { signTypedDataAsync } = useSignTypedData();
@@ -65,45 +138,160 @@ export default function CreateOrder() {
     expiresIn: 3600, // 1 hour
   });
 
-  // Check current allowance for makerAsset
-  const allowanceQuery = useReadContract({
-    address: form.makerAsset as `0x${string}`,
-    abi: ERC20_ABI,
-    functionName: 'allowance',
-    args: [address as `0x${string}`, limitOrderContractAddress as `0x${string}`],
+  // Get aToken address for the makerAsset
+  const aaveReserveDataQuery = useReadContract({
+    address: AAVE_V3_POOL_ADDRESS as `0x${string}`,
+    abi: AAVE_V3_POOL_ABI,
+    functionName: 'getReserveData',
+    args: [form.makerAsset as `0x${string}`],
     query: {
-      enabled: !!address && !!form.makerAsset,
+      enabled: !!form.makerAsset,
     },
   });
 
-  // Helper function to check if approval is needed
-  const needsApproval = (makingAmountWei: bigint): boolean => {
-    if (!allowanceQuery.data) return true;
-    return allowanceQuery.data < makingAmountWei;
-  };
+  // Token approval hooks
+  const makerApproval = useTokenApproval(form.makerAsset, limitOrderContractAddress, address);
+  const aTokenApproval = useTokenApproval(aaveReserveDataQuery.data?.aTokenAddress, ourContractAddress, address);
+  const takerApproval = useTokenApproval(form.takerAsset, ourContractAddress, address);
 
-  // Function to handle approval transaction
-  const handleApproval = async (makingAmountWei: bigint): Promise<boolean> => {
+  // Calculate required amounts
+  const requiredAmounts = useMemo(() => {
+    if (!form.makingAmount || !form.takingAmount) return null;
+    
+    const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
+    const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
+    
+    return { makingAmountWei, takingAmountWei };
+  }, [form.makingAmount, form.takingAmount]);
+
+  // Generate approval items
+  const approvalItems = useMemo((): ApprovalItem[] => {
+    if (!requiredAmounts || !aaveReserveDataQuery.data) return [];
+
+    const items: ApprovalItem[] = [
+      {
+        tokenAddress: form.makerAsset,
+        tokenName: 'maker asset',
+        spender: limitOrderContractAddress,
+        requiredAmount: requiredAmounts.makingAmountWei,
+        needsApproval: makerApproval.needsApproval(requiredAmounts.makingAmountWei),
+        currentAllowance: makerApproval.allowance,
+      },
+      {
+        tokenAddress: form.takerAsset,
+        tokenName: 'taker asset',
+        spender: ourContractAddress,
+        requiredAmount: requiredAmounts.takingAmountWei,
+        needsApproval: takerApproval.needsApproval(requiredAmounts.takingAmountWei),
+        currentAllowance: takerApproval.allowance,
+      },
+    ];
+
+    // Add aToken if available
+    const aTokenAddress = aaveReserveDataQuery.data?.aTokenAddress;
+    if (aTokenAddress) {
+      items.push({
+        tokenAddress: aTokenAddress,
+        tokenName: 'aToken',
+        spender: ourContractAddress,
+        requiredAmount: requiredAmounts.makingAmountWei,
+        needsApproval: aTokenApproval.needsApproval(requiredAmounts.makingAmountWei),
+        currentAllowance: aTokenApproval.allowance,
+      });
+    }
+
+    return items;
+  }, [
+    requiredAmounts,
+    aaveReserveDataQuery.data,
+    form.makerAsset,
+    form.takerAsset,
+    limitOrderContractAddress,
+    ourContractAddress,
+    makerApproval,
+    takerApproval,
+    aTokenApproval,
+  ]);
+
+  // Function to handle individual approval
+  const handleApproval = async (item: ApprovalItem): Promise<boolean> => {
     try {
-      setApprovalStatus('Sending approval transaction...');
+      setApprovalStatus(`Sending ${item.tokenName} approval transaction...`);
       
       const hash = await writeContractAsync({
-        address: form.makerAsset as `0x${string}`,
+        address: item.tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [limitOrderContractAddress as `0x${string}`, maxUint256],
+        args: [item.spender as `0x${string}`, maxUint256],
       });
 
       setApprovalTxHash(hash);
-      setApprovalStatus('Waiting for approval confirmation...');
+      setApprovalStatus(`Waiting for ${item.tokenName} approval confirmation...`);
       
       return true;
     } catch (error) {
-      console.error('Approval failed:', error);
+      console.error(`${item.tokenName} approval failed:`, error);
       setApprovalStatus(null);
-      setError(error instanceof Error ? error.message : 'Approval failed');
+      setError(error instanceof Error ? error.message : `${item.tokenName} approval failed`);
       return false;
     }
+  };
+
+  // Function to wait for approval confirmation
+  const waitForApprovalConfirmation = async (tokenName: string): Promise<boolean> => {
+    while (approvalTxHash && !approvalReceipt.isSuccess && !approvalReceipt.isError) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    if (approvalReceipt.isError) {
+      setError(`${tokenName} approval transaction failed`);
+      return false;
+    }
+
+    setApprovalStatus(`${tokenName} approval confirmed!`);
+    return true;
+  };
+
+  // Function to process all approvals
+  const processApprovals = async (): Promise<boolean> => {
+    const itemsNeedingApproval = approvalItems.filter(item => item.needsApproval);
+    
+    // Log all approval statuses
+    approvalItems.forEach(item => {
+      console.log(`${item.tokenName}:`, item.tokenAddress);
+      console.log(`${item.tokenName} needs approval:`, item.needsApproval);
+      console.log(`${item.tokenName} current allowance:`, item.currentAllowance?.toString());
+      console.log(`${item.tokenName} required amount:`, item.requiredAmount.toString());
+    });
+
+    if (itemsNeedingApproval.length === 0) {
+      console.log('No approvals needed - all tokens have sufficient allowance');
+      setApprovalStatus('Creating order...');
+      return true;
+    }
+
+    // Process approvals sequentially
+    for (const item of itemsNeedingApproval) {
+      setApprovalTxHash(null); // Reset for new approval
+      
+      const approvalSuccess = await handleApproval(item);
+      if (!approvalSuccess) return false;
+
+      const confirmationSuccess = await waitForApprovalConfirmation(item.tokenName);
+      if (!confirmationSuccess) return false;
+
+      // Refetch the specific allowance
+      if (item.tokenName === 'maker asset') {
+        await makerApproval.refetch();
+      } else if (item.tokenName === 'aToken') {
+        await aTokenApproval.refetch();
+      } else if (item.tokenName === 'taker asset') {
+        await takerApproval.refetch();
+      }
+    }
+
+    setApprovalStatus('All approvals confirmed! Creating order...');
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,38 +302,22 @@ export default function CreateOrder() {
       return;
     }
 
+    if (!requiredAmounts) {
+      setError('Please enter valid amounts');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
     setApprovalStatus(null);
 
     try {
-      // Convert amounts to wei/smallest units
-      const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
-      const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
-
-      // Check if approval is needed
-      if (needsApproval(makingAmountWei)) {
-        const approvalSuccess = await handleApproval(makingAmountWei);
-        if (!approvalSuccess) {
-          setLoading(false);
-          return;
-        }
-
-        // Wait for approval confirmation
-        while (approvalTxHash && !approvalReceipt.isSuccess && !approvalReceipt.isError) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        if (approvalReceipt.isError) {
-          setError('Approval transaction failed');
-          setLoading(false);
-          return;
-        }
-
-        setApprovalStatus('Approval confirmed! Creating order...');
-        // Refetch allowance after approval
-        await allowanceQuery.refetch();
+      // Process all approvals
+      const approvalsSuccess = await processApprovals();
+      if (!approvalsSuccess) {
+        setLoading(false);
+        return;
       }
 
       // Create expiration timestamp
@@ -155,21 +327,38 @@ export default function CreateOrder() {
       const UINT_40_MAX = (1n << 40n) - 1n;
       const nonce = randBigInt(UINT_40_MAX);
       const makerTraits = MakerTraits.default()
+        .enablePreInteraction()
+        .enablePostInteraction()
+        .withExtension()
         .withExpiration(expiration)
         .withNonce(nonce)
         .allowMultipleFills();
+
+      
+
+      // const abiCoder = new ethers.AbiCoder();
+      // const callData = abiCoder.encode(['uint256'], [1]);
+
+      const preInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+      const postInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+
+      const extensions = new Extension({
+        ...Extension.EMPTY,
+        preInteraction: preInteraction.encode(),
+        postInteraction: postInteraction.encode(),
+      });
 
       // Create a real LimitOrder using the 1inch SDK
       const limitOrder = new LimitOrder(
         {
           makerAsset: new Address(form.makerAsset),
           takerAsset: new Address(form.takerAsset),
-          makingAmount: makingAmountWei,
-          takingAmount: takingAmountWei,
+          makingAmount: requiredAmounts.makingAmountWei,
+          takingAmount: requiredAmounts.takingAmountWei,
           maker: new Address(address),
         },
         makerTraits,
-        Extension.default()
+        extensions
       );
 
       // Get the real EIP-712 order hash and typed data
