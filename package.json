@@ -19,7 +19,8 @@
     "fix": "bun run format && bun run lint:fix",
     "build:prod": "bun i && bun run fix && bun run check && bun run clean && bun run build",
     "rebuild": "bun run clean && rm -rf node_modules bun.lock && bun install && bun run build:prod",
-    "test": "bun test"
+    "test": "bun test",
+    "install:all": "bun install && cd api && bun install && cd ../ui && bun install && cd ../db && bun install && cd ../resolver && bun install && cd .."
   },
   "keywords": [],
   "author": "",
