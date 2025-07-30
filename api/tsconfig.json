@@ -7,7 +7,7 @@
     "types": ["bun-types"],
     // API uses CommonJS for compatibility
     "module": "commonjs",
-    "noEmit": false
+    "noEmit": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
