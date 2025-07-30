@@ -30,18 +30,6 @@ export default function OrderDetails() {
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filling, setFilling] = useState(false);
-  const [fillingArgs, setFillingArgs] = useState(false);
-  const [fillResult, setFillResult] = useState<{
-    success: boolean;
-    message: string;
-    txHash?: string;
-  } | null>(null);
-  const [fillArgsResult, setFillArgsResult] = useState<{
-    success: boolean;
-    message: string;
-    txHash?: string;
-  } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(
     null
@@ -113,85 +101,6 @@ export default function OrderDetails() {
     navigator.clipboard.writeText(text);
   };
 
-  const fillOrder = async () => {
-    if (!orderHash) return;
-
-    setFilling(true);
-    setFillResult(null);
-
-    try {
-      const response = await fetch(`http://localhost:3000/order/${orderHash}/fill`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-      console.log('Fill result:', result); // Debug log
-      setFillResult({
-        success: result.success,
-        message: result.success ? result.message : result.error,
-        txHash: result.txHash,
-      });
-
-      // If successful, refresh the order to update status
-      if (result.success) {
-        setTimeout(() => {
-          fetchOrder();
-        }, 1000);
-      }
-    } catch (err) {
-      setFillResult({
-        success: false,
-        message: 'Failed to fill order: Network error',
-      });
-    } finally {
-      setFilling(false);
-    }
-  };
-
-  const fillOrderArgs = async () => {
-    if (!orderHash) return;
-
-    setFillingArgs(true);
-    setFillArgsResult(null);
-
-    try {
-      const response = await fetch(`http://localhost:3000/order/${orderHash}/fill-args`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-      console.log('Fill args result:', result); // Debug log
-      setFillArgsResult({
-        success: result.success,
-        message: result.success ? result.message : result.error,
-        txHash: result.txHash,
-      });
-
-      // If successful, refresh the order to update status
-      if (result.success) {
-        setTimeout(() => {
-          fetchOrder();
-        }, 1000);
-      }
-    } catch (err) {
-      setFillArgsResult({
-        success: false,
-        message: 'Failed to fill order with args: Network error',
-      });
-    } finally {
-      setFillingArgs(false);
-    }
-  };
-
-  const canFillOrder = (order: OrderDetails) => {
-    return order.status === 'pending';
-  };
 
   const cancelOrder = async () => {
     if (!orderHash) return;
@@ -409,37 +318,13 @@ export default function OrderDetails() {
                 </h4>
                 <p className="text-sm text-gray-400">Analysis for resolver: 0xf39F...2266</p>
               </div>
-              {canFillOrder(order) && (
+              {order.status === 'pending' && (
                 <div className="flex space-x-3">
                   <button
-                    onClick={fillOrder}
-                    disabled={filling || fillingArgs || cancelling}
-                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                      filling || fillingArgs || cancelling
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    {filling ? '⏳ Filling...' : '🚀 Fill Order'}
-                  </button>
-
-                  <button
-                    onClick={fillOrderArgs}
-                    disabled={filling || fillingArgs || cancelling}
-                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                      filling || fillingArgs || cancelling
-                        ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                        : 'bg-purple-600 hover:bg-purple-700 text-white'
-                    }`}
-                  >
-                    {fillingArgs ? '⏳ Filling...' : '⚡ Fill with Args'}
-                  </button>
-
-                  <button
                     onClick={cancelOrder}
-                    disabled={filling || fillingArgs || cancelling}
+                    disabled={cancelling}
                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                      filling || fillingArgs || cancelling
+                      cancelling
                         ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
                         : 'bg-red-600 hover:bg-red-700 text-white'
                     }`}
@@ -483,109 +368,13 @@ export default function OrderDetails() {
               </div>
             </div>
 
-            {!canFillOrder(order) && (
+            {order.status !== 'pending' && (
               <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <span className="text-yellow-400">⚠️</span>
                   <span className="text-yellow-200 text-sm">
-                    Order cannot be filled - Status: {getStatusText(order)}
+                    Order Status: {getStatusText(order)}
                   </span>
-                </div>
-              </div>
-            )}
-
-            {fillResult && (
-              <div
-                className={`mt-4 p-4 rounded-lg border ${
-                  fillResult.success
-                    ? 'bg-green-900/30 border-green-500/50'
-                    : 'bg-red-900/30 border-red-500/50'
-                }`}
-              >
-                <div className="flex items-start space-x-3">
-                  <span
-                    className={`text-xl ${fillResult.success ? 'text-green-400' : 'text-red-400'}`}
-                  >
-                    {fillResult.success ? '✅' : '❌'}
-                  </span>
-                  <div className="flex-1">
-                    <p
-                      className={`font-medium ${fillResult.success ? 'text-green-100' : 'text-red-100'}`}
-                    >
-                      {fillResult.success ? 'Fill Successful!' : 'Fill Failed'}
-                    </p>
-                    <p
-                      className={`text-sm mt-1 ${fillResult.success ? 'text-green-200' : 'text-red-200'}`}
-                    >
-                      {fillResult.message}
-                    </p>
-                    {fillResult.txHash && (
-                      <div className="mt-3 p-2 bg-gray-800/50 rounded border">
-                        <span className="text-gray-300 text-xs block mb-1">Transaction Hash:</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-blue-300 text-xs font-mono break-all">
-                            {fillResult.txHash}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(fillResult.txHash!)}
-                            className="text-blue-400 hover:text-blue-300 text-sm"
-                            title="Copy transaction hash"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {fillArgsResult && (
-              <div
-                className={`mt-4 p-4 rounded-lg border ${
-                  fillArgsResult.success
-                    ? 'bg-purple-900/30 border-purple-500/50'
-                    : 'bg-red-900/30 border-red-500/50'
-                }`}
-              >
-                <div className="flex items-start space-x-3">
-                  <span
-                    className={`text-xl ${fillArgsResult.success ? 'text-purple-400' : 'text-red-400'}`}
-                  >
-                    {fillArgsResult.success ? '⚡' : '❌'}
-                  </span>
-                  <div className="flex-1">
-                    <p
-                      className={`font-medium ${fillArgsResult.success ? 'text-purple-100' : 'text-red-100'}`}
-                    >
-                      {fillArgsResult.success
-                        ? 'Fill with Args Successful!'
-                        : 'Fill with Args Failed'}
-                    </p>
-                    <p
-                      className={`text-sm mt-1 ${fillArgsResult.success ? 'text-purple-200' : 'text-red-200'}`}
-                    >
-                      {fillArgsResult.message}
-                    </p>
-                    {fillArgsResult.txHash && (
-                      <div className="mt-3 p-2 bg-gray-800/50 rounded border">
-                        <span className="text-gray-300 text-xs block mb-1">Transaction Hash:</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-blue-300 text-xs font-mono break-all">
-                            {fillArgsResult.txHash}
-                          </span>
-                          <button
-                            onClick={() => copyToClipboard(fillArgsResult.txHash!)}
-                            className="text-blue-400 hover:text-blue-300 text-sm"
-                            title="Copy transaction hash"
-                          >
-                            📋
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             )}
