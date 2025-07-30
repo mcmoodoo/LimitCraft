@@ -1,5 +1,3 @@
-> 純太さんのような優秀なエンジニアとチームを組めて、本当に感謝しています。これから一緒に素晴らしいものを作っていけるのが楽しみです。
-
 # 🏮 1inch Limit Order - Arbitrum 🌸
 
 A complete orderbook application for creating and managing 1inch limit orders on Arbitrum. Features include order creation, automated order filling, and a React frontend with Web3 wallet integration.

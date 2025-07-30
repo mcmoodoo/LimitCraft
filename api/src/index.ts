@@ -8,10 +8,6 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, eq, lt } from 'drizzle-orm';
 import postgres from 'postgres';
 import { orders } from '../../db/src/schema.js';
-import { config } from './config';
-import { buildOrderExt } from './lib';
-import { SimpleHttpConnector } from './simpleHttpConnector';
-import { APIOrderFiller } from './filler.js';
 
 interface LimitOrderRequest {
   makerAsset: string;
@@ -77,13 +73,13 @@ async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: 
 const app = new Elysia()
   .use(
     cors({
-      origin: true, // Allow all origins for debugging
+      origin: ['http://127.0.0.1:5173', 'http://localhost:5173'], // Allow all origins for debugging
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
       credentials: true, // for cookies or Authorization headers
     })
   )
-  .get('/', () => 'Hello Elysia')
+  .get('/', () => 'Orderly backend running')
   .get('/order/:orderHash', async ({ params }) => {
     try {
       const order = await getOrderByHash(params.orderHash);
@@ -171,81 +167,6 @@ const app = new Elysia()
       };
     }
   })
-  .post('/limit-order', async ({ body }: { body: LimitOrderRequest }) => {
-    try {
-      if (!config.apiKey) {
-        throw new Error('API key is required. Set ONE_INCH_API_KEY environment variable.');
-      }
-
-      const provider = new JsonRpcProvider(config.rpcUrl);
-      const maker = new Wallet(config.privateKey, provider);
-      const expiresIn = BigInt(body.expiresIn || 120); // Default 2 minutes
-      const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
-      const UINT_40_MAX = (1n << 40n) - 1n;
-
-      const makerTraits = MakerTraits.default()
-        .withExpiration(expiration)
-        .withNonce(randBigInt(UINT_40_MAX))
-        .allowMultipleFills();
-
-      const sdk = new Sdk({
-        authKey: config.apiKey,
-        networkId: config.networkId,
-        httpConnector: new SimpleHttpConnector(),
-      });
-
-      const order = await sdk.createOrder(
-        {
-          makerAsset: new Address(body.makerAsset),
-          takerAsset: new Address(body.takerAsset),
-          makingAmount: BigInt(body.makingAmount),
-          takingAmount: BigInt(body.takingAmount),
-          maker: new Address(maker.address),
-        },
-        makerTraits
-      );
-
-      const orderHash = order.getOrderHash(config.networkId);
-      const typedData = order.getTypedData(config.networkId);
-      const signature = await maker.signTypedData(
-        typedData.domain,
-        { Order: typedData.types.Order },
-        typedData.message
-      );
-
-      console.log('🔍 Token addresses being saved to database:');
-      console.log('  - makerAsset:', body.makerAsset);
-      console.log('  - takerAsset:', body.takerAsset);
-
-      const savedOrder = await createOrder({
-        orderHash,
-        salt: order.salt.toString(),
-        makerAsset: body.makerAsset,
-        takerAsset: body.takerAsset,
-        makingAmount: body.makingAmount,
-        takingAmount: body.takingAmount,
-        makerAddress: maker.address,
-        expiresIn: new Date(Number(expiration) * 1000),
-        signature,
-        makerTraits: makerTraits.asBigInt().toString(),
-        extension: order.extension.encode(),
-      });
-
-      return {
-        success: true,
-        orderHash,
-        orderId: savedOrder.id,
-        extension: order.extension.encode(),
-        message: 'Order saved successfully!',
-      };
-    } catch (error) {
-      console.error('Error creating limit order:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  })
   .post('/submit-signed-order', async ({ body }: { body: SignedOrderRequest }) => {
     try {
       // Calculate expiration
@@ -278,102 +199,6 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error processing signed order:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  })
-  .post('/order/:orderHash/fill', async ({ params }) => {
-    try {
-      const { orderHash } = params;
-      
-      // Get order from database
-      const order = await getOrderByHash(orderHash);
-      
-      if (!order) {
-        return {
-          success: false,
-          error: 'Order not found',
-        };
-      }
-      
-      if (order.status !== 'pending') {
-        return {
-          success: false,
-          error: `Order is not pending. Current status: ${order.status}`,
-        };
-      }
-      
-      // Create OrderFiller instance for this request
-      const orderFiller = new APIOrderFiller();
-      
-      // Attempt to fill the order using the resolver logic
-      const fillResult = await orderFiller.fillOrder(order);
-      
-      if (fillResult.success) {
-        return {
-          success: true,
-          message: 'Order filled successfully',
-          txHash: fillResult.txHash,
-        };
-      } else {
-        return {
-          success: false,
-          error: fillResult.error || 'Failed to fill order',
-        };
-      }
-      
-    } catch (error) {
-      console.error('Error filling order:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  })
-  .post('/order/:orderHash/fill-args', async ({ params }) => {
-    try {
-      const { orderHash } = params;
-      
-      // Get order from database
-      const order = await getOrderByHash(orderHash);
-      
-      if (!order) {
-        return {
-          success: false,
-          error: 'Order not found',
-        };
-      }
-      
-      if (order.status !== 'pending') {
-        return {
-          success: false,
-          error: `Order is not pending. Current status: ${order.status}`,
-        };
-      }
-      
-      // Create OrderFiller instance for this request
-      const orderFiller = new APIOrderFiller();
-      
-      // Attempt to fill the order using fillOrderArgs
-      const fillResult = await orderFiller.fillOrderArgs(order);
-      
-      if (fillResult.success) {
-        return {
-          success: true,
-          message: 'Order filled successfully using fillOrderArgs',
-          txHash: fillResult.txHash,
-        };
-      } else {
-        return {
-          success: false,
-          error: fillResult.error || 'Failed to fill order with fillOrderArgs',
-        };
-      }
-      
-    } catch (error) {
-      console.error('Error filling order with fillOrderArgs:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -427,6 +252,53 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error refreshing orders:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .get('/prices', async ({ query }) => {
+    try {
+      // Mock prices - static values for now
+      const mockPrices: Record<string, number> = {
+        // USDC
+        '0xaf88d065e77c8cc2239327c5edb3a432268e5831': 1.0,
+        // WETH
+        '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': 3200.50,
+        // USDT
+        '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': 0.999,
+        // USDC.e
+        '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8': 0.998,
+      };
+
+      // If specific tokens are requested via query params
+      const tokens = query.tokens?.split(',') || [];
+      
+      if (tokens.length > 0) {
+        const requestedPrices: Record<string, number> = {};
+        tokens.forEach(token => {
+          const address = token.toLowerCase();
+          requestedPrices[address] = mockPrices[address] || 0;
+        });
+        
+        return {
+          success: true,
+          prices: requestedPrices,
+          source: 'mock',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // Return all prices if no specific tokens requested
+      return {
+        success: true,
+        prices: mockPrices,
+        source: 'mock',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Error fetching prices:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
