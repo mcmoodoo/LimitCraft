@@ -1,34 +1,44 @@
 {
-  "name": "orderbook",
+  "name": "orderbook-monorepo",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "1inch Limit Order Monorepo - Arbitrum",
+  "private": true,
+  "workspaces": ["api", "db", "resolver", "ui"],
   "scripts": {
-    "start": "bun scripts/index.ts",
-    "dev": "concurrently 'bun run dev:api' 'bun run dev:ui'",
-    "dev:api": "bun --watch api/src/index.ts",
-    "dev:ui": "cd ui && bun run dev",
+    "dev": "concurrently 'cd api && bun dev' 'cd ui && bun dev'",
+    "dev:all": "concurrently 'cd api && bun dev' 'cd ui && bun dev' 'cd resolver && bun dev'",
+    "dev:api": "cd api && bun dev",
+    "dev:ui": "cd ui && bun dev",
+    "dev:resolver": "cd resolver && bun dev",
+    "build:api": "cd api && bun run build",
+    "build:resolver": "cd resolver && bun run build", 
+    "build:ui": "cd ui && bun run build",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "build:prod": "bun i && bun run fix && bun run check && bun run clean && bun run build",
-    "rebuild": "bun run clean && rm -rf node_modules bun.lock && bun install && bun run build:prod",
-    "install:all": "bun install && cd api && bun install && cd ../ui && bun install && cd ../db && bun install && cd ../resolver && bun install && cd .."
+    "db:setup": "cd db && bun run setup",
+    "db:studio": "cd db && bun run studio",
+    "db:reset": "cd db && bun run reset",
+    "resolver:start": "cd resolver && bun run start"
   },
-  "keywords": [],
+  "keywords": ["1inch", "limit-orders", "arbitrum", "defi", "orderbook"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "@1inch/byte-utils": "^3.1.0",
-    "@1inch/limit-order-sdk": "v5.0.3",
-    "@types/node": "^24.0.13",
+    "@1inch/limit-order-sdk": "5.0.3",
+    "axios": "^1.10.0",
+    "drizzle-orm": "^0.44.3",
     "ethers": "^6.15.0",
-    "typescript": "^5.8.3"
+    "postgres": "^3.4.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",
-    "concurrently": "^9.2.0"
+    "@types/node": "^24.0.13",
+    "bun-types": "latest",
+    "concurrently": "^9.2.0",
+    "drizzle-kit": "^0.28.0",
+    "typescript": "^5.8.3"
   }
 }

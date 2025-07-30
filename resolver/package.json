@@ -1,5 +1,5 @@
 {
-  "name": "orderbook-resolver",
+  "name": "@orderbook/resolver",
   "version": "1.0.0",
   "description": "Automated order resolver and filler",
   "main": "index.js",
@@ -8,16 +8,5 @@
     "start": "bun src/index.ts",
     "dev": "bun --watch src/index.ts",
     "build": "tsc"
-  },
-  "dependencies": {
-    "@1inch/limit-order-sdk": "v5.0.3",
-    "axios": "^1.6.0",
-    "drizzle-orm": "^0.44.3",
-    "ethers": "^6.15.0",
-    "postgres": "^3.4.7"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.13",
-    "typescript": "^5.8.3"
   }
 }

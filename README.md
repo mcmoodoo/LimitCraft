@@ -8,8 +8,8 @@ A complete orderbook application for creating and managing 1inch limit orders on
 ⛩️ **`ui/`** - React frontend with RainbowKit wallet integration
 ⛩️ **`db/`** - PostgreSQL database layer with Drizzle ORM
 ⛩️ **`resolver/`** - Automated order resolver and filler
-⛩️ **`scripts/`** - Utility scripts
 ⛩️ **`contracts/`** - Foundry smart contracts with 1inch integration
+⛩️ **`anvil/`** - Local blockchain configuration for development
 
 ## 🏗️ Smart Contracts Setup
 
@@ -98,10 +98,10 @@ Initialize git submodules (required for smart contracts):
 git submodule update --init --recursive
 ```
 
-Install dependencies:
+Install dependencies in all directories:
 
 ```bash
-bun install
+bun run install:all
 ```
 
 Start development servers (API + Frontend):
@@ -128,29 +128,21 @@ bun run start
 
 🌟 `bun run dev` - Start both API and frontend concurrently
 🌟 `bun run dev:api` - Start API server only (watch mode)
-🌟 `bun run dev:ui` - Start frontend only
-🌟 `bun run start` - Run production build
-🌟 `bun test` - Run tests
+🌟 `bun run dev:ui` - Start frontend only  
+🌟 `bun run start` - Run the main script (Note: scripts/index.ts needs to be created)
 
 ### 🏗️ Build & Production
 
-🔨 `bun run build` - Build TypeScript to dist/
-🔨 `bun run build:prod` - Full production build (install, fix, check, clean, build)
-🔨 `bun run clean` - Remove dist/ directory
+🔨 `bun run build:prod` - Production build sequence (Note: Some referenced scripts may need to be implemented)
 🔨 `bun run rebuild` - Clean everything and rebuild from scratch
+🔨 `bun run install:all` - Install dependencies in all directories
 
 ### ✨ Code Quality
 
 🎨 `bun run typecheck` - TypeScript type checking
 🎨 `bun run lint` - Lint code with Biome
+🎨 `bun run lint:fix` - Fix linting issues with Biome
 🎨 `bun run format` - Format code with Biome
-🎨 `bun run lint:fix` - Fix linting issues
-🎨 `bun run check` - Run typecheck + lint
-🎨 `bun run fix` - Run format + lint:fix
-
-### 🏭 Infrastructure
-
-🔧 `bun run redis` - Start Redis container via Podman
 
 ## 🗃️ Database Management
 

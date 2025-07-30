@@ -1,5 +1,5 @@
 {
-  "name": "orderbook-db",
+  "name": "@orderbook/db",
   "version": "1.0.0",
   "description": "Database layer for orderbook application",
   "main": "index.js",
@@ -12,14 +12,5 @@
     "generate": "drizzle-kit generate",
     "migrate": "bun src/migrate.ts",
     "studio": "drizzle-kit studio"
-  },
-  "dependencies": {
-    "drizzle-orm": "^0.36.4",
-    "postgres": "^3.4.5"
-  },
-  "devDependencies": {
-    "drizzle-kit": "^0.28.0",
-    "@types/node": "^24.0.13",
-    "typescript": "^5.8.3"
   }
 }

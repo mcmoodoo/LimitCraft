@@ -5,13 +5,12 @@
     "module": "commonjs",
     "declaration": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["api/src/**/*", "db/src/**/*", "resolver/src/**/*", "ui/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
