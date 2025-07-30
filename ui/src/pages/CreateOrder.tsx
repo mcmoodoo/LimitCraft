@@ -504,8 +504,11 @@ export default function CreateOrder() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Asset</label>
+                    <label htmlFor="makerAsset" className="block text-sm font-medium mb-2">
+                      Asset
+                    </label>
                     <select
+                      id="makerAsset"
                       name="makerAsset"
                       value={form.makerAsset}
                       onChange={handleChange}
@@ -521,8 +524,11 @@ export default function CreateOrder() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Amount</label>
+                    <label htmlFor="makingAmount" className="block text-sm font-medium mb-2">
+                      Amount
+                    </label>
                     <input
+                      id="makingAmount"
                       type="number"
                       name="makingAmount"
                       value={form.makingAmount}
@@ -536,9 +542,7 @@ export default function CreateOrder() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">
-                      Use Lending Position
-                    </label>
+                    <span className="text-sm font-medium text-gray-300">Use Lending Position</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -561,9 +565,12 @@ export default function CreateOrder() {
 
                   {form.useLendingProtocol && (
                     <div className="mt-3">
-                      <label className="block text-sm font-medium mb-2">Protocol</label>
+                      <label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
+                        Protocol
+                      </label>
                       <div className="relative">
                         <select
+                          id="lendingProtocol"
                           name="lendingProtocol"
                           value={form.lendingProtocol}
                           onChange={handleChange}
@@ -598,8 +605,11 @@ export default function CreateOrder() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Asset</label>
+                    <label htmlFor="takerAsset" className="block text-sm font-medium mb-2">
+                      Asset
+                    </label>
                     <select
+                      id="takerAsset"
                       name="takerAsset"
                       value={form.takerAsset}
                       onChange={handleChange}
@@ -615,8 +625,11 @@ export default function CreateOrder() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Amount</label>
+                    <label htmlFor="takingAmount" className="block text-sm font-medium mb-2">
+                      Amount
+                    </label>
                     <input
+                      id="takingAmount"
                       type="number"
                       name="takingAmount"
                       value={form.takingAmount}
@@ -630,9 +643,9 @@ export default function CreateOrder() {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">
+                    <span className="text-sm font-medium text-gray-300">
                       Supply to Lending Protocol
-                    </label>
+                    </span>
                     <button
                       type="button"
                       onClick={() =>
@@ -655,9 +668,15 @@ export default function CreateOrder() {
 
                   {form.supplyToLendingProtocol && (
                     <div className="mt-3">
-                      <label className="block text-sm font-medium mb-2">Protocol</label>
+                      <label
+                        htmlFor="supplyLendingProtocol"
+                        className="block text-sm font-medium mb-2"
+                      >
+                        Protocol
+                      </label>
                       <div className="relative">
                         <select
+                          id="supplyLendingProtocol"
                           name="supplyLendingProtocol"
                           value={form.supplyLendingProtocol}
                           onChange={handleChange}
@@ -689,8 +708,11 @@ export default function CreateOrder() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Expiration</label>
+              <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
+                Expiration
+              </label>
               <select
+                id="expiresIn"
                 name="expiresIn"
                 value={form.expiresIn}
                 onChange={handleChange}
