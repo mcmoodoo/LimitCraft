@@ -1,13 +1,24 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   define: {
     global: "globalThis",
-    "process.env": {},
+    // Only expose specific environment variables instead of entire process.env
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || "development"),
+    "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL),
+    // Define process.env properties directly
+    "process.env": JSON.stringify({
+      NODE_ENV: process.env.NODE_ENV || "development",
+      VITE_API_URL: process.env.VITE_API_URL,
+    }),
+    "process.browser": "true",
+    "process.version": '""',
+    "process.platform": '"browser"',
   },
   resolve: {
     alias: {
@@ -15,10 +26,11 @@ export default defineConfig({
       buffer: "buffer",
       crypto: "crypto-browserify",
       stream: "stream-browserify",
+      events: "events",
       util: "util",
-      process: "process/browser",
+      // Use absolute path for process to fix the warning
+      process: path.resolve(__dirname, "node_modules/process/browser.js"),
       path: "path-browserify",
-      fs: "fs",
       os: "os-browserify",
       url: "url",
       querystring: "querystring-es3",
@@ -27,15 +39,20 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       "buffer",
-      "crypto-browserify",
+      "crypto-browserify", 
       "stream-browserify",
+      "events",
       "util",
       "assert",
-      "process/browser",
       "path-browserify",
       "os-browserify",
-      "url",
       "querystring-es3",
     ],
+    exclude: ["fs"],
+    esbuildOptions: {
+      define: {
+        global: "globalThis",
+      },
+    },
   },
 });
