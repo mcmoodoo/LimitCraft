@@ -69,7 +69,7 @@ export class OrderFiller {
 
       const limitOrder = this.reconstructLimitOrder(order);
       const orderStruct = this.reconstructOrderStruct(limitOrder);
-      
+
       console.log('📋 Reconstructed order struct:', {
         salt: orderStruct.salt.toString(),
         maker: orderStruct.maker,
@@ -117,8 +117,8 @@ export class OrderFiller {
       const orderStructForSDK = limitOrder.build();
 
       let calldata: string;
-      // When no extension 
-      if (order.extension === "0x") {
+      // When no extension
+      if (order.extension === '0x') {
         // Use getFillOrderCalldata for orders without extensions
         calldata = LimitOrderContract.getFillOrderCalldata(
           orderStructForSDK,
@@ -265,17 +265,13 @@ export class OrderFiller {
     }
   }
 
-  private async checkTakerAssetBalance(order: Order): Promise<{ sufficient: boolean; balance: string }> {
+  private async checkTakerAssetBalance(
+    order: Order
+  ): Promise<{ sufficient: boolean; balance: string }> {
     try {
-      const ERC20_ABI = [
-        'function balanceOf(address owner) view returns (uint256)',
-      ];
+      const ERC20_ABI = ['function balanceOf(address owner) view returns (uint256)'];
 
-      const takerAssetContract = new Contract(
-        order.takerAsset,
-        ERC20_ABI,
-        walletManager.provider
-      );
+      const takerAssetContract = new Contract(order.takerAsset, ERC20_ABI, walletManager.provider);
 
       const balance = await takerAssetContract.balanceOf(walletManager.wallet.address);
       const requiredAmount = BigInt(order.takingAmount);
@@ -301,18 +297,16 @@ export class OrderFiller {
     }
   }
 
-  private async ensureTakerAssetApproval(order: Order): Promise<{ success: boolean; error?: string; txHash?: string }> {
+  private async ensureTakerAssetApproval(
+    order: Order
+  ): Promise<{ success: boolean; error?: string; txHash?: string }> {
     try {
       const ERC20_ABI = [
         'function allowance(address owner, address spender) view returns (uint256)',
         'function approve(address spender, uint256 amount) returns (bool)',
       ];
 
-      const takerAssetContract = new Contract(
-        order.takerAsset,
-        ERC20_ABI,
-        walletManager.wallet
-      );
+      const takerAssetContract = new Contract(order.takerAsset, ERC20_ABI, walletManager.wallet);
 
       // Check current allowance
       const allowance = await takerAssetContract.allowance(
@@ -338,9 +332,9 @@ export class OrderFiller {
 
       // Need to approve - send approval transaction
       console.log(`📤 Sending approval transaction for ${order.takerAsset}...`);
-      
-      const approvalAmount = ethers.MaxUint256; 
-      
+
+      const approvalAmount = ethers.MaxUint256;
+
       const approveTx = await takerAssetContract.approve(
         this.limitOrderContract.target,
         approvalAmount,
@@ -370,7 +364,7 @@ export class OrderFiller {
       }
     } catch (error: any) {
       console.error('❌ Error ensuring takerAsset approval:', error);
-      
+
       let errorMessage = 'Unknown approval error';
       if (error.reason) {
         errorMessage = error.reason;

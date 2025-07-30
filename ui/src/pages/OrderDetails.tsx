@@ -32,10 +32,20 @@ export default function OrderDetails() {
   const [error, setError] = useState<string | null>(null);
   const [filling, setFilling] = useState(false);
   const [fillingArgs, setFillingArgs] = useState(false);
-  const [fillResult, setFillResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
-  const [fillArgsResult, setFillArgsResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
+  const [fillResult, setFillResult] = useState<{
+    success: boolean;
+    message: string;
+    txHash?: string;
+  } | null>(null);
+  const [fillArgsResult, setFillArgsResult] = useState<{
+    success: boolean;
+    message: string;
+    txHash?: string;
+  } | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(
+    null
+  );
 
   useEffect(() => {
     if (orderHash) {
@@ -105,10 +115,10 @@ export default function OrderDetails() {
 
   const fillOrder = async () => {
     if (!orderHash) return;
-    
+
     setFilling(true);
     setFillResult(null);
-    
+
     try {
       const response = await fetch(`http://localhost:3000/order/${orderHash}/fill`, {
         method: 'POST',
@@ -116,15 +126,15 @@ export default function OrderDetails() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const result = await response.json();
       console.log('Fill result:', result); // Debug log
       setFillResult({
         success: result.success,
         message: result.success ? result.message : result.error,
-        txHash: result.txHash
+        txHash: result.txHash,
       });
-      
+
       // If successful, refresh the order to update status
       if (result.success) {
         setTimeout(() => {
@@ -134,7 +144,7 @@ export default function OrderDetails() {
     } catch (err) {
       setFillResult({
         success: false,
-        message: 'Failed to fill order: Network error'
+        message: 'Failed to fill order: Network error',
       });
     } finally {
       setFilling(false);
@@ -143,10 +153,10 @@ export default function OrderDetails() {
 
   const fillOrderArgs = async () => {
     if (!orderHash) return;
-    
+
     setFillingArgs(true);
     setFillArgsResult(null);
-    
+
     try {
       const response = await fetch(`http://localhost:3000/order/${orderHash}/fill-args`, {
         method: 'POST',
@@ -154,15 +164,15 @@ export default function OrderDetails() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const result = await response.json();
       console.log('Fill args result:', result); // Debug log
       setFillArgsResult({
         success: result.success,
         message: result.success ? result.message : result.error,
-        txHash: result.txHash
+        txHash: result.txHash,
       });
-      
+
       // If successful, refresh the order to update status
       if (result.success) {
         setTimeout(() => {
@@ -172,7 +182,7 @@ export default function OrderDetails() {
     } catch (err) {
       setFillArgsResult({
         success: false,
-        message: 'Failed to fill order with args: Network error'
+        message: 'Failed to fill order with args: Network error',
       });
     } finally {
       setFillingArgs(false);
@@ -185,10 +195,10 @@ export default function OrderDetails() {
 
   const cancelOrder = async () => {
     if (!orderHash) return;
-    
+
     setCancelling(true);
     setCancelResult(null);
-    
+
     try {
       const response = await fetch(`http://localhost:3000/order/${orderHash}/cancel`, {
         method: 'POST',
@@ -196,14 +206,14 @@ export default function OrderDetails() {
           'Content-Type': 'application/json',
         },
       });
-      
+
       const result = await response.json();
       console.log('Cancel result:', result); // Debug log
       setCancelResult({
         success: result.success,
         message: result.success ? result.message : result.error,
       });
-      
+
       // If successful, refresh the order to update status
       if (result.success) {
         setTimeout(() => {
@@ -213,7 +223,7 @@ export default function OrderDetails() {
     } catch (err) {
       setCancelResult({
         success: false,
-        message: 'Failed to cancel order: Network error'
+        message: 'Failed to cancel order: Network error',
       });
     } finally {
       setCancelling(false);
@@ -397,9 +407,7 @@ export default function OrderDetails() {
                 <h4 className="text-lg font-medium text-purple-300 mb-1">
                   🤖 Resolver Profitability
                 </h4>
-                <p className="text-sm text-gray-400">
-                  Analysis for resolver: 0xf39F...2266
-                </p>
+                <p className="text-sm text-gray-400">Analysis for resolver: 0xf39F...2266</p>
               </div>
               {canFillOrder(order) && (
                 <div className="flex space-x-3">
@@ -414,7 +422,7 @@ export default function OrderDetails() {
                   >
                     {filling ? '⏳ Filling...' : '🚀 Fill Order'}
                   </button>
-                  
+
                   <button
                     onClick={fillOrderArgs}
                     disabled={filling || fillingArgs || cancelling}
@@ -426,7 +434,7 @@ export default function OrderDetails() {
                   >
                     {fillingArgs ? '⏳ Filling...' : '⚡ Fill with Args'}
                   </button>
-                  
+
                   <button
                     onClick={cancelOrder}
                     disabled={filling || fillingArgs || cancelling}
@@ -445,25 +453,19 @@ export default function OrderDetails() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <div className="text-sm text-gray-400 mb-1">Estimated Profit</div>
-                <div className="text-xl font-bold text-green-400">
-                  +0.0245 ETH
-                </div>
+                <div className="text-xl font-bold text-green-400">+0.0245 ETH</div>
                 <div className="text-xs text-gray-500">~$82.50 USD</div>
               </div>
-              
+
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <div className="text-sm text-gray-400 mb-1">Gas Cost</div>
-                <div className="text-xl font-bold text-yellow-400">
-                  ~0.0021 ETH
-                </div>
+                <div className="text-xl font-bold text-yellow-400">~0.0021 ETH</div>
                 <div className="text-xs text-gray-500">~$7.10 USD</div>
               </div>
-              
+
               <div className="bg-gray-800/50 rounded-lg p-4">
                 <div className="text-sm text-gray-400 mb-1">Net Profit</div>
-                <div className="text-xl font-bold text-blue-400">
-                  +0.0224 ETH
-                </div>
+                <div className="text-xl font-bold text-blue-400">+0.0224 ETH</div>
                 <div className="text-xs text-gray-500">~$75.40 USD</div>
               </div>
             </div>
@@ -493,20 +495,28 @@ export default function OrderDetails() {
             )}
 
             {fillResult && (
-              <div className={`mt-4 p-4 rounded-lg border ${
-                fillResult.success 
-                  ? 'bg-green-900/30 border-green-500/50' 
-                  : 'bg-red-900/30 border-red-500/50'
-              }`}>
+              <div
+                className={`mt-4 p-4 rounded-lg border ${
+                  fillResult.success
+                    ? 'bg-green-900/30 border-green-500/50'
+                    : 'bg-red-900/30 border-red-500/50'
+                }`}
+              >
                 <div className="flex items-start space-x-3">
-                  <span className={`text-xl ${fillResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                  <span
+                    className={`text-xl ${fillResult.success ? 'text-green-400' : 'text-red-400'}`}
+                  >
                     {fillResult.success ? '✅' : '❌'}
                   </span>
                   <div className="flex-1">
-                    <p className={`font-medium ${fillResult.success ? 'text-green-100' : 'text-red-100'}`}>
+                    <p
+                      className={`font-medium ${fillResult.success ? 'text-green-100' : 'text-red-100'}`}
+                    >
                       {fillResult.success ? 'Fill Successful!' : 'Fill Failed'}
                     </p>
-                    <p className={`text-sm mt-1 ${fillResult.success ? 'text-green-200' : 'text-red-200'}`}>
+                    <p
+                      className={`text-sm mt-1 ${fillResult.success ? 'text-green-200' : 'text-red-200'}`}
+                    >
                       {fillResult.message}
                     </p>
                     {fillResult.txHash && (
@@ -532,20 +542,30 @@ export default function OrderDetails() {
             )}
 
             {fillArgsResult && (
-              <div className={`mt-4 p-4 rounded-lg border ${
-                fillArgsResult.success 
-                  ? 'bg-purple-900/30 border-purple-500/50' 
-                  : 'bg-red-900/30 border-red-500/50'
-              }`}>
+              <div
+                className={`mt-4 p-4 rounded-lg border ${
+                  fillArgsResult.success
+                    ? 'bg-purple-900/30 border-purple-500/50'
+                    : 'bg-red-900/30 border-red-500/50'
+                }`}
+              >
                 <div className="flex items-start space-x-3">
-                  <span className={`text-xl ${fillArgsResult.success ? 'text-purple-400' : 'text-red-400'}`}>
+                  <span
+                    className={`text-xl ${fillArgsResult.success ? 'text-purple-400' : 'text-red-400'}`}
+                  >
                     {fillArgsResult.success ? '⚡' : '❌'}
                   </span>
                   <div className="flex-1">
-                    <p className={`font-medium ${fillArgsResult.success ? 'text-purple-100' : 'text-red-100'}`}>
-                      {fillArgsResult.success ? 'Fill with Args Successful!' : 'Fill with Args Failed'}
+                    <p
+                      className={`font-medium ${fillArgsResult.success ? 'text-purple-100' : 'text-red-100'}`}
+                    >
+                      {fillArgsResult.success
+                        ? 'Fill with Args Successful!'
+                        : 'Fill with Args Failed'}
                     </p>
-                    <p className={`text-sm mt-1 ${fillArgsResult.success ? 'text-purple-200' : 'text-red-200'}`}>
+                    <p
+                      className={`text-sm mt-1 ${fillArgsResult.success ? 'text-purple-200' : 'text-red-200'}`}
+                    >
                       {fillArgsResult.message}
                     </p>
                     {fillArgsResult.txHash && (
@@ -571,20 +591,28 @@ export default function OrderDetails() {
             )}
 
             {cancelResult && (
-              <div className={`mt-4 p-4 rounded-lg border ${
-                cancelResult.success 
-                  ? 'bg-orange-900/30 border-orange-500/50' 
-                  : 'bg-red-900/30 border-red-500/50'
-              }`}>
+              <div
+                className={`mt-4 p-4 rounded-lg border ${
+                  cancelResult.success
+                    ? 'bg-orange-900/30 border-orange-500/50'
+                    : 'bg-red-900/30 border-red-500/50'
+                }`}
+              >
                 <div className="flex items-start space-x-3">
-                  <span className={`text-xl ${cancelResult.success ? 'text-orange-400' : 'text-red-400'}`}>
+                  <span
+                    className={`text-xl ${cancelResult.success ? 'text-orange-400' : 'text-red-400'}`}
+                  >
                     {cancelResult.success ? '🚫' : '❌'}
                   </span>
                   <div className="flex-1">
-                    <p className={`font-medium ${cancelResult.success ? 'text-orange-100' : 'text-red-100'}`}>
+                    <p
+                      className={`font-medium ${cancelResult.success ? 'text-orange-100' : 'text-red-100'}`}
+                    >
                       {cancelResult.success ? 'Order Cancelled!' : 'Cancel Failed'}
                     </p>
-                    <p className={`text-sm mt-1 ${cancelResult.success ? 'text-orange-200' : 'text-red-200'}`}>
+                    <p
+                      className={`text-sm mt-1 ${cancelResult.success ? 'text-orange-200' : 'text-red-200'}`}
+                    >
                       {cancelResult.message}
                     </p>
                   </div>

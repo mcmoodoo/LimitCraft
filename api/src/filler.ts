@@ -35,21 +35,17 @@ export class APIOrderFiller {
     // Hardcoded private key for resolver operations
     const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
     this.wallet = new Wallet(privateKey, this.provider);
-    
+
     console.log(`🔑 Using wallet address: ${this.wallet.address}`);
     console.log(`🌐 RPC URL: ${config.rpcUrl}`);
     console.log(`⛓️ Network ID: ${config.networkId}`);
-    
+
     // Use the actual 1inch contract address since we forked Arbitrum
     const contractAddress = getLimitOrderContract(config.networkId);
-      
+
     console.log(`🔗 Using contract address: ${contractAddress}`);
-    
-    this.limitOrderContract = new Contract(
-      contractAddress,
-      LIMIT_ORDER_ABI,
-      this.wallet
-    );
+
+    this.limitOrderContract = new Contract(contractAddress, LIMIT_ORDER_ABI, this.wallet);
   }
 
   async fillOrderArgs(order: Order): Promise<FillResult> {
@@ -59,7 +55,7 @@ export class APIOrderFiller {
       // Check wallet has sufficient balance
       const balance = await this.provider.getBalance(this.wallet.address);
       console.log(`👛 Wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`);
-      
+
       if (balance < parseUnits('0.001', 'ether')) {
         return {
           success: false,
@@ -71,15 +67,17 @@ export class APIOrderFiller {
       const limitOrder = this.reconstructLimitOrder(order);
       const orderStruct = this.reconstructOrderStruct(limitOrder);
 
-      console.log("--- Reconstructed Limit Order BEGIN ---");
+      console.log('--- Reconstructed Limit Order BEGIN ---');
       console.log(limitOrder);
-      console.log("--- Reconstructed Limit Order END -----");
+      console.log('--- Reconstructed Limit Order END -----');
 
       // Split signature into r and vs components
-      const signature = order.signature.startsWith('0x') ? order.signature.slice(2) : order.signature;
+      const signature = order.signature.startsWith('0x')
+        ? order.signature.slice(2)
+        : order.signature;
       const r = '0x' + signature.slice(0, 64);
       const vs = '0x' + signature.slice(64, 128);
-      
+
       console.log(`🔑 Signature components - r: ${r}, vs: ${vs}`);
 
       // Use default taker traits and full taking amount
@@ -111,7 +109,7 @@ export class APIOrderFiller {
 
       if (receipt && receipt.status === 1) {
         console.log(`✅ Order filled successfully using fillOrderArgs!`);
-        
+
         try {
           // Mark order as filled in database
           await updateOrderStatus(order.id, 'filled');
@@ -151,8 +149,9 @@ export class APIOrderFiller {
       // Check wallet has sufficient balance
       const balance = await this.provider.getBalance(this.wallet.address);
       console.log(`👛 Wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`);
-      
-      if (balance < parseUnits('0.001', 'ether')) { // Reduced threshold to 0.001 ETH
+
+      if (balance < parseUnits('0.001', 'ether')) {
+        // Reduced threshold to 0.001 ETH
         return {
           success: false,
           error: `Insufficient wallet balance: ${(Number(balance) / 1e18).toFixed(4)} ETH`,
@@ -163,22 +162,22 @@ export class APIOrderFiller {
       const limitOrder = this.reconstructLimitOrder(order);
       const orderStruct = this.reconstructOrderStruct(limitOrder);
 
-      console.log("--- Reconstructed Limit Order BEGIN ---");
+      console.log('--- Reconstructed Limit Order BEGIN ---');
       console.log(limitOrder);
-      console.log("--- Reconstructed Limit Order END -----");
-      
+      console.log('--- Reconstructed Limit Order END -----');
+
       // Generate calldata using the SDK
       const takerTraits = TakerTraits.default();
-      
+
       // Since we forked Arbitrum, the 1inch contract exists - proceed with real transaction
-      
+
       const calldata = LimitOrderContract.getFillOrderCalldata(
         limitOrder.build(),
         order.signature,
         takerTraits,
         BigInt(order.takingAmount) // Fill full amount
       );
-      
+
       console.log(`📋 Generated calldata: ${calldata}`);
       console.log(`📋 Calldata length: ${calldata.length}`);
 
@@ -198,7 +197,7 @@ export class APIOrderFiller {
 
       if (receipt && receipt.status === 1) {
         console.log(`✅ Order filled successfully!`);
-        
+
         try {
           // Mark order as filled in database
           await updateOrderStatus(order.id, 'filled');
@@ -239,7 +238,6 @@ export class APIOrderFiller {
     //
     //
     //
-
 
     const salt = BigInt(order.salt);
 

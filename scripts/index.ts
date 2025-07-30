@@ -11,7 +11,7 @@ import {
   type OrderInfoData,
   randBigInt,
   Sdk,
-  ExtensionBuilder
+  ExtensionBuilder,
 } from '@1inch/limit-order-sdk';
 import { JsonRpcProvider, Wallet } from 'ethers';
 import { config } from './config';
@@ -120,7 +120,7 @@ async function createLimitOrderWithInteraction(): Promise<LimitOrder> {
     new Address('0xd65cef6db48e269d607733950b26cb81bbd27499'), // target contract
     '0xabcdef' // optional extraData only (NO selector here)
     // '0xabcdef01234567890' // Call data (method + params)
-  )
+  );
   const extension = new ExtensionBuilder()
     .withPreInteraction(preInteraction)
     // .withCustomData('0xdeadbeef')
@@ -151,7 +151,7 @@ async function createLimitOrderWithInteraction(): Promise<LimitOrder> {
   console.log(`📋 Order maker traits: ${order.makerTraits.asBigInt()}`);
 
   await saveLimitOrderToDatabase(order, signature);
-  
+
   return order;
 }
 

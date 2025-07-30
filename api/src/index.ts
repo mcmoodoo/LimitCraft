@@ -1,9 +1,22 @@
-import { Address, Api, Extension, LimitOrder, MakerTraits, randBigInt, Sdk } from '@1inch/limit-order-sdk';
+import {
+  Address,
+  Api,
+  Extension,
+  LimitOrder,
+  MakerTraits,
+  randBigInt,
+  Sdk,
+} from '@1inch/limit-order-sdk';
 import { cors } from '@elysiajs/cors';
 import axios from 'axios';
 import { Elysia } from 'elysia';
 import { JsonRpcProvider, Wallet } from 'ethers';
-import { createOrder, getAllOrders, getOrderByHash, updateOrderStatus } from '../../db/src/index.js';
+import {
+  createOrder,
+  getAllOrders,
+  getOrderByHash,
+  updateOrderStatus,
+} from '../../db/src/index.js';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { and, eq, lt } from 'drizzle-orm';
 import postgres from 'postgres';
@@ -39,7 +52,7 @@ const db = drizzle(dbClient);
 async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: string }> {
   try {
     const currentTime = new Date();
-    
+
     // Update all pending orders that have expired
     const result = await db
       .update(orders)
@@ -55,18 +68,21 @@ async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: 
       );
 
     const expiredCount = result.length || 0;
-    
+
     console.log(`⏰ Refreshed ${expiredCount} expired orders`);
-    
+
     return {
       expiredCount,
-      message: expiredCount > 0 
-        ? `Successfully marked ${expiredCount} orders as expired`
-        : 'No expired orders found'
+      message:
+        expiredCount > 0
+          ? `Successfully marked ${expiredCount} orders as expired`
+          : 'No expired orders found',
     };
   } catch (error) {
     console.error('❌ Error refreshing expired orders:', error);
-    throw new Error(`Failed to refresh orders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to refresh orders: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -124,7 +140,6 @@ const app = new Elysia()
   })
   .get('/orders', async ({ query }) => {
     try {
-
       try {
         await refreshExpiredOrders();
       } catch (error) {
@@ -208,32 +223,31 @@ const app = new Elysia()
   .post('/order/:orderHash/cancel', async ({ params }) => {
     try {
       const { orderHash } = params;
-      
+
       // Get order from database
       const order = await getOrderByHash(orderHash);
-      
+
       if (!order) {
         return {
           success: false,
           error: 'Order not found',
         };
       }
-      
+
       if (order.status !== 'pending') {
         return {
           success: false,
           error: `Cannot cancel order. Current status: ${order.status}`,
         };
       }
-      
+
       // Update order status to cancelled
       await updateOrderStatus(order.id, 'cancelled');
-      
+
       return {
         success: true,
         message: 'Order cancelled successfully',
       };
-      
     } catch (error) {
       console.error('Error cancelling order:', error);
       return {
@@ -245,7 +259,7 @@ const app = new Elysia()
   .post('/refresh-orders', async () => {
     try {
       const result = await refreshExpiredOrders();
-      
+
       return {
         success: true,
         ...result,
@@ -265,7 +279,7 @@ const app = new Elysia()
         // USDC
         '0xaf88d065e77c8cc2239327c5edb3a432268e5831': 1.0,
         // WETH
-        '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': 3200.50,
+        '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': 3200.5,
         // USDT
         '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': 0.999,
         // USDC.e
@@ -274,14 +288,14 @@ const app = new Elysia()
 
       // If specific tokens are requested via query params
       const tokens = query.tokens?.split(',') || [];
-      
+
       if (tokens.length > 0) {
         const requestedPrices: Record<string, number> = {};
-        tokens.forEach(token => {
+        tokens.forEach((token) => {
           const address = token.toLowerCase();
           requestedPrices[address] = mockPrices[address] || 0;
         });
-        
+
         return {
           success: true,
           prices: requestedPrices,

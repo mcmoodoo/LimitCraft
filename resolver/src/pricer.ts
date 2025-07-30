@@ -51,7 +51,7 @@ export class PriceChecker {
 
       return tokenPrice;
     } catch (error) {
-      console.warn(`⚠️ Failed to get price for ${tokenAddress}:`, /* error */);
+      console.warn(`⚠️ Failed to get price for ${tokenAddress}:` /* error */);
       return null;
     }
   }

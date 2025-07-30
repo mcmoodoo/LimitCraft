@@ -1,8 +1,23 @@
-import { Address, Extension, getLimitOrderContract, Interaction, LimitOrder, MakerTraits, randBigInt } from '@1inch/limit-order-sdk';
+import {
+  Address,
+  Extension,
+  getLimitOrderContract,
+  Interaction,
+  LimitOrder,
+  MakerTraits,
+  randBigInt,
+} from '@1inch/limit-order-sdk';
 import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { maxUint256, parseUnits } from 'viem';
-import { useAccount, useChainId, useSignTypedData, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import {
+  useAccount,
+  useChainId,
+  useSignTypedData,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../tokens';
 import { ethers } from 'ethers';
 
@@ -78,7 +93,11 @@ const ERC20_ABI = [
 ] as const;
 
 // Custom hook for token approval management
-const useTokenApproval = (tokenAddress: string | undefined, spender: string, owner: string | undefined) => {
+const useTokenApproval = (
+  tokenAddress: string | undefined,
+  spender: string,
+  owner: string | undefined
+) => {
   const allowanceQuery = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: ERC20_ABI,
@@ -125,7 +144,7 @@ export default function CreateOrder() {
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
-  
+
   // Wait for approval transaction confirmation
   const approvalReceipt = useWaitForTransactionReceipt({
     hash: approvalTxHash as `0x${string}` | undefined,
@@ -159,16 +178,20 @@ export default function CreateOrder() {
 
   // Token approval hooks
   const makerApproval = useTokenApproval(form.makerAsset, limitOrderContractAddress, address);
-  const aTokenApproval = useTokenApproval(aaveReserveDataQuery.data?.aTokenAddress, ourContractAddress, address);
+  const aTokenApproval = useTokenApproval(
+    aaveReserveDataQuery.data?.aTokenAddress,
+    ourContractAddress,
+    address
+  );
   const takerApproval = useTokenApproval(form.takerAsset, ourContractAddress, address);
 
   // Calculate required amounts
   const requiredAmounts = useMemo(() => {
     if (!form.makingAmount || !form.takingAmount) return null;
-    
+
     const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
     const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
-    
+
     return { makingAmountWei, takingAmountWei };
   }, [form.makingAmount, form.takingAmount]);
 
@@ -231,7 +254,7 @@ export default function CreateOrder() {
   const handleApproval = async (item: ApprovalItem): Promise<boolean> => {
     try {
       setApprovalStatus(`Sending ${item.tokenName} approval transaction...`);
-      
+
       const hash = await writeContractAsync({
         address: item.tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
@@ -241,7 +264,7 @@ export default function CreateOrder() {
 
       setApprovalTxHash(hash);
       setApprovalStatus(`Waiting for ${item.tokenName} approval confirmation...`);
-      
+
       return true;
     } catch (error) {
       console.error(`${item.tokenName} approval failed:`, error);
@@ -254,7 +277,7 @@ export default function CreateOrder() {
   // Function to wait for approval confirmation
   const waitForApprovalConfirmation = async (tokenName: string): Promise<boolean> => {
     while (approvalTxHash && !approvalReceipt.isSuccess && !approvalReceipt.isError) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
 
     if (approvalReceipt.isError) {
@@ -268,10 +291,10 @@ export default function CreateOrder() {
 
   // Function to process all approvals
   const processApprovals = async (): Promise<boolean> => {
-    const itemsNeedingApproval = approvalItems.filter(item => item.needsApproval);
-    
+    const itemsNeedingApproval = approvalItems.filter((item) => item.needsApproval);
+
     // Log all approval statuses
-    approvalItems.forEach(item => {
+    approvalItems.forEach((item) => {
       console.log(`${item.tokenName}:`, item.tokenAddress);
       console.log(`${item.tokenName} needs approval:`, item.needsApproval);
       console.log(`${item.tokenName} current allowance:`, item.currentAllowance?.toString());
@@ -287,7 +310,7 @@ export default function CreateOrder() {
     // Process approvals sequentially
     for (const item of itemsNeedingApproval) {
       setApprovalTxHash(null); // Reset for new approval
-      
+
       const approvalSuccess = await handleApproval(item);
       if (!approvalSuccess) return false;
 
@@ -352,17 +375,17 @@ export default function CreateOrder() {
       // Only enable pre-interaction if "Use Lending Position" is toggled on
       if (form.useLendingProtocol) {
         makerTraits = makerTraits.enablePreInteraction().withExtension();
-        const preInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+        const preInteraction = new Interaction(new Address(ourContractAddress), '0x00');
         extensionData.preInteraction = preInteraction.encode();
       }
 
       // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
       if (form.supplyToLendingProtocol) {
         makerTraits = makerTraits.enablePostInteraction().withExtension();
-        const postInteraction = new Interaction(new Address(ourContractAddress), "0x00");
+        const postInteraction = new Interaction(new Address(ourContractAddress), '0x00');
         extensionData.postInteraction = postInteraction.encode();
       }
-      
+
       const extensions = new Extension(extensionData);
 
       // Create a real LimitOrder using the 1inch SDK
@@ -430,9 +453,9 @@ export default function CreateOrder() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
-    setForm((prev) => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
     }));
   };
 
@@ -520,7 +543,12 @@ export default function CreateOrder() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, useLendingProtocol: !prev.useLendingProtocol }))}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          useLendingProtocol: !prev.useLendingProtocol,
+                        }))
+                      }
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
                         form.useLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
                       }`}
@@ -546,15 +574,16 @@ export default function CreateOrder() {
                           <option value="aave">Aave</option>
                         </select>
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <img 
-                            src="https://app.aave.com/icons/tokens/aave.svg" 
-                            alt="Aave" 
+                          <img
+                            src="https://app.aave.com/icons/tokens/aave.svg"
+                            alt="Aave"
                             className="w-5 h-5"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                               const fallback = document.createElement('div');
-                              fallback.className = 'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                              fallback.className =
+                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
                               fallback.textContent = 'A';
                               target.parentNode?.appendChild(fallback);
                             }}
@@ -608,7 +637,12 @@ export default function CreateOrder() {
                     </label>
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, supplyToLendingProtocol: !prev.supplyToLendingProtocol }))}
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          supplyToLendingProtocol: !prev.supplyToLendingProtocol,
+                        }))
+                      }
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
                         form.supplyToLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
                       }`}
@@ -634,15 +668,16 @@ export default function CreateOrder() {
                           <option value="aave">Aave</option>
                         </select>
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <img 
-                            src="https://app.aave.com/icons/tokens/aave.svg" 
-                            alt="Aave" 
+                          <img
+                            src="https://app.aave.com/icons/tokens/aave.svg"
+                            alt="Aave"
                             className="w-5 h-5"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.style.display = 'none';
                               const fallback = document.createElement('div');
-                              fallback.className = 'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                              fallback.className =
+                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
                               fallback.textContent = 'A';
                               target.parentNode?.appendChild(fallback);
                             }}
@@ -696,10 +731,7 @@ export default function CreateOrder() {
                 disabled={loading}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors"
               >
-                {loading 
-                  ? (approvalStatus ? approvalStatus : 'Creating Order...') 
-                  : 'Create Order'
-                }
+                {loading ? (approvalStatus ? approvalStatus : 'Creating Order...') : 'Create Order'}
               </button>
 
               <Link
@@ -730,7 +762,7 @@ export default function CreateOrder() {
               </span>
             </p>
           </div>
-          
+
           <div className="mt-3 pt-3 border-t border-gray-700">
             <p className="text-xs text-gray-500">
               📝 Note: You may need to approve token spending before creating the order.
