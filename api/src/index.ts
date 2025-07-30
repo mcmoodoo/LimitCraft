@@ -5,6 +5,7 @@ import { Elysia } from 'elysia';
 import postgres from 'postgres';
 import { createOrder, getAllOrders, getOrderByHash, getOrdersByMaker, updateOrderStatus } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
+import { getMoralisChainId } from './chains';
 
 interface SignedOrderRequest {
   orderHash: string;
@@ -17,6 +18,22 @@ interface SignedOrderRequest {
     message: Record<string, unknown>;
   };
   extension?: string;
+}
+
+interface TokenBalance {
+  token_address: string;
+  symbol: string;
+  name: string;
+  logo?: string;
+  thumbnail?: string;
+  decimals: number;
+  balance: string;
+  possible_spam: boolean;
+  verified_contract: boolean;
+  total_supply?: string;
+  total_supply_formatted?: string;
+  percentage_relative_to_total_supply?: number;
+  security_score?: number;
 }
 
 // Database connection for order refresh functionality
@@ -266,6 +283,84 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error refreshing orders:', error);
+      set.status = 500;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
+  })
+  .get('/api/v1/tokens/:address', async ({ params, query, set }) => {
+    try {
+      const { address } = params;
+      const chainId = parseInt(query.chainId as string);
+
+      // Validate inputs
+      if (!address || !chainId) {
+        set.status = 400;
+        return {
+          success: false,
+          error: 'Address and chainId are required',
+        };
+      }
+
+      // Get Moralis chain identifier
+      const moralisChain = getMoralisChainId(chainId);
+      if (!moralisChain) {
+        set.status = 400;
+        return {
+          success: false,
+          error: `Unsupported chain ID: ${chainId}`,
+        };
+      }
+
+      // Check for Moralis API key
+      const moralisApiKey = process.env.MORALIS_API_KEY;
+      if (!moralisApiKey) {
+        set.status = 500;
+        return {
+          success: false,
+          error: 'Moralis API key not configured',
+        };
+      }
+
+      // Fetch token balances from Moralis
+      const moralisUrl = `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=${moralisChain}`;
+      
+      const response = await fetch(moralisUrl, {
+        headers: {
+          'X-API-Key': moralisApiKey,
+        },
+      });
+
+      if (!response.ok) {
+        console.error('Moralis API error:', response.status, await response.text());
+        throw new Error(`Moralis API error: ${response.status}`);
+      }
+
+      const tokens = await response.json() as TokenBalance[];
+
+      // Filter out spam tokens and add formatted balance
+      const filteredTokens = tokens
+        .filter(token => !token.possible_spam && token.verified_contract)
+        .map(token => ({
+          ...token,
+          balance_formatted: (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6),
+        }))
+        .sort((a, b) => b.security_score || 0 - (a.security_score || 0)); // Sort by security score
+
+      return {
+        success: true,
+        data: {
+          address,
+          chainId,
+          moralisChain,
+          tokens: filteredTokens,
+          count: filteredTokens.length,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching token balances:', error);
       set.status = 500;
       return {
         success: false,

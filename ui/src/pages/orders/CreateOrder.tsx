@@ -20,6 +20,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../../tokens';
+import TokenBalances from '../../components/TokenBalances';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -461,6 +462,13 @@ export default function CreateOrder() {
     }));
   };
 
+  const handleTokenSelect = (tokenAddress: string, symbol: string, field: 'makerAsset' | 'takerAsset') => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: tokenAddress,
+    }));
+  };
+
   const tokenOptions = [
     { value: USDC, label: 'USDC' },
     { value: WETH, label: 'WETH' },
@@ -499,18 +507,32 @@ export default function CreateOrder() {
         <h1 className="text-3xl font-bold">Create Order</h1>
       </div>
 
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-gray-800 rounded-lg p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <div className="bg-gray-800 rounded-lg p-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-green-400">Making (Sell)</h3>
 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="makerAsset" className="block text-sm font-medium mb-2">
-                      Asset
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label htmlFor="makerAsset" className="block text-sm font-medium">
+                        Asset
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sidebar = document.getElementById('token-balances');
+                          sidebar?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="text-xs text-blue-400 hover:text-blue-300"
+                      >
+                        Select from wallet →
+                      </button>
+                    </div>
                     <select
                       id="makerAsset"
                       name="makerAsset"
@@ -609,9 +631,21 @@ export default function CreateOrder() {
 
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="takerAsset" className="block text-sm font-medium mb-2">
-                      Asset
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label htmlFor="takerAsset" className="block text-sm font-medium">
+                        Asset
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sidebar = document.getElementById('token-balances');
+                          sidebar?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="text-xs text-blue-400 hover:text-blue-300"
+                      >
+                        Select from wallet →
+                      </button>
+                    </div>
                     <select
                       id="takerAsset"
                       name="takerAsset"
@@ -764,33 +798,51 @@ export default function CreateOrder() {
               >
                 Cancel
               </Link>
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-
-        <div className="mt-6 bg-gray-800 rounded-lg p-4">
-          <h3 className="font-semibold mb-2">Order Summary</h3>
-          <div className="text-sm text-gray-400 space-y-1">
-            <p>
-              You will sell{' '}
-              <span className="text-white font-medium">{form.makingAmount || '0'}</span> tokens
-            </p>
-            <p>
-              You will receive{' '}
-              <span className="text-white font-medium">{form.takingAmount || '0'}</span> tokens
-            </p>
-            <p>
-              Order expires in{' '}
-              <span className="text-white font-medium">
-                {expirationOptions.find((opt) => opt.value === form.expiresIn)?.label}
-              </span>
-            </p>
           </div>
 
-          <div className="mt-3 pt-3 border-t border-gray-700">
-            <p className="text-xs text-gray-500">
-              📝 Note: You may need to approve token spending before creating the order.
-            </p>
+          <div className="space-y-6">
+            <div id="token-balances">
+              <TokenBalances
+                address={address}
+                chainId={chainId}
+                onTokenSelect={(tokenAddress, symbol) => {
+                  // For now, we'll set it as makerAsset - could add UI to choose
+                  setForm((prev) => ({
+                    ...prev,
+                    makerAsset: tokenAddress,
+                  }));
+                }}
+              />
+            </div>
+
+            <div className="bg-gray-800 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Order Summary</h3>
+              <div className="text-sm text-gray-400 space-y-1">
+                <p>
+                  You will sell{' '}
+                  <span className="text-white font-medium">{form.makingAmount || '0'}</span> tokens
+                </p>
+                <p>
+                  You will receive{' '}
+                  <span className="text-white font-medium">{form.takingAmount || '0'}</span> tokens
+                </p>
+                <p>
+                  Order expires in{' '}
+                  <span className="text-white font-medium">
+                    {expirationOptions.find((opt) => opt.value === form.expiresIn)?.label}
+                  </span>
+                </p>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-gray-700">
+                <p className="text-xs text-gray-500">
+                  📝 Note: You may need to approve token spending before creating the order.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
