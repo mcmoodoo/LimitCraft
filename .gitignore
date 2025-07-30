@@ -30,3 +30,9 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+*.tsbuildinfo
+db/src/*.js
+db/src/*.js.map
+db/src/*.d.ts
+db/src/*.d.ts.map

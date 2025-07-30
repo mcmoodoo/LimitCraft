@@ -1,4 +1,14 @@
 {
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "noEmit": true
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
