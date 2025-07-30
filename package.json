@@ -3,7 +3,12 @@
   "version": "1.0.0",
   "description": "1inch Limit Order Monorepo - Arbitrum",
   "private": true,
-  "workspaces": ["api", "db", "resolver", "ui"],
+  "workspaces": [
+    "api",
+    "db",
+    "resolver",
+    "ui"
+  ],
   "scripts": {
     "dev": "concurrently 'cd api && bun dev' 'cd ui && bun dev'",
     "dev:all": "concurrently 'cd api && bun dev' 'cd ui && bun dev' 'cd resolver && bun dev'",
@@ -11,7 +16,7 @@
     "dev:ui": "cd ui && bun dev",
     "dev:resolver": "cd resolver && bun dev",
     "build:api": "cd api && bun run build",
-    "build:resolver": "cd resolver && bun run build", 
+    "build:resolver": "cd resolver && bun run build",
     "build:ui": "cd ui && bun run build",
     "typecheck": "bunx tsc --build --noEmit",
     "typecheck:watch": "bunx tsc --build --watch --noEmit",
@@ -24,7 +29,13 @@
     "resolver:start": "cd resolver && bun run start",
     "clean": "rm -rf node_modules bun.lockb api/node_modules api/bun.lockb db/node_modules db/bun.lockb resolver/node_modules resolver/bun.lockb ui/node_modules ui/bun.lockb ui/dist contracts/out contracts/cache api/dist resolver/dist .next .turbo .cache"
   },
-  "keywords": ["1inch", "limit-orders", "arbitrum", "defi", "orderbook"],
+  "keywords": [
+    "1inch",
+    "limit-orders",
+    "arbitrum",
+    "defi",
+    "orderbook"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

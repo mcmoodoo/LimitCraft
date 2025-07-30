@@ -101,7 +101,6 @@ export default function OrderDetails() {
     navigator.clipboard.writeText(text);
   };
 
-
   const cancelOrder = async () => {
     if (!orderHash) return;
 
