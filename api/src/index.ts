@@ -7,7 +7,7 @@ import {
   randBigInt,
   Sdk,
 } from '@1inch/limit-order-sdk';
-import { cors } from '@elysiajs/cors';
+// import { cors } from '@elysiajs/cors'; // Causing server to hang
 import axios from 'axios';
 import { Elysia } from 'elysia';
 import { JsonRpcProvider, Wallet } from 'ethers';
@@ -87,14 +87,17 @@ async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: 
 }
 
 const app = new Elysia()
-  .use(
-    cors({
-      origin: true, // Allow all origins during development
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-      credentials: true,
-    })
-  )
+  .onBeforeHandle(({ set }) => {
+    set.headers['Access-Control-Allow-Origin'] = '*'
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+  })
+  .options('*', ({ set }) => {
+    set.headers['Access-Control-Allow-Origin'] = '*'
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+    set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    return ''
+  })
   .get('/', () => 'Orderly backend running')
   .get('/order/:orderHash', async ({ params }) => {
     try {

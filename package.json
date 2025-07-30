@@ -20,7 +20,8 @@
     "db:setup": "cd db && bun run setup",
     "db:studio": "cd db && bun run studio",
     "db:reset": "cd db && bun run reset",
-    "resolver:start": "cd resolver && bun run start"
+    "resolver:start": "cd resolver && bun run start",
+    "clean": "rm -rf node_modules bun.lockb api/node_modules api/bun.lockb db/node_modules db/bun.lockb resolver/node_modules resolver/bun.lockb ui/node_modules ui/bun.lockb ui/dist contracts/out contracts/cache api/dist resolver/dist .next .turbo .cache"
   },
   "keywords": ["1inch", "limit-orders", "arbitrum", "defi", "orderbook"],
   "author": "",
