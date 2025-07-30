@@ -236,7 +236,7 @@ export default function OrderDetails() {
                       <span className="font-mono text-sm">{formatAddress(order.data.taker)}</span>
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(order.data.taker)}
+                        onClick={() => copyToClipboard(order.data.taker || '')}
                         className="ml-2 text-blue-400 hover:text-blue-300"
                       >
                         📋

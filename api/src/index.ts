@@ -175,12 +175,12 @@ const app = new Elysia()
       // Save to database
       const savedOrder = await createOrder({
         orderHash: body.orderHash,
-        salt: body.typedData.message.salt,
-        makerAsset: body.typedData.message.makerAsset,
-        takerAsset: body.typedData.message.takerAsset,
-        makingAmount: body.typedData.message.makingAmount,
-        takingAmount: body.typedData.message.takingAmount,
-        makerAddress: body.typedData.message.maker,
+        salt: String(body.typedData.message.salt),
+        makerAsset: String(body.typedData.message.makerAsset),
+        takerAsset: String(body.typedData.message.takerAsset),
+        makingAmount: String(body.typedData.message.makingAmount),
+        takingAmount: String(body.typedData.message.takingAmount),
+        makerAddress: String(body.typedData.message.maker),
         expiresIn: expiresIn,
         signature: body.signature,
         makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),

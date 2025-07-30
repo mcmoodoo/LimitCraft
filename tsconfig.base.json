@@ -29,11 +29,9 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
 
-    // Skip Lib Check
+    // Skip Lib Check - helps with workspace cross-imports
     "skipLibCheck": true,
-
-    // Type Roots
-    "typeRoots": ["./node_modules/@types"],
+    "skipDefaultLibCheck": true,
 
     // Path Mappings for Workspace
     "paths": {

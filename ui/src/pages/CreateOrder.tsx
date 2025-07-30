@@ -366,7 +366,7 @@ export default function CreateOrder() {
         .withNonce(nonce)
         .allowMultipleFills();
 
-      const extensionData: Record<string, unknown> = {
+      const extensionData = {
         ...Extension.EMPTY,
       };
 
