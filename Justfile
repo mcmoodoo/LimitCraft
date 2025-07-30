@@ -21,10 +21,10 @@ default:
     @just --list
 
 get-order order_hash:
-    xh GET {{LOCAL_API_URL}}/order/{{order_hash}}
+    xh GET {{LOCAL_API_URL}}/api/v1/orders/{{order_hash}}
 
 get-orders:
-    xh GET {{LOCAL_API_URL}}/orders
+    xh GET {{LOCAL_API_URL}}/api/v1/orders
 
 create-order:
     xh POST {{LOCAL_API_URL}}/limit-order \

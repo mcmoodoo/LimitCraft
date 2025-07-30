@@ -65,21 +65,31 @@ async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: 
 const app = new Elysia()
   .onBeforeHandle(({ set }) => {
     set.headers['Access-Control-Allow-Origin'] = '*';
-    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
     set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
   })
   .options('*', ({ set }) => {
     set.headers['Access-Control-Allow-Origin'] = '*';
-    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS';
+    set.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH';
     set.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization';
     return '';
   })
-  .get('/', () => 'Orderly backend running')
-  .get('/order/:orderHash', async ({ params }) => {
+  .get('/', () => ({ 
+    status: 'ok', 
+    message: 'Orderly API running',
+    version: 'v1',
+    timestamp: new Date().toISOString() 
+  }))
+  .get('/health', () => ({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString() 
+  }))
+  .get('/api/v1/orders/:orderHash', async ({ params, set }) => {
     try {
       const order = await getOrderByHash(params.orderHash);
 
       if (!order) {
+        set.status = 404;
         return {
           success: false,
           error: 'Order not found',
@@ -111,13 +121,14 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error fetching order:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   })
-  .get('/orders', async ({ query }) => {
+  .get('/api/v1/orders', async ({ query, set }) => {
     try {
       try {
         await refreshExpiredOrders();
@@ -155,13 +166,14 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error fetching orders:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   })
-  .post('/submit-signed-order', async ({ body }: { body: SignedOrderRequest }) => {
+  .post('/api/v1/orders', async ({ body, set }: { body: SignedOrderRequest, set: any }) => {
     try {
       // Calculate expiration
       const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
@@ -182,6 +194,7 @@ const app = new Elysia()
         extension: body.extension || '0x',
       });
 
+      set.status = 201;
       return {
         success: true,
         message: 'Signed order saved successfully',
@@ -193,13 +206,14 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error processing signed order:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   })
-  .post('/order/:orderHash/cancel', async ({ params }) => {
+  .patch('/api/v1/orders/:orderHash/cancel', async ({ params, set }) => {
     try {
       const { orderHash } = params;
 
@@ -207,6 +221,7 @@ const app = new Elysia()
       const order = await getOrderByHash(orderHash);
 
       if (!order) {
+        set.status = 404;
         return {
           success: false,
           error: 'Order not found',
@@ -214,6 +229,7 @@ const app = new Elysia()
       }
 
       if (order.status !== 'pending') {
+        set.status = 400;
         return {
           success: false,
           error: `Cannot cancel order. Current status: ${order.status}`,
@@ -229,13 +245,14 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error cancelling order:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   })
-  .post('/refresh-orders', async () => {
+  .post('/api/v1/admin/refresh-orders', async ({ set }) => {
     try {
       const result = await refreshExpiredOrders();
 
@@ -245,13 +262,14 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error refreshing orders:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
   })
-  .get('/prices', async ({ query }) => {
+  .get('/api/v1/prices', async ({ query, set }) => {
     try {
       // Mock prices - static values for now
       const mockPrices: Record<string, number> = {
@@ -292,6 +310,7 @@ const app = new Elysia()
       };
     } catch (error) {
       console.error('Error fetching prices:', error);
+      set.status = 500;
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

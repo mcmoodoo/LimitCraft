@@ -37,7 +37,7 @@ export default function OrderDetails() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:3000/order/${orderHash}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}`);
       const result = await response.json();
 
       if (result.success) {
@@ -108,8 +108,8 @@ export default function OrderDetails() {
     setCancelResult(null);
 
     try {
-      const response = await fetch(`http://localhost:3000/order/${orderHash}/cancel`, {
-        method: 'POST',
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}/cancel`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
