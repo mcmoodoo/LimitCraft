@@ -1,177 +1,161 @@
 # Order Resolver
 
-Automated order resolver and filler for the orderbook application. This service continuously monitors the database for pending orders, checks their profitability, and automatically fills profitable orders using the 1inch Limit Order Protocol.
+Automated order resolver and filler for the Orderly application. This service continuously monitors the database for pending orders, checks their profitability, and automatically fills profitable orders using the 1inch Limit Order Protocol.
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 resolver/
 ├── src/
-│   ├── index.ts      # Main polling scheduler
+│   ├── index.ts      # Main entry point and polling scheduler
 │   ├── monitor.ts    # Database order monitoring
-│   ├── pricer.ts     # Price checking & profitability
-│   ├── filler.ts     # 1inch contract interaction
-│   ├── wallet.ts     # Wallet management
-│   └── config.ts     # Configuration
+│   ├── pricer.ts     # Price checking & profitability calculation
+│   ├── filler.ts     # 1inch contract interaction and order filling
+│   ├── wallet.ts     # Wallet management and balance checks
+│   ├── config.ts     # Configuration management
+│   └── abi.ts        # Contract ABIs
+├── scripts/
+│   └── fill.ts       # Manual order filling script
 ├── package.json
-├── .env              # Your environment variables
-└── .env.example      # Template
+├── .env              # Environment variables (create from .env.example)
+└── .env.example      # Environment template
 ```
 
-## 🔧 Key Features
+## Key Features
 
-- **✅ Polling scheduler** - Checks orders every 30 seconds
-- **✅ Database monitoring** - Finds pending, non-expired orders
-- **✅ Price checking** - Uses 1inch API for token prices
-- **✅ Profitability calculation** - Accounts for gas costs
-- **✅ Order filling** - Calls 1inch `fillOrder()` contract
-- **✅ Wallet management** - Balance checks and transaction handling
-- **✅ Error handling** - Graceful shutdown and error recovery
+- **Automated Polling** - Checks orders every 30 seconds by default
+- **Database Integration** - Monitors pending, non-expired orders  
+- **Price Discovery** - Uses 1inch API for real-time token prices
+- **Profitability Analysis** - Calculates net profit after gas costs
+- **Order Execution** - Fills orders via 1inch Limit Order Protocol
+- **Wallet Management** - Balance validation and transaction handling
+- **Error Recovery** - Graceful error handling and logging
 
-## 🚀 Setup and Usage
+## Setup and Usage
 
-### 1. Set up environment
+### Environment Configuration
 
 ```bash
 cd resolver
 cp .env.example .env
 ```
 
-Edit `.env` with your configuration:
+Configure your `.env` file:
 
 ```bash
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=our-limit-order-db
+# Database Connection
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/our-limit-order-db
 
-# Blockchain (Arbitrum)
-ARBITRUM_RPC=https://arb1.arbitrum.io/rpc
-RESOLVER_PRIVATE_KEY=0x1234...your-private-key-here
+# Blockchain Configuration (Arbitrum)
+ARBITRUM_RPC_URL=https://arb1.arbitrum.io/rpc
+RESOLVER_PRIVATE_KEY=your_private_key_here
 
 # 1inch API
-ONE_INCH_API_KEY=your-1inch-api-key-here
+ONE_INCH_API_KEY=your_1inch_api_key_here
 
 # Resolver Settings
-POLL_INTERVAL_MS=30000              # 30 seconds
+POLL_INTERVAL_MS=30000              # Polling frequency
 MIN_PROFIT_WEI=50000000000000000    # 0.05 ETH minimum profit
-MAX_GAS_PRICE=50000000000           # 50 gwei max gas price
+MAX_GAS_PRICE=50000000000           # 50 gwei gas limit
 ```
 
-### 2. Install dependencies
+### Installation and Startup
 
 ```bash
+# Install dependencies
 bun install
-```
 
-### 3. Run the resolver
-
-```bash
 # Start the resolver
 bun run start
 
-# Or for development with auto-reload
+# Development mode with auto-reload
 bun run dev
 ```
 
-## 💡 How It Works
+## How It Works
 
-The resolver operates in a continuous polling loop:
+The resolver operates in a continuous polling cycle:
 
-1. **Monitors database** for pending orders (status='pending', not expired)
-2. **Marks expired orders** as expired in the database
-3. **Checks market prices** via 1inch API for maker/taker assets
-4. **Calculates profitability**:
-   - Converts token amounts to USD
-   - Calculates profit in ETH
-   - Subtracts estimated gas costs
-   - Only proceeds if profit > minimum threshold
-5. **Fills profitable orders** by calling 1inch `fillOrder()` contract
-6. **Updates database** status to 'filled' on successful execution
+1. **Database Monitoring** - Queries for orders with status='pending' and not expired
+2. **Order Validation** - Marks expired orders and validates remaining orders
+3. **Price Discovery** - Fetches current market prices via 1inch API
+4. **Profitability Analysis**:
+   - Converts token amounts to USD values
+   - Calculates gross profit in ETH
+   - Estimates gas costs
+   - Only proceeds if net profit exceeds threshold
+5. **Order Execution** - Calls 1inch Limit Order Protocol contract
+6. **Status Updates** - Updates database with execution results
 
-## 📊 Profitability Logic
+## Profitability Calculation
 
 ```typescript
-// Simplified profitability calculation:
-takingAmountUSD - makingAmountUSD = grossProfitUSD
-grossProfitETH - gasCostETH = netProfitETH
+// Basic profitability logic:
+const grossProfitUSD = takingAmountUSD - makingAmountUSD
+const grossProfitETH = grossProfitUSD / ethPriceUSD
+const netProfitETH = grossProfitETH - estimatedGasCostETH
 
-// Only fill if:
+// Fills order only if:
 netProfitETH >= MIN_PROFIT_WEI
 ```
 
-## 💰 Wallet Requirements
+## Wallet Requirements
 
-Your resolver wallet needs:
+The resolver wallet must have:
 
-- **ETH balance** for gas fees (recommended: >0.1 ETH)
-- **Token balances** to fulfill orders, OR
-- **Flash loan integration** (not implemented - would need Aave/dYdX)
+- **ETH for gas** - Minimum 0.1 ETH recommended
+- **Token balances** - Sufficient tokens to fulfill orders
+- **Private key security** - Keep private keys secure and never commit to repo
 
-## 🛡️ Safety Features
+## Safety Features
 
-- **Balance checks** - Won't attempt fills if insufficient ETH
-- **Gas estimation** - Estimates gas before execution
-- **Predicate validation** - Checks order validity before filling
-- **Error handling** - Graceful error recovery and logging
-- **Graceful shutdown** - Handles SIGINT/SIGTERM properly
+- **Balance Validation** - Checks ETH balance before attempting fills
+- **Gas Estimation** - Pre-execution gas cost estimation
+- **Order Validation** - Validates order parameters and predicates
+- **Error Recovery** - Graceful error handling with detailed logging
+- **Graceful Shutdown** - Proper cleanup on process termination
 
-## 📈 Monitoring
+## Monitoring and Logging
 
-The resolver provides detailed console logging:
+The resolver provides comprehensive console logging for monitoring:
 
 ```
 🚀 Starting Order Resolver...
 📊 Poll interval: 30000ms
-💰 Min profit: 50000000000000000 wei
+💰 Min profit threshold: 0.05 ETH
 👛 Wallet balance: 0.1234 ETH
 🔍 Checking for orders to fill...
 📊 Found 3 pending orders
 🔍 Analyzing order 0xabc123...
-💰 Order 0xabc123 is profitable! Estimated profit: 0.0750 ETH
-🔄 Attempting to fill order 0xabc123
-📤 Fill transaction sent: 0xdef456...
+💰 Order 0xabc123 is profitable! Net profit: 0.075 ETH
+🔄 Filling order 0xabc123
 ✅ Order filled successfully: 0xdef456
 ```
 
-## 🔧 Configuration Options
+## Configuration Options
 
-| Variable               | Default           | Description                                |
-| ---------------------- | ----------------- | ------------------------------------------ |
-| `POLL_INTERVAL_MS`     | 30000             | How often to check for orders (ms)         |
-| `MIN_PROFIT_WEI`       | 50000000000000000 | Minimum profit threshold (0.05 ETH)        |
-| `MAX_GAS_PRICE`        | 50000000000       | Maximum gas price willing to pay (50 gwei) |
-| `RESOLVER_PRIVATE_KEY` | -                 | Private key for resolver wallet            |
-| `ONE_INCH_API_KEY`     | -                 | 1inch API key for price data               |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POLL_INTERVAL_MS` | 30000 | Polling frequency in milliseconds |
+| `MIN_PROFIT_WEI` | 50000000000000000 | Minimum profit threshold (0.05 ETH) |
+| `MAX_GAS_PRICE` | 50000000000 | Maximum gas price limit (50 gwei) |
+| `RESOLVER_PRIVATE_KEY` | - | Resolver wallet private key |
+| `ONE_INCH_API_KEY` | - | 1inch API key for price data |
 
-## 🚨 Important Notes
-
-- **Private Key Security**: Keep your resolver private key secure and never commit it to version control
-- **Capital Requirements**: Ensure your wallet has sufficient tokens to fill orders
-- **Gas Management**: Monitor gas prices and adjust `MAX_GAS_PRICE` accordingly
-- **API Limits**: 1inch API has rate limits - adjust polling frequency if needed
-- **Network**: Currently configured for Arbitrum mainnet
-
-## 🛠️ Development
-
-For development and testing:
+## Development
 
 ```bash
-# Watch mode with auto-reload
+# Development mode with hot reload
 bun run dev
 
-# Build TypeScript
-bun run build
+# Manual order filling script
+bun run scripts/fill.ts
 ```
 
-## 📝 Order Flow
+## Important Considerations
 
-1. User creates order via frontend
-2. Order saved to database with status='pending'
-3. Resolver detects order in next polling cycle
-4. Resolver checks profitability via price APIs
-5. If profitable, resolver calls 1inch contract to fill order
-6. Database updated to status='filled' on success
-7. User sees filled order in frontend
+- **Security**: Never commit private keys to version control
+- **Capital**: Ensure sufficient token balances for order fulfillment  
+- **Gas Costs**: Monitor and adjust gas price limits based on network conditions
+- **API Limits**: 1inch API has rate limits - adjust polling frequency accordingly
+- **Network**: Currently configured for Arbitrum mainnet

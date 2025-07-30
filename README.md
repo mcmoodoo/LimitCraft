@@ -1,77 +1,58 @@
-# 🏮 1inch Limit Order - Arbitrum 🌸
+# Orderly - 1inch Limit Order Protocol
 
 A complete orderbook application for creating and managing 1inch limit orders on Arbitrum. Features include order creation, automated order filling, and a React frontend with Web3 wallet integration.
 
-## 🏯 Project Structure
+## Project Structure
 
-⛩️ **`api/`** - Elysia.js backend API for order management
-⛩️ **`ui/`** - React frontend with RainbowKit wallet integration
-⛩️ **`db/`** - PostgreSQL database layer with Drizzle ORM
-⛩️ **`resolver/`** - Automated order resolver and filler
-⛩️ **`contracts/`** - Foundry smart contracts with 1inch integration
-⛩️ **`anvil/`** - Local blockchain configuration for development
+- **`api/`** - Elysia.js backend API for order management
+- **`ui/`** - React frontend with RainbowKit and Wagmi wallet integration  
+- **`db/`** - PostgreSQL database layer with Drizzle ORM
+- **`resolver/`** - Automated order resolver and filler
+- **`contracts/`** - Foundry smart contracts with 1inch Limit Order Protocol integration
 
-## 🏗️ Smart Contracts Setup
+## Smart Contracts
 
-The `contracts/` folder contains Foundry-based smart contracts that integrate with the 1inch Limit Order Protocol.
+The `contracts/` directory contains Foundry-based smart contracts for 1inch Limit Order Protocol integration, including custom interaction managers for lending protocols.
 
-### 🔧 Prerequisites for Contracts
-
-🎋 [Foundry](https://book.getfoundry.sh/getting-started/installation) - Ethereum development toolkit
-🎋 Git - For submodule dependencies
-
-### 🚀 Contracts Quick Start
+### Setup
 
 ```bash
-# Install Foundry (if not already installed)
-curl -L https://foundry.paradigm.xyz | bash
-foundryup
-
-# Initialize git submodules (if not done in main setup)
+# Initialize git submodules
 git submodule update --init --recursive
 
 # Navigate to contracts directory
 cd contracts
-
-# Install local dependencies (forge-std, etc.)
-forge install
 
 # Build contracts
 forge build
 
 # Run tests
 forge test
-
-# Run tests with verbose output
-forge test -vv
 ```
 
-### 📦 Dependencies
+### Dependencies
 
-The contracts folder includes these key dependencies:
+- **1inch Limit Order Protocol** - Core limit order functionality
+- **OpenZeppelin Contracts** - Standard secure contract implementations  
+- **1inch Solidity Utils** - Utility libraries
 
-🌟 **1inch Limit Order Protocol** - Core limit order functionality
-🌟 **OpenZeppelin Contracts** - Standard secure contract implementations  
-🌟 **1inch Solidity Utils** - Utility libraries for 1inch integration
+Dependencies are managed as git submodules in `lib/`.
 
-Dependencies are managed as git submodules in `lib/`:
+## Prerequisites
 
-## 📋 Prerequisites
+- Bun runtime
+- Podman or Docker (for PostgreSQL)
+- Just command runner (optional, for database recipes)
 
-🎋 Bun runtime
-🎋 Node.js (for package compatibility)
-🎋 Podman or Docker (for PostgreSQL)
-🎋 Just command runner (optional, for database recipes)
+## Quick Start
 
-## 🚀 Quick Start
-
-### 1️⃣ Database Setup 🗄️
+### Database Setup
 
 Create and start a local PostgreSQL container:
 
 ```bash
-# Using Just recipes (recommended)
-just run-postgres-container
+# Using Just recipes
+just postgres-container-run
 
 # Or manually with Podman
 podman run --name our-limit-order-db \
@@ -86,85 +67,89 @@ Initialize the database:
 
 ```bash
 cd db
+bun install
 bun run setup
 ```
 
-### 2️⃣ Application Setup ⚙️
+### Application Setup
 
-Initialize git submodules (required for smart contracts):
+Initialize git submodules:
 
 ```bash
-# Initialize and update all git submodules
 git submodule update --init --recursive
 ```
 
-Install dependencies in all directories:
+Install dependencies:
 
 ```bash
-bun run install:all
+bun install
 ```
 
-Start development servers (API + Frontend):
+Start development servers:
 
 ```bash
+# Start API + UI
 bun run dev
+
+# Or start all services including resolver
+bun run dev:all
 ```
 
-### 3️⃣ Order Resolver (Optional) 🤖
+### Order Resolver (Optional)
 
 To enable automated order filling:
 
 ```bash
 cd resolver
 cp .env.example .env
-# Edit .env with your private key and 1inch API key
+# Configure with your private key and 1inch API key
 bun install
 bun run start
 ```
 
-## 📜 Available Scripts
+## Available Scripts
 
-### 🎯 Main Scripts
+### Development
 
-🌟 `bun run dev` - Start both API and frontend concurrently
-🌟 `bun run dev:api` - Start API server only (watch mode)
-🌟 `bun run dev:ui` - Start frontend only  
-🌟 `bun run start` - Run the main script (Note: scripts/index.ts needs to be created)
+- `bun run dev` - Start API and frontend concurrently
+- `bun run dev:all` - Start API, frontend, and resolver
+- `bun run dev:api` - Start API server only
+- `bun run dev:ui` - Start frontend only
+- `bun run dev:resolver` - Start resolver only
 
-### 🏗️ Build & Production
+### Build
 
-🔨 `bun run build:prod` - Production build sequence (Note: Some referenced scripts may need to be implemented)
-🔨 `bun run rebuild` - Clean everything and rebuild from scratch
-🔨 `bun run install:all` - Install dependencies in all directories
+- `bun run build:api` - Build API
+- `bun run build:ui` - Build frontend  
+- `bun run build:resolver` - Build resolver
 
-### ✨ Code Quality
+### Code Quality
 
-🎨 `bun run typecheck` - TypeScript type checking
-🎨 `bun run lint` - Lint code with Biome
-🎨 `bun run lint:fix` - Fix linting issues with Biome
-🎨 `bun run format` - Format code with Biome
+- `bun run typecheck` - TypeScript type checking
+- `bun run lint` - Lint code with Biome
+- `bun run format` - Format code with Biome
 
-## 🗃️ Database Management
+## Database Management
 
-### 🐘 PostgreSQL Container Management
+### PostgreSQL Container
 
 Using Just recipes:
 
 ```bash
 # Start PostgreSQL container
-just run-postgres-container
+just postgres-container-run
 
 # Connect to local database
 just psql-connect-local
 
-# Connect to remote database (using env vars)
+# Connect to remote database
 just psql-connect-remote
 
 # Stop and remove container
-just rm-postgres-container
+just postgres-container-remove
 ```
 
-### ⚡ Database Operations
+### Database Operations
 
 ```bash
 cd db
@@ -172,62 +157,29 @@ cd db
 # Initialize database and create tables
 bun run setup
 
-# Create database only
-bun run init
-
-# Create tables only
-bun run create-tables
-
-# Reset database (drop all tables)
+# Reset database
 bun run reset
 
 # Open Drizzle Studio
 bun run studio
 ```
 
-## 🤖 Order Resolver
+## Architecture
 
-The resolver automatically monitors the database for pending orders and fills profitable ones.
+The application follows a microservices architecture:
 
-### 🛠️ Setup
+1. **Order Creation**: Users create orders via the React frontend
+2. **API Storage**: Orders are stored in PostgreSQL via the Elysia.js API
+3. **Order Monitoring**: Resolver service polls for pending orders
+4. **Profitability Check**: Market prices checked via 1inch API
+5. **Order Filling**: Profitable orders filled via 1inch Limit Order Protocol
+6. **Status Updates**: Database updated with execution status
 
-```bash
-cd resolver
-cp .env.example .env
-# Configure your private key and API keys
-bun install
-```
+## Technology Stack
 
-### 💫 Usage
-
-```bash
-# Start resolver
-bun run start
-
-# Development mode with auto-reload
-bun run dev
-```
-
-### ⚙️ Configuration
-
-🔑 Key environment variables:
-
-🎌 `RESOLVER_PRIVATE_KEY` - Private key for resolver wallet
-🎌 `ONE_INCH_API_KEY` - 1inch API key for price data
-🎌 `MIN_PROFIT_WEI` - Minimum profit threshold (default: 0.05 ETH)
-🎌 `POLL_INTERVAL_MS` - How often to check orders (default: 30s)
-
-## 🌊 Architecture Flow
-
-1️⃣ **Order Creation**: User creates order via frontend → API saves to database
-2️⃣ **Order Monitoring**: Resolver polls database for pending orders
-3️⃣ **Profitability Check**: Resolver checks market prices via 1inch API
-4️⃣ **Order Filling**: Profitable orders are filled via 1inch contract
-5️⃣ **Status Updates**: Database updated with fill status
-
-## 💬 Suggested on discord
-
-You need to make sure you have the proper feeTaker extension when submitting the limit order
-cc @Rashid | X:mcmoodoo @abzel23 @hwang Lingo @Darius.TM 🥷 @di 龙小小 @sajal
-
-essentially just use the latest verison of the @1inch/fusion-sdk and the createOrder function should handle building the feeTaker extension. This does require an extra API call to get the fee, but you can also cache the request, if the API rejects the order it's likely the whitelist changed or fee tier changed and you'll have to re-fetch the data anyway
+- **Frontend**: React + Vite + TailwindCSS + RainbowKit + Wagmi
+- **Backend**: Elysia.js (Bun runtime)
+- **Database**: PostgreSQL + Drizzle ORM
+- **Blockchain**: 1inch Limit Order Protocol on Arbitrum
+- **Smart Contracts**: Foundry + OpenZeppelin
+- **Automation**: Custom resolver service
