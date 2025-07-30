@@ -3,7 +3,7 @@ import { and, eq, lt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { Elysia } from 'elysia';
 import postgres from 'postgres';
-import { createOrder, getAllOrders, getOrderByHash, updateOrderStatus } from '../../db/src/index';
+import { createOrder, getAllOrders, getOrderByHash, getOrdersByMaker, updateOrderStatus } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
 
 interface SignedOrderRequest {
@@ -138,8 +138,12 @@ const app = new Elysia()
 
       const limit = parseInt(query.limit || '100');
       const offset = (parseInt(query.page || '1') - 1) * limit;
+      const makerAddress = query.maker as string;
 
-      const orders = await getAllOrders(limit, offset);
+      // Filter by maker address if provided
+      const orders = makerAddress 
+        ? await getOrdersByMaker(makerAddress, limit, offset)
+        : await getAllOrders(limit, offset);
 
       // Transform database structure to match frontend expectations
       const transformedOrders = orders.map((order) => ({

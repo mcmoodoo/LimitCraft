@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAccount } from 'wagmi';
 import { navigationHelpers } from '../../router/navigation';
 
 interface Order {
@@ -21,15 +22,24 @@ interface Order {
 }
 
 export default function OrdersList() {
+  const { address, isConnected } = useAccount();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
+    // Don't fetch orders if wallet is not connected
+    if (!isConnected || !address) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`
-      );
+      const url = new URL(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`);
+      url.searchParams.append('maker', address);
+      
+      const response = await fetch(url.toString());
       const result = await response.json();
 
       if (result.success) {
@@ -42,7 +52,7 @@ export default function OrdersList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isConnected, address]);
 
   useEffect(() => {
     fetchOrders();
@@ -87,6 +97,18 @@ export default function OrdersList() {
     return (Number(num) / 1e18).toFixed(6);
   };
 
+  if (!isConnected) {
+    return (
+      <div className="text-center py-12">
+        <h1 className="text-3xl font-bold mb-6">Orders</h1>
+        <div className="bg-yellow-900/20 border border-yellow-500 rounded-lg p-6 max-w-md mx-auto">
+          <h3 className="text-yellow-400 font-semibold mb-2">Wallet Not Connected</h3>
+          <p className="text-yellow-300 mb-4">Please connect your wallet to view your orders.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -118,7 +140,7 @@ export default function OrdersList() {
 
       {orders.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-400 text-lg">No orders found</p>
+          <p className="text-gray-400 text-lg">No orders found for your wallet</p>
           <Link
             to={navigationHelpers.toCreateOrder()}
             className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition-colors"
@@ -128,7 +150,7 @@ export default function OrdersList() {
         </div>
       ) : (
         <div className="space-y-4">
-          You have {orders.length} orders
+          You have {orders.length} order{orders.length !== 1 ? 's' : ''}
           {orders.map((order) => (
             <div
               key={order.orderHash}
