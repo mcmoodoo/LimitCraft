@@ -89,10 +89,10 @@ async function refreshExpiredOrders(): Promise<{ expiredCount: number; message: 
 const app = new Elysia()
   .use(
     cors({
-      origin: ['http://127.0.0.1:5173', 'http://localhost:5173'], // Allow all origins for debugging
+      origin: true, // Allow all origins during development
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization'],
-      credentials: true, // for cookies or Authorization headers
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+      credentials: true,
     })
   )
   .get('/', () => 'Orderly backend running')
