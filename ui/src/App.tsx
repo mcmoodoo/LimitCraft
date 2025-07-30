@@ -2,7 +2,6 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { useAccount } from 'wagmi';
 import CreateOrder from './pages/CreateOrder';
-import EIP712Demo from './pages/EIP712Demo';
 import OrderDetails from './pages/OrderDetails';
 import Orders from './pages/Orders';
 
@@ -14,7 +13,6 @@ function Navigation() {
     { path: '/', label: 'Home' },
     { path: '/orders', label: 'Orders' },
     { path: '/create-order', label: 'Create Order' },
-    { path: '/eip712-demo', label: 'EIP-712 Demo' },
   ];
 
   return (
@@ -61,12 +59,6 @@ function HomePage() {
                 Create Order
               </Link>
             </div>
-            <Link
-              to="/eip712-demo"
-              className="w-full bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg transition-colors text-center block mt-4"
-            >
-              🔏 EIP-712 Signing Demo
-            </Link>
           </div>
         ) : (
           <div className="bg-gray-800 rounded-lg p-6">
@@ -103,7 +95,6 @@ function AppContent() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/order/:orderHash" element={<OrderDetails />} />
             <Route path="/create-order" element={<CreateOrder />} />
-            <Route path="/eip712-demo" element={<EIP712Demo />} />
           </Routes>
         </div>
       </main>
