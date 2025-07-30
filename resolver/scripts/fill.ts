@@ -3,9 +3,9 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
-import { orders } from '../../db/src/schema.js';
-import { config } from '../src/config.js';
-import { orderFiller } from '../src/filler.js';
+import { orders } from '../../db/src/schema';
+import { config } from '../src/config';
+import { orderFiller } from '../src/filler';
 
 // Get order hash from command line
 const orderHash = process.argv[2];

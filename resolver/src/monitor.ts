@@ -1,11 +1,11 @@
 import { and, eq, gt, lt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import type { Order } from '../../db/src/schema.js';
+import type { Order } from '../../db/src/schema';
 
 // Import schema from db package
-import { orders } from '../../db/src/schema.js';
-import { config } from './config.js';
+import { orders } from '../../db/src/schema';
+import { config } from './config';
 
 const connectionString = `postgresql://${config.db.user}:${config.db.password}@${config.db.host}:${config.db.port}/${config.db.database}`;
 const client = postgres(connectionString, { max: 5 });

@@ -3,13 +3,8 @@ import { and, eq, lt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { Elysia } from 'elysia';
 import postgres from 'postgres';
-import {
-  createOrder,
-  getAllOrders,
-  getOrderByHash,
-  updateOrderStatus,
-} from '../../db/src/index.js';
-import { orders } from '../../db/src/schema.js';
+import { createOrder, getAllOrders, getOrderByHash, updateOrderStatus } from '../../db/src/index';
+import { orders } from '../../db/src/schema';
 
 interface SignedOrderRequest {
   orderHash: string;

@@ -1,6 +1,6 @@
 import axios from 'axios';
-import type { Order } from '../../db/src/schema.js';
-import { config } from './config.js';
+import type { Order } from '../../db/src/schema';
+import { config } from './config';
 
 interface TokenPrice {
   price: string; // Price in USD

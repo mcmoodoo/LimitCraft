@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { client, db } from './connection.js';
+import { client, db } from './connection';
 
 async function main() {
   console.log('Resetting database (dropping all tables and types)...');

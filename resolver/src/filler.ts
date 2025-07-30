@@ -8,11 +8,11 @@ import {
   TakerTraits,
 } from '@1inch/limit-order-sdk';
 import { Contract, ethers, parseUnits } from 'ethers';
-import type { Order } from '../../db/src/schema.js';
-import { AGGREGATION_ROUTER_ABI } from './abi.js';
-import { config } from './config.js';
-import { orderMonitor } from './monitor.js';
-import { walletManager } from './wallet.js';
+import type { Order } from '../../db/src/schema';
+import { AGGREGATION_ROUTER_ABI } from './abi';
+import { config } from './config';
+import { orderMonitor } from './monitor';
+import { walletManager } from './wallet';
 
 interface FillResult {
   success: boolean;

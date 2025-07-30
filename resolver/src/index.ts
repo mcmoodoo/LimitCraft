@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import type { Order } from '../../db/src/schema.js';
-import { config } from './config.js';
-import { orderFiller } from './filler.js';
-import { orderMonitor } from './monitor.js';
-import { priceChecker } from './pricer.js';
-import { walletManager } from './wallet.js';
+import type { Order } from '../../db/src/schema';
+import { config } from './config';
+import { orderFiller } from './filler';
+import { orderMonitor } from './monitor';
+import { priceChecker } from './pricer';
+import { walletManager } from './wallet';
 
 class OrderResolver {
   private isRunning = false;

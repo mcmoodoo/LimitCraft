@@ -1,5 +1,5 @@
 import { Contract, JsonRpcProvider, Wallet } from 'ethers';
-import { config } from './config.js';
+import { config } from './config';
 
 export class WalletManager {
   public provider: JsonRpcProvider;

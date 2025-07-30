@@ -1,6 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
-import { db } from './connection.js';
-import { type NewOrder, type Order, orders } from './schema.js';
+import { db } from './connection';
+import { type NewOrder, type Order, orders } from './schema';
 
 export async function createOrder(orderData: NewOrder): Promise<Order> {
   const [newOrder] = await db.insert(orders).values(orderData).returning();
