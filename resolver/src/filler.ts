@@ -9,10 +9,10 @@ import {
 } from '@1inch/limit-order-sdk';
 import { Contract, ethers, parseUnits } from 'ethers';
 import type { Order } from '../../db/src/schema.js';
+import { AGGREGATION_ROUTER_ABI } from './abi.js';
 import { config } from './config.js';
 import { orderMonitor } from './monitor.js';
 import { walletManager } from './wallet.js';
-import { AGGREGATION_ROUTER_ABI } from './abi.js';
 
 interface FillResult {
   success: boolean;
