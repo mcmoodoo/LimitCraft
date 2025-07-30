@@ -90,11 +90,15 @@ export class OrderFiller {
             error: 'Order predicate check failed',
           };
         }
-      } catch (predicateError: any) {
+      } catch (predicateError: unknown) {
         console.warn('⚠️ Could not check predicate, proceeding anyway:', predicateError);
 
         // If we get BUFFER_OVERRUN, the contract might not exist or function might be wrong
-        if (predicateError.code === 'BUFFER_OVERRUN') {
+        if (
+          predicateError instanceof Error &&
+          'code' in predicateError &&
+          predicateError.code === 'BUFFER_OVERRUN'
+        ) {
           console.error('🚨 BUFFER_OVERRUN suggests contract/function issue. Checking contract...');
 
           // Test basic contract existence
@@ -172,15 +176,17 @@ export class OrderFiller {
       } else {
         throw new Error('Transaction failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`❌ Error filling order ${order.orderHash}:`, error);
 
       // Handle specific error cases
       let errorMessage = 'Unknown error';
-      if (error.reason) {
-        errorMessage = error.reason;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error instanceof Error) {
+        if ('reason' in error && typeof error.reason === 'string') {
+          errorMessage = error.reason;
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       return {
@@ -223,9 +229,11 @@ export class OrderFiller {
         offsets: BigInt(orderStruct.makerTraits),
         interactions: EMPTY_BYTES, // Default for missing field
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error reconstructing order struct with SDK:', error);
-      throw new Error(`Failed to reconstruct order struct: ${error.message}`);
+      throw new Error(
+        `Failed to reconstruct order struct: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -259,9 +267,11 @@ export class OrderFiller {
 
       // Reconstruct the LimitOrder using the SDK
       return new LimitOrder(orderInfo, makerTraits, extension);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error reconstructing LimitOrder with SDK:', error);
-      throw new Error(`Failed to reconstruct LimitOrder: ${error.message}`);
+      throw new Error(
+        `Failed to reconstruct LimitOrder: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -288,7 +298,7 @@ export class OrderFiller {
         sufficient: balance >= requiredAmount,
         balance: balance.toString(),
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error checking takerAsset balance:', error);
       return {
         sufficient: false,
@@ -362,14 +372,16 @@ export class OrderFiller {
       } else {
         throw new Error('Approval transaction failed');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Error ensuring takerAsset approval:', error);
 
       let errorMessage = 'Unknown approval error';
-      if (error.reason) {
-        errorMessage = error.reason;
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error instanceof Error) {
+        if ('reason' in error && typeof error.reason === 'string') {
+          errorMessage = error.reason;
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       return {

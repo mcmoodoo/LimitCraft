@@ -1,18 +1,7 @@
-import {
-  Address,
-  Api,
-  Extension,
-  LimitOrder,
-  MakerTraits,
-  randBigInt,
-  Sdk,
-} from '@1inch/limit-order-sdk';
-// import { cors } from '@elysiajs/cors'; // Causing server to hang
-import axios from 'axios';
+import { MakerTraits } from '@1inch/limit-order-sdk';
 import { and, eq, lt } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { Elysia } from 'elysia';
-import { JsonRpcProvider, Wallet } from 'ethers';
 import postgres from 'postgres';
 import {
   createOrder,
@@ -22,23 +11,15 @@ import {
 } from '../../db/src/index.js';
 import { orders } from '../../db/src/schema.js';
 
-interface LimitOrderRequest {
-  makerAsset: string;
-  takerAsset: string;
-  makingAmount: string;
-  takingAmount: string;
-  expiresIn?: number;
-}
-
 interface SignedOrderRequest {
   orderHash: string;
   signature: string;
   makerTraits: string;
   chainId: number;
   typedData: {
-    domain: any;
-    types: any;
-    message: any;
+    domain: Record<string, unknown>;
+    types: Record<string, unknown>;
+    message: Record<string, unknown>;
   };
   extension?: string;
 }

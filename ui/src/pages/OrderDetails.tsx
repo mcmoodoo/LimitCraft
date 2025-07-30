@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 interface OrderDetails {
@@ -35,13 +35,7 @@ export default function OrderDetails() {
     null
   );
 
-  useEffect(() => {
-    if (orderHash) {
-      fetchOrder();
-    }
-  }, [orderHash]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:3000/order/${orderHash}`);
       const result = await response.json();
@@ -51,12 +45,18 @@ export default function OrderDetails() {
       } else {
         setError(result.error);
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch order details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderHash]);
+
+  useEffect(() => {
+    if (orderHash) {
+      fetchOrder();
+    }
+  }, [orderHash, fetchOrder]);
 
   const getStatusText = (order: OrderDetails) => {
     switch (order.status) {
@@ -128,7 +128,7 @@ export default function OrderDetails() {
           fetchOrder();
         }, 1000);
       }
-    } catch (err) {
+    } catch (_err) {
       setCancelResult({
         success: false,
         message: 'Failed to cancel order: Network error',
@@ -206,6 +206,7 @@ export default function OrderDetails() {
                   <div className="flex items-center">
                     <span className="font-mono text-sm">{formatAddress(order.orderHash)}</span>
                     <button
+                      type="button"
                       onClick={() => copyToClipboard(order.orderHash)}
                       className="ml-2 text-blue-400 hover:text-blue-300"
                     >
@@ -219,6 +220,7 @@ export default function OrderDetails() {
                   <div className="flex items-center">
                     <span className="font-mono text-sm">{formatAddress(order.data.maker)}</span>
                     <button
+                      type="button"
                       onClick={() => copyToClipboard(order.data.maker)}
                       className="ml-2 text-blue-400 hover:text-blue-300"
                     >
@@ -233,6 +235,7 @@ export default function OrderDetails() {
                     <div className="flex items-center">
                       <span className="font-mono text-sm">{formatAddress(order.data.taker)}</span>
                       <button
+                        type="button"
                         onClick={() => copyToClipboard(order.data.taker)}
                         className="ml-2 text-blue-400 hover:text-blue-300"
                       >
@@ -320,6 +323,7 @@ export default function OrderDetails() {
               {order.status === 'pending' && (
                 <div className="flex space-x-3">
                   <button
+                    type="button"
                     onClick={cancelOrder}
                     disabled={cancelling}
                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${

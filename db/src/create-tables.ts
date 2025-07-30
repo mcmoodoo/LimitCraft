@@ -11,8 +11,8 @@ async function main() {
         CREATE TYPE order_status AS ENUM('pending', 'filled', 'cancelled', 'expired')
       `);
       console.log('✅ Created order_status enum');
-    } catch (error: any) {
-      if (error.code === '42710') {
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error && error.code === '42710') {
         console.log('✅ order_status enum already exists');
       } else {
         throw error;

@@ -4,14 +4,9 @@ import App from './App.tsx';
 import './index.css';
 
 import '@rainbow-me/rainbowkit/styles.css';
-import {
-  darkTheme,
-  getDefaultConfig,
-  lightTheme,
-  RainbowKitProvider,
-} from '@rainbow-me/rainbowkit';
+import { darkTheme, getDefaultConfig, RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createConfig, http, WagmiProvider } from 'wagmi';
+import { http, WagmiProvider } from 'wagmi';
 import { arbitrum, mainnet, polygon } from 'wagmi/chains';
 
 const config = getDefaultConfig({
@@ -27,7 +22,10 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Root element not found');
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>

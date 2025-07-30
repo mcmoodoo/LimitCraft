@@ -15,8 +15,8 @@ async function main() {
   try {
     await client`CREATE DATABASE ${client(dbName)}`;
     console.log(`✅ Database "${dbName}" created successfully!`);
-  } catch (error: any) {
-    if (error.code === '42P04') {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && error.code === '42P04') {
       console.log(`✅ Database "${dbName}" already exists.`);
     } else {
       console.error('❌ Database creation failed:', error);

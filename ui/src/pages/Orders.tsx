@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Order {
@@ -24,11 +24,7 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const response = await fetch('http://localhost:3000/orders');
       const result = await response.json();
@@ -38,12 +34,16 @@ export default function Orders() {
       } else {
         setError(result.error);
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to fetch orders');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const getStatusText = (order: Order) => {
     switch (order.status) {

@@ -7,7 +7,6 @@ import {
   MakerTraits,
   randBigInt,
 } from '@1inch/limit-order-sdk';
-import { ethers } from 'ethers';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { maxUint256, parseUnits } from 'viem';
@@ -244,7 +243,6 @@ export default function CreateOrder() {
     form.useLendingProtocol,
     form.supplyToLendingProtocol,
     limitOrderContractAddress,
-    ourContractAddress,
     makerApproval,
     takerApproval,
     aTokenApproval,
@@ -368,7 +366,7 @@ export default function CreateOrder() {
         .withNonce(nonce)
         .allowMultipleFills();
 
-      const extensionData: any = {
+      const extensionData: Record<string, unknown> = {
         ...Extension.EMPTY,
       };
 
@@ -410,7 +408,7 @@ export default function CreateOrder() {
 
       // Convert BigInt values to strings for JSON serialization
       const typedDataForJson = JSON.parse(
-        JSON.stringify(typedData, (key, value) =>
+        JSON.stringify(typedData, (_key, value) =>
           typeof value === 'bigint' ? value.toString() : value
         )
       );

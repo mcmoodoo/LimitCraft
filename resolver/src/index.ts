@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import type { Order } from '../../db/src/schema.js';
 import { config } from './config.js';
 import { orderFiller } from './filler.js';
 import { orderMonitor } from './monitor.js';
@@ -88,7 +89,7 @@ class OrderResolver {
     }
   }
 
-  private async processOrder(order: any) {
+  private async processOrder(order: Order) {
     try {
       console.log(`🔍 Analyzing order ${order.orderHash}`);
 

@@ -7,7 +7,6 @@ import Orders from './pages/Orders';
 
 function Navigation() {
   const location = useLocation();
-  const { isConnected } = useAccount();
 
   const navItems = [
     { path: '/', label: 'Home' },
