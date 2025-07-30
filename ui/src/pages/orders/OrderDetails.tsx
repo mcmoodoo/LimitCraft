@@ -38,7 +38,9 @@ export default function OrderDetails() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}`
+      );
       const result = await response.json();
 
       if (result.success) {
@@ -109,12 +111,15 @@ export default function OrderDetails() {
     setCancelResult(null);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       const result = await response.json();
       console.log('Cancel result:', result); // Debug log
@@ -152,7 +157,10 @@ export default function OrderDetails() {
       <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
         <h3 className="text-red-400 font-semibold mb-2">Error</h3>
         <p className="text-red-300">{error}</p>
-        <Link to={navigationHelpers.toOrders()} className="mt-4 inline-block text-blue-400 hover:text-blue-300">
+        <Link
+          to={navigationHelpers.toOrders()}
+          className="mt-4 inline-block text-blue-400 hover:text-blue-300"
+        >
           ← Back to Orders
         </Link>
       </div>
@@ -163,7 +171,10 @@ export default function OrderDetails() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-400 text-lg">Order not found</p>
-        <Link to={navigationHelpers.toOrders()} className="mt-4 inline-block text-blue-400 hover:text-blue-300">
+        <Link
+          to={navigationHelpers.toOrders()}
+          className="mt-4 inline-block text-blue-400 hover:text-blue-300"
+        >
           ← Back to Orders
         </Link>
       </div>

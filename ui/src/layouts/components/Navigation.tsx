@@ -11,22 +11,22 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { 
-    path: ROUTES.HOME, 
-    label: 'Home', 
+  {
+    path: ROUTES.HOME,
+    label: 'Home',
     icon: '🏠',
-    exact: true
+    exact: true,
   },
-  { 
-    path: ROUTES.ORDERS.LIST, 
-    label: 'Orders', 
-    icon: '📋'
+  {
+    path: ROUTES.ORDERS.LIST,
+    label: 'Orders',
+    icon: '📋',
   },
-  { 
-    path: ROUTES.ORDERS.CREATE, 
-    label: 'Create Order', 
+  {
+    path: ROUTES.ORDERS.CREATE,
+    label: 'Create Order',
     icon: '➕',
-    highlight: true
+    highlight: true,
   },
 ];
 
@@ -37,17 +37,17 @@ export function Navigation() {
     <nav className="flex items-center space-x-6">
       {navigationItems.map((item) => {
         const isActive = isActiveRoute(location.pathname, item.path, item.exact);
-        
+
         return (
           <Link
             key={item.path}
             to={item.path}
             className={`flex items-center space-x-2 transition-colors ${
-              isActive 
-                ? 'text-blue-400' 
+              isActive
+                ? 'text-blue-400'
                 : item.highlight
-                ? 'text-green-400 hover:text-green-300'
-                : 'text-gray-300 hover:text-white'
+                  ? 'text-green-400 hover:text-green-300'
+                  : 'text-gray-300 hover:text-white'
             }`}
           >
             <span className="text-sm">{item.icon}</span>

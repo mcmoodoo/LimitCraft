@@ -415,20 +415,23 @@ export default function CreateOrder() {
       );
 
       // Submit to backend
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          orderHash: orderHash,
-          signature: signature,
-          makerTraits: makerTraits.asBigInt().toString(),
-          chainId: chainId,
-          typedData: typedDataForJson,
-          extension: limitOrder.extension.encode(),
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderHash: orderHash,
+            signature: signature,
+            makerTraits: makerTraits.asBigInt().toString(),
+            chainId: chainId,
+            typedData: typedDataForJson,
+            extension: limitOrder.extension.encode(),
+          }),
+        }
+      );
 
       const result = await response.json();
 

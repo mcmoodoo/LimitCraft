@@ -27,7 +27,9 @@ export default function OrdersList() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`);
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`
+      );
       const result = await response.json();
 
       if (result.success) {
