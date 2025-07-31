@@ -19,7 +19,6 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
-import TokenBalances from '../../components/TokenBalances';
 import { ethers } from 'ethers';
 
 // Aave V3 Pool address on Arbitrum
@@ -1126,19 +1125,6 @@ export default function CreateOrder() {
           </div>
 
           <div className="space-y-6">
-            <div id="token-balances">
-              <TokenBalances
-                address={address}
-                chainId={chainId}
-                onTokenSelect={(tokenAddress, symbol) => {
-                  // For now, we'll set it as makerAsset - could add UI to choose
-                  setForm((prev) => ({
-                    ...prev,
-                    makerAsset: tokenAddress,
-                  }));
-                }}
-              />
-            </div>
 
             <div className="bg-gray-800 rounded-lg p-4">
               <h3 className="font-semibold mb-2">Order Summary</h3>
