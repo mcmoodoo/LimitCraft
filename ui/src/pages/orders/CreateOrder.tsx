@@ -840,34 +840,36 @@ export default function CreateOrder() {
                           required
                         />
                       </div>
-                      {form.makerAsset && form.makingAmount && (
-                        <div className="text-sm text-gray-500 text-right">
-                          ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
-                        </div>
-                      )}
                       {form.makerAsset && (
-                        <div className="text-sm text-left">
-                          {(() => {
-                            const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
-                            if (selectedToken) {
-                              const formatBalance = (balance: string) => {
-                                const num = parseFloat(balance);
-                                if (num === 0) return '0';
-                                if (num < 0.000001) return '<0.000001';
-                                if (num < 1) return num.toFixed(6);
-                                if (num < 1000) return num.toFixed(4);
-                                if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-                                return `${(num / 1000000).toFixed(2)}M`;
-                              };
-                              return (
-                                <>
-                                  <span className="text-white font-medium">{selectedToken.name}</span>
-                                  <span className="text-gray-400"> available {formatBalance(selectedToken.balance_formatted)}</span>
-                                </>
-                              );
-                            }
-                            return <span className="text-gray-400">Available to spend: 0</span>;
-                          })()}
+                        <div className="flex justify-between items-center text-sm">
+                          <div className="text-left">
+                            {(() => {
+                              const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
+                              if (selectedToken) {
+                                const formatBalance = (balance: string) => {
+                                  const num = parseFloat(balance);
+                                  if (num === 0) return '0';
+                                  if (num < 0.000001) return '<0.000001';
+                                  if (num < 1) return num.toFixed(6);
+                                  if (num < 1000) return num.toFixed(4);
+                                  if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
+                                  return `${(num / 1000000).toFixed(2)}M`;
+                                };
+                                return (
+                                  <>
+                                    <span className="text-white font-medium">{selectedToken.name}</span>
+                                    <span className="text-gray-400"> available {formatBalance(selectedToken.balance_formatted)}</span>
+                                  </>
+                                );
+                              }
+                              return <span className="text-gray-400">Available to spend: 0</span>;
+                            })()}
+                          </div>
+                          {form.makingAmount && (
+                            <div className="text-gray-500">
+                              ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
