@@ -656,7 +656,7 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
-                  <div>
+                  <div className="border border-gray-600 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
 
                     <div className="space-y-4">
