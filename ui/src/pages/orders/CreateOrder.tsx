@@ -858,11 +858,11 @@ export default function CreateOrder() {
                                 return (
                                   <>
                                     <span className="text-white font-medium">{selectedToken.name}</span>
-                                    <span className="text-gray-400"> available {formatBalance(selectedToken.balance_formatted)}</span>
+                                    <span className="text-gray-400"> available: {formatBalance(selectedToken.balance_formatted)}</span>
                                   </>
                                 );
                               }
-                              return <span className="text-gray-400">Available to spend: 0</span>;
+                              return <span className="text-gray-400">Available: 0</span>;
                             })()}
                           </div>
                           {form.makingAmount && (
