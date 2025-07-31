@@ -101,7 +101,8 @@ const app = new Elysia()
     status: 'ok', 
     timestamp: new Date().toISOString() 
   }))
-  .get('/api/v1/orders/:orderHash', async ({ params, set }) => {
+  .group('/api/v1', (app) => app
+    .get('/orders/:orderHash', async ({ params, set }) => {
     try {
       const order = await getOrderByHash(params.orderHash);
 
@@ -144,8 +145,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .get('/api/v1/orders', async ({ query, set }) => {
+    })
+    .get('/orders', async ({ query, set }) => {
     try {
       try {
         await refreshExpiredOrders();
@@ -193,8 +194,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .post('/api/v1/orders', async ({ body, set }: { body: SignedOrderRequest, set: any }) => {
+    })
+    .post('/orders', async ({ body, set }: { body: SignedOrderRequest, set: any }) => {
     try {
       // Calculate expiration
       const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
@@ -233,8 +234,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .patch('/api/v1/orders/:orderHash/cancel', async ({ params, set }) => {
+    })
+    .patch('/orders/:orderHash/cancel', async ({ params, set }) => {
     try {
       const { orderHash } = params;
 
@@ -272,8 +273,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .post('/api/v1/admin/refresh-orders', async ({ set }) => {
+    })
+    .post('/admin/refresh-orders', async ({ set }) => {
     try {
       const result = await refreshExpiredOrders();
 
@@ -289,8 +290,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .get('/api/v1/tokens/:address', async ({ params, query, set }) => {
+    })
+    .get('/tokens/:address', async ({ params, query, set }) => {
     try {
       const { address } = params;
       const chainId = parseInt(query.chainId as string);
@@ -367,8 +368,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
-  .get('/api/v1/prices', async ({ query, set }) => {
+    })
+    .get('/prices', async ({ query, set }) => {
     try {
       // Mock prices - static values for now
       const mockPrices: Record<string, number> = {
@@ -415,7 +416,8 @@ const app = new Elysia()
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       };
     }
-  })
+    })
+  )
   .listen(3000);
 
 console.log(`🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`);
