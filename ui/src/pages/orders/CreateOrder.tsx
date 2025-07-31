@@ -22,6 +22,11 @@ import {
 import { ethers } from 'ethers';
 import { Slider } from '../../components/ui/slider';
 import { Input } from '../../components/ui/input';
+import { Button } from '../../components/ui/button';
+import { Switch } from '../../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Label } from '../../components/ui/label';
+import { Alert, AlertDescription } from '../../components/ui/alert';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -1092,13 +1097,14 @@ export default function CreateOrder() {
                             return selectedToken?.symbol || 'Token';
                           })()} at rate ({calculateMarketRatePercentage()}%)
                         </span>
-                        <button
+                        <Button
                           type="button"
                           onClick={setToMarketRate}
-                          className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                          variant="secondary"
+                          size="sm"
                         >
                           Set to market
-                        </button>
+                        </Button>
                       </div>
                       
                       {/* Rate Input */}
@@ -1112,18 +1118,19 @@ export default function CreateOrder() {
                           placeholder="0.000000"
                           className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-right focus:outline-none focus:ring-2 focus:ring-blue-500 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                         />
-                        <button
+                        <Button
                           type="button"
                           onClick={() => {
                             setRateFlipped(!rateFlipped);
                             setCustomRate(''); // Clear custom rate when flipping
                           }}
-                          className="p-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg transition-colors"
+                          variant="outline"
+                          size="icon"
                         >
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                        </button>
+                        </Button>
                         <span className="text-sm text-gray-400 min-w-16">
                           {(() => {
                             const makerToken = tokens.find(t => t.token_address === form.makerAsset);
@@ -1142,9 +1149,9 @@ export default function CreateOrder() {
 
                 {/* Expiration Slider */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
+                  <Label className="block text-sm font-medium mb-2">
                     Expiration: {getMinutesFromSeconds(form.expiresIn)} minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}
-                  </label>
+                  </Label>
                   
                   {/* Slider and Input Row */}
                   <div className="flex items-center gap-3 mb-4">
@@ -1184,87 +1191,68 @@ export default function CreateOrder() {
 
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">
+                    <Label htmlFor="useLendingProtocol" className="text-sm font-medium text-gray-300">
                       Withdraw from Lending Position
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
+                    </Label>
+                    <Switch
+                      id="useLendingProtocol"
+                      checked={form.useLendingProtocol}
+                      onCheckedChange={(checked) =>
                         setForm((prev) => ({
                           ...prev,
-                          useLendingProtocol: !prev.useLendingProtocol,
+                          useLendingProtocol: checked,
                         }))
                       }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
-                        form.useLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          form.useLendingProtocol ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {form.useLendingProtocol && (
                     <div className="mt-3">
-                      <label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
+                      <Label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
                         Protocol
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="lendingProtocol"
-                          name="lendingProtocol"
-                          value={form.lendingProtocol}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                        >
-                          <option value="aave">Aave</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <img
-                            src="https://app.aave.com/icons/tokens/aave.svg"
-                            alt="Aave"
-                            className="w-5 h-5"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = document.createElement('div');
-                              fallback.className =
-                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
-                              fallback.textContent = 'A';
-                              target.parentNode?.appendChild(fallback);
-                            }}
-                          />
-                        </div>
-                      </div>
+                      </Label>
+                      <Select
+                        value={form.lendingProtocol}
+                        onValueChange={(value) => setForm(prev => ({ ...prev, lendingProtocol: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select protocol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aave">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src="https://app.aave.com/icons/tokens/aave.svg"
+                                alt="Aave"
+                                className="w-4 h-4"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                              Aave
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
 
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">TWAP Order</label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm((prev) => ({ ...prev, useTwapOrder: !prev.useTwapOrder }))
+                    <Label htmlFor="useTwapOrder" className="text-sm font-medium text-gray-300">TWAP Order</Label>
+                    <Switch
+                      id="useTwapOrder"
+                      checked={form.useTwapOrder}
+                      onCheckedChange={(checked) =>
+                        setForm((prev) => ({ ...prev, useTwapOrder: checked }))
                       }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
-                        form.useTwapOrder ? 'bg-blue-600' : 'bg-gray-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          form.useTwapOrder ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {form.useTwapOrder && (
                     <div className="mt-3">
-                      <label className="block text-sm font-medium mb-2">Running Time (hours)</label>
-                      <input
+                      <Label className="block text-sm font-medium mb-2">Running Time (hours)</Label>
+                      <Input
                         type="number"
                         name="twapRunningTimeHours"
                         value={form.twapRunningTimeHours}
@@ -1272,7 +1260,6 @@ export default function CreateOrder() {
                         min="1"
                         max="168"
                         step="1"
-                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="1"
                       />
                       <p className="text-xs text-gray-500 mt-1">
@@ -1282,105 +1269,98 @@ export default function CreateOrder() {
                   )}
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">
+                    <Label htmlFor="supplyToLendingProtocol" className="text-sm font-medium text-gray-300">
                       Supply to Lending Protocol
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
+                    </Label>
+                    <Switch
+                      id="supplyToLendingProtocol"
+                      checked={form.supplyToLendingProtocol}
+                      onCheckedChange={(checked) =>
                         setForm((prev) => ({
                           ...prev,
-                          supplyToLendingProtocol: !prev.supplyToLendingProtocol,
+                          supplyToLendingProtocol: checked,
                         }))
                       }
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
-                        form.supplyToLendingProtocol ? 'bg-blue-600' : 'bg-gray-600'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          form.supplyToLendingProtocol ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+                    />
                   </div>
 
                   {form.supplyToLendingProtocol && (
                     <div className="mt-3">
-                      <label
+                      <Label
                         htmlFor="supplyLendingProtocol"
                         className="block text-sm font-medium mb-2"
                       >
                         Protocol
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="supplyLendingProtocol"
-                          name="supplyLendingProtocol"
-                          value={form.supplyLendingProtocol}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                        >
-                          <option value="aave">Aave</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <img
-                            src="https://app.aave.com/icons/tokens/aave.svg"
-                            alt="Aave"
-                            className="w-5 h-5"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = document.createElement('div');
-                              fallback.className =
-                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
-                              fallback.textContent = 'A';
-                              target.parentNode?.appendChild(fallback);
-                            }}
-                          />
-                        </div>
-                      </div>
+                      </Label>
+                      <Select
+                        value={form.supplyLendingProtocol}
+                        onValueChange={(value) => setForm(prev => ({ ...prev, supplyLendingProtocol: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select protocol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aave">
+                            <div className="flex items-center gap-2">
+                              <img
+                                src="https://app.aave.com/icons/tokens/aave.svg"
+                                alt="Aave"
+                                className="w-4 h-4"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                              Aave
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>
 
                 {approvalStatus && (
-                  <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
-                    <p className="text-blue-400">{approvalStatus}</p>
-                  </div>
+                  <Alert>
+                    <AlertDescription>{approvalStatus}</AlertDescription>
+                  </Alert>
                 )}
 
                 {error && (
-                  <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
-                    <p className="text-red-400">{error}</p>
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
                 )}
 
                 {success && (
-                  <div className="bg-green-900/20 border border-green-500 rounded-lg p-4">
-                    <p className="text-green-400">{success}</p>
-                  </div>
+                  <Alert className="border-green-500 bg-green-900/20">
+                    <AlertDescription className="text-green-400">{success}</AlertDescription>
+                  </Alert>
                 )}
 
                 <div className="flex space-x-4">
-                  <button
+                  <Button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="flex-1"
+                    size="lg"
                   >
                     {loading
                       ? approvalStatus
                         ? approvalStatus
                         : 'Creating Order...'
                       : 'Create Order'}
-                  </button>
+                  </Button>
 
-                  <Link
-                    to={navigationHelpers.toOrders()}
-                    className="px-6 py-3 border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors text-center"
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    asChild
                   >
-                    Cancel
-                  </Link>
+                    <Link to={navigationHelpers.toOrders()}>
+                      Cancel
+                    </Link>
+                  </Button>
                 </div>
               </form>
             </div>
