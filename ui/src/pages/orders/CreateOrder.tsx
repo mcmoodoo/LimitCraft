@@ -230,6 +230,17 @@ export default function CreateOrder() {
     fetchTokens();
   }, [address]);
 
+  // Get selected token decimals for step calculation
+  const getSelectedTokenDecimals = (tokenAddress: string): number => {
+    const token = tokens.find(t => t.token_address === tokenAddress);
+    return token?.decimals || 18; // default to 18 if not found
+  };
+
+  // Generate step value based on token decimals
+  const getStepForDecimals = (decimals: number): string => {
+    return `0.${'0'.repeat(decimals - 1)}1`;
+  };
+
   // Get aToken address for the makerAsset
   const aaveReserveDataQuery = useReadContract({
     address: AAVE_V3_POOL_ADDRESS as `0x${string}`,
@@ -256,13 +267,16 @@ export default function CreateOrder() {
 
   // Calculate required amounts
   const requiredAmounts = useMemo(() => {
-    if (!form.makingAmount || !form.takingAmount) return null;
+    if (!form.makingAmount || !form.takingAmount || !form.makerAsset || !form.takerAsset) return null;
 
-    const makingAmountWei = parseUnits(form.makingAmount, 6); // USDC has 6 decimals
-    const takingAmountWei = parseUnits(form.takingAmount, 18); // WETH has 18 decimals
+    const makerDecimals = getSelectedTokenDecimals(form.makerAsset);
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+
+    const makingAmountWei = parseUnits(form.makingAmount, makerDecimals);
+    const takingAmountWei = parseUnits(form.takingAmount, takerDecimals);
 
     return { makingAmountWei, takingAmountWei };
-  }, [form.makingAmount, form.takingAmount]);
+  }, [form.makingAmount, form.takingAmount, form.makerAsset, form.takerAsset, tokens]);
 
   // Generate approval items
   const approvalItems = useMemo((): ApprovalItem[] => {
@@ -554,6 +568,59 @@ export default function CreateOrder() {
     }));
   };
 
+  // Handler to prevent invalid key presses
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowedKeys = [
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+      '.', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 
+      'ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'
+    ];
+    
+    // Allow Ctrl/Cmd combinations (copy, paste, select all, etc.)
+    if (e.ctrlKey || e.metaKey) {
+      return;
+    }
+    
+    if (!allowedKeys.includes(e.key)) {
+      e.preventDefault();
+      return;
+    }
+    
+    // Prevent multiple decimal points
+    if (e.key === '.' && e.currentTarget.value.includes('.')) {
+      e.preventDefault();
+    }
+  };
+
+  // Custom handler for amount inputs that validates decimal places and format
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenAddress: string) => {
+    const { name, value } = e.target;
+    
+    // Allow empty value
+    if (value === '') {
+      setForm((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
+
+    // Regex to allow only digits and single decimal point
+    const regex = /^\d*\.?\d*$/;
+    if (!regex.test(value)) {
+      return; // Don't update if invalid format
+    }
+
+    const decimals = getSelectedTokenDecimals(tokenAddress);
+    const decimalParts = value.split('.');
+    
+    // If there's a decimal part, check if it exceeds allowed decimals
+    if (decimalParts.length === 2 && decimalParts[1].length > decimals) {
+      // Truncate to allowed decimal places
+      const truncatedValue = `${decimalParts[0]}.${decimalParts[1].substring(0, decimals)}`;
+      setForm((prev) => ({ ...prev, [name]: truncatedValue }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
   const handleTokenSelect = (
     tokenAddress: string,
     symbol: string,
@@ -645,9 +712,11 @@ export default function CreateOrder() {
                           type="number"
                           name="makingAmount"
                           value={form.makingAmount}
-                          onChange={handleChange}
-                          step="0.000001"
+                          onChange={(e) => handleAmountChange(e, form.makerAsset)}
+                          onKeyDown={handleKeyDown}
+                          step={getStepForDecimals(getSelectedTokenDecimals(form.makerAsset))}
                           min="0"
+                          inputMode="decimal"
                           className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                           placeholder="0.0"
                           required
@@ -685,9 +754,11 @@ export default function CreateOrder() {
                           type="number"
                           name="takingAmount"
                           value={form.takingAmount}
-                          onChange={handleChange}
-                          step="0.000001"
+                          onChange={(e) => handleAmountChange(e, form.takerAsset)}
+                          onKeyDown={handleKeyDown}
+                          step={getStepForDecimals(getSelectedTokenDecimals(form.takerAsset))}
                           min="0"
+                          inputMode="decimal"
                           className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                           placeholder="0.0"
                           required
