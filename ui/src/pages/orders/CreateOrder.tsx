@@ -20,6 +20,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 import { ethers } from 'ethers';
+import { Slider } from '../../components/ui/slider';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -885,6 +886,21 @@ export default function CreateOrder() {
     { value: 86400, label: '24 hours' },
   ];
 
+  // Helper functions for slider synchronization
+  const getSliderValueFromExpiration = (expiresIn: number): number => {
+    const index = expirationOptions.findIndex(option => option.value === expiresIn);
+    return index >= 0 ? index : 4; // Default to "1 hour" index
+  };
+
+  const getExpirationFromSliderValue = (sliderValue: number): number => {
+    return expirationOptions[sliderValue]?.value || 3600; // Default to 1 hour
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    const newExpiration = getExpirationFromSliderValue(value[0]);
+    setForm(prev => ({ ...prev, expiresIn: newExpiration }));
+  };
+
   if (!isConnected) {
     return (
       <div className="text-center py-12">
@@ -1100,9 +1116,30 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
+                {/* Expiration Slider */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Expiration: {expirationOptions.find(opt => opt.value === form.expiresIn)?.label}
+                  </label>
+                  <div className="px-2 mb-4">
+                    <Slider
+                      value={[getSliderValueFromExpiration(form.expiresIn)]}
+                      onValueChange={handleSliderChange}
+                      max={expirationOptions.length - 1}
+                      min={0}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-2">
+                      <span>{expirationOptions[0].label}</span>
+                      <span>{expirationOptions[Math.floor((expirationOptions.length - 1) / 2)].label}</span>
+                      <span>{expirationOptions[expirationOptions.length - 1].label}</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
-                    Expiration
+                    Expiration (Dropdown)
                   </label>
                   <select
                     id="expiresIn"
