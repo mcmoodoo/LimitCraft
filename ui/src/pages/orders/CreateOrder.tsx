@@ -539,25 +539,10 @@ export default function CreateOrder() {
               <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4 text-green-400">Making (Sell)</h3>
+                <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label htmlFor="makerAsset" className="block text-sm font-medium">
-                        Asset
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const sidebar = document.getElementById('token-balances');
-                          sidebar?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="text-xs text-blue-400 hover:text-blue-300"
-                      >
-                        Select from wallet →
-                      </button>
-                    </div>
                     <select
                       id="makerAsset"
                       name="makerAsset"
@@ -689,25 +674,10 @@ export default function CreateOrder() {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-4 text-blue-400">Taking (Buy)</h3>
+                <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
 
                 <div className="space-y-4">
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label htmlFor="takerAsset" className="block text-sm font-medium">
-                        Asset
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const sidebar = document.getElementById('token-balances');
-                          sidebar?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className="text-xs text-blue-400 hover:text-blue-300"
-                      >
-                        Select from wallet →
-                      </button>
-                    </div>
                     <select
                       id="takerAsset"
                       name="takerAsset"
