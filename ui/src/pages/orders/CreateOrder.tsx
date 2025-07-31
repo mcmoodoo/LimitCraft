@@ -7,7 +7,7 @@ import {
   MakerTraits,
   randBigInt,
 } from '@1inch/limit-order-sdk';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { navigationHelpers } from '../../router/navigation';
 import { maxUint256, parseUnits } from 'viem';
@@ -19,7 +19,6 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
-import { USDC, USDC_E, USDT, WETH } from '../../tokens';
 import TokenBalances from '../../components/TokenBalances';
 import { ethers } from 'ethers';
 
@@ -71,6 +70,17 @@ interface CreateOrderForm {
   supplyLendingProtocol: string;
   useTwapOrder: boolean;
   twapRunningTimeHours: number;
+}
+
+interface Token {
+  token_address: string;
+  symbol: string;
+  name: string;
+  decimals: number;
+  balance: string;
+  balance_formatted: string;
+  possible_spam: boolean;
+  verified_contract: boolean;
 }
 
 const ERC20_ABI = [
@@ -146,6 +156,8 @@ export default function CreateOrder() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
+  const [tokens, setTokens] = useState<Token[]>([]);
+  const [tokensLoading, setTokensLoading] = useState(true);
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -159,8 +171,8 @@ export default function CreateOrder() {
   const limitOrderContractAddress = getLimitOrderContract(chainId);
 
   const [form, setForm] = useState<CreateOrderForm>({
-    makerAsset: USDC,
-    takerAsset: WETH,
+    makerAsset: '',
+    takerAsset: '',
     makingAmount: '',
     takingAmount: '',
     expiresIn: 3600, // 1 hour
@@ -171,6 +183,51 @@ export default function CreateOrder() {
     useTwapOrder: false,
     twapRunningTimeHours: 5,
   });
+
+  // Fetch tokens from API
+  useEffect(() => {
+    const fetchTokens = async () => {
+      if (!address) return;
+      
+      try {
+        setTokensLoading(true);
+        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}?chainId=${chainId}`;
+        console.log('Fetching tokens from:', url);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API Response Error:', response.status, errorText);
+          throw new Error(`Failed to fetch tokens: ${response.status} ${errorText}`);
+        }
+        
+        const data = await response.json();
+        console.log('API Response:', data);
+        setTokens(data.data?.tokens || []);
+        
+        // Set default tokens if available
+        const tokens = data.data?.tokens || [];
+        if (tokens.length > 0) {
+          const usdcToken = tokens.find((token: Token) => token.symbol === 'USDC');
+          const wethToken = tokens.find((token: Token) => token.symbol === 'WETH');
+          
+          setForm(prev => ({
+            ...prev,
+            makerAsset: usdcToken?.token_address || tokens[0].token_address,
+            takerAsset: wethToken?.token_address || (tokens[1]?.token_address || tokens[0].token_address),
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching tokens:', err);
+        setError('Failed to load tokens');
+      } finally {
+        setTokensLoading(false);
+      }
+    };
+
+    fetchTokens();
+  }, [address]);
 
   // Get aToken address for the makerAsset
   const aaveReserveDataQuery = useReadContract({
@@ -494,12 +551,19 @@ export default function CreateOrder() {
     }));
   };
 
-  const tokenOptions = [
-    { value: USDC, label: 'USDC' },
-    { value: WETH, label: 'WETH' },
-    { value: USDT, label: 'USDT' },
-    { value: USDC_E, label: 'USDC.e' },
-  ];
+  const tokenOptions = tokens.map(token => {
+    // Ensure we have a proper formatted balance, fallback to manual calculation if needed
+    const formattedBalance = token.balance_formatted || 
+      (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6);
+    
+    // Remove trailing zeros and unnecessary decimal point
+    const cleanBalance = parseFloat(formattedBalance).toString();
+    
+    return {
+      value: token.token_address,
+      label: `${token.symbol} (${cleanBalance})`,
+    };
+  });
 
   const expirationOptions = [
     { value: 60, label: '1 minute' },
@@ -538,7 +602,7 @@ export default function CreateOrder() {
             <div className="bg-gray-800 rounded-lg p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-6">
-              <div>
+              <div className="border border-gray-600 rounded-lg p-4">
                 <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
 
                 <div className="space-y-4">
@@ -550,14 +614,18 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
                       required
+                      disabled={tokensLoading}
                     >
-                      {tokenOptions.map((token) => (
-                        <option key={token.value} value={token.value}>
-                          {token.label}
-                        </option>
-                      ))}
+                      {tokensLoading ? (
+                        <option>Loading...</option>
+                      ) : (
+                        tokenOptions.map((token) => (
+                          <option key={token.value} value={token.value}>
+                            {token.label}
+                          </option>
+                        ))
+                      )}
                     </select>
-                    <div className="w-px bg-gray-600"></div>
                     <input
                       id="makingAmount"
                       type="number"
@@ -566,14 +634,57 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       step="0.000001"
                       min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                       placeholder="0.0"
                       required
                     />
                   </div>
 
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
+
+                <div className="space-y-4">
+                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                    <select
+                      id="takerAsset"
+                      name="takerAsset"
+                      value={form.takerAsset}
+                      onChange={handleChange}
+                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
+                      required
+                      disabled={tokensLoading}
+                    >
+                      {tokensLoading ? (
+                        <option>Loading...</option>
+                      ) : (
+                        tokenOptions.map((token) => (
+                          <option key={token.value} value={token.value}>
+                            {token.label}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <input
+                      id="takingAmount"
+                      type="number"
+                      name="takingAmount"
+                      value={form.takingAmount}
+                      onChange={handleChange}
+                      step="0.000001"
+                      min="0"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                      placeholder="0.0"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">Use Lending Position</span>
+                    <span className="text-sm font-medium text-gray-300">Withdraw from Lending Position</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -593,6 +704,41 @@ export default function CreateOrder() {
                       />
                     </button>
                   </div>
+
+                  {form.useLendingProtocol && (
+                    <div className="mt-3">
+                      <label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
+                        Protocol
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="lendingProtocol"
+                          name="lendingProtocol"
+                          value={form.lendingProtocol}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+                        >
+                          <option value="aave">Aave</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <img
+                            src="https://app.aave.com/icons/tokens/aave.svg"
+                            alt="Aave"
+                            className="w-5 h-5"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = document.createElement('div');
+                              fallback.className =
+                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
+                              fallback.textContent = 'A';
+                              target.parentNode?.appendChild(fallback);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between">
                     <label className="text-sm font-medium text-gray-300">
@@ -630,77 +776,6 @@ export default function CreateOrder() {
                       <p className="text-xs text-gray-500 mt-1">TWAP will execute over this time period (1-168 hours)</p>
                     </div>
                   )}
-
-                  {form.useLendingProtocol && (
-                    <div className="mt-3">
-                      <label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
-                        Protocol
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="lendingProtocol"
-                          name="lendingProtocol"
-                          value={form.lendingProtocol}
-                          onChange={handleChange}
-                          className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-                        >
-                          <option value="aave">Aave</option>
-                        </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <img
-                            src="https://app.aave.com/icons/tokens/aave.svg"
-                            alt="Aave"
-                            className="w-5 h-5"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const fallback = document.createElement('div');
-                              fallback.className =
-                                'w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold';
-                              fallback.textContent = 'A';
-                              target.parentNode?.appendChild(fallback);
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
-
-                <div className="space-y-4">
-                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                    <select
-                      id="takerAsset"
-                      name="takerAsset"
-                      value={form.takerAsset}
-                      onChange={handleChange}
-                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
-                      required
-                    >
-                      {tokenOptions.map((token) => (
-                        <option key={token.value} value={token.value}>
-                          {token.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="w-px bg-gray-600"></div>
-                    <input
-                      id="takingAmount"
-                      type="number"
-                      name="takingAmount"
-                      value={form.takingAmount}
-                      onChange={handleChange}
-                      step="0.000001"
-                      min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                      placeholder="0.0"
-                      required
-                    />
-                  </div>
 
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-300">
@@ -763,8 +838,6 @@ export default function CreateOrder() {
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
             </div>
 
             <div>
