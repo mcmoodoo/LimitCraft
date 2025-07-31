@@ -841,7 +841,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.makerAsset && (
-                        <div className="flex justify-between items-center text-sm">
+                        <div className="flex justify-between items-center text-base">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
@@ -901,7 +901,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.takerAsset && (
-                        <div className="flex justify-between items-center text-sm">
+                        <div className="flex justify-between items-center text-base">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
