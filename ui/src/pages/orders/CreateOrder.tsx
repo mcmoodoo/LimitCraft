@@ -21,6 +21,7 @@ import {
 } from 'wagmi';
 import { USDC, USDC_E, USDT, WETH } from '../../tokens';
 import TokenBalances from '../../components/TokenBalances';
+import { ethers } from 'ethers';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -68,6 +69,8 @@ interface CreateOrderForm {
   lendingProtocol: string;
   supplyToLendingProtocol: boolean;
   supplyLendingProtocol: string;
+  useTwapOrder: boolean;
+  twapRunningTimeHours: number;
 }
 
 const ERC20_ABI = [
@@ -132,7 +135,8 @@ interface ApprovalItem {
 }
 
 export default function CreateOrder() {
-  const ourContractAddress = '0x3195796c0999cee134ad7e957ad9767f89869b2c';
+  const lendingInteractionManagerAddress = '0x3195796c0999cee134ad7e957ad9767f89869b2c';
+  const twapCalculatorAddress = '0x1DE87041738c30bc133a54DC1f8322Cf9A80a6B8';
 
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
@@ -164,6 +168,8 @@ export default function CreateOrder() {
     lendingProtocol: 'aave',
     supplyToLendingProtocol: false,
     supplyLendingProtocol: 'aave',
+    useTwapOrder: false,
+    twapRunningTimeHours: 5,
   });
 
   // Get aToken address for the makerAsset
@@ -181,10 +187,10 @@ export default function CreateOrder() {
   const makerApproval = useTokenApproval(form.makerAsset, limitOrderContractAddress, address);
   const aTokenApproval = useTokenApproval(
     aaveReserveDataQuery.data?.aTokenAddress,
-    ourContractAddress,
+    lendingInteractionManagerAddress,
     address
   );
-  const takerApproval = useTokenApproval(form.takerAsset, ourContractAddress, address);
+  const takerApproval = useTokenApproval(form.takerAsset, lendingInteractionManagerAddress, address);
 
   // Calculate required amounts
   const requiredAmounts = useMemo(() => {
@@ -216,7 +222,7 @@ export default function CreateOrder() {
       items.push({
         tokenAddress: form.takerAsset,
         tokenName: 'taker asset',
-        spender: ourContractAddress,
+        spender: lendingInteractionManagerAddress,
         requiredAmount: requiredAmounts.takingAmountWei,
         needsApproval: takerApproval.needsApproval(requiredAmounts.takingAmountWei),
         currentAllowance: takerApproval.allowance,
@@ -229,7 +235,7 @@ export default function CreateOrder() {
       items.push({
         tokenAddress: aTokenAddress,
         tokenName: 'aToken',
-        spender: ourContractAddress,
+        spender: lendingInteractionManagerAddress,
         requiredAmount: requiredAmounts.makingAmountWei,
         needsApproval: aTokenApproval.needsApproval(requiredAmounts.makingAmountWei),
         currentAllowance: aTokenApproval.allowance,
@@ -375,16 +381,35 @@ export default function CreateOrder() {
       // Only enable pre-interaction if "Use Lending Position" is toggled on
       if (form.useLendingProtocol) {
         makerTraits = makerTraits.enablePreInteraction().withExtension();
-        const preInteraction = new Interaction(new Address(ourContractAddress), '0x00');
+        const preInteraction = new Interaction(new Address(lendingInteractionManagerAddress), '0x00');
         extensionData.preInteraction = preInteraction.encode();
       }
 
       // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
       if (form.supplyToLendingProtocol) {
         makerTraits = makerTraits.enablePostInteraction().withExtension();
-        const postInteraction = new Interaction(new Address(ourContractAddress), '0x00');
+        const postInteraction = new Interaction(new Address(lendingInteractionManagerAddress), '0x00');
         extensionData.postInteraction = postInteraction.encode();
       }
+      
+      if (form.useTwapOrder) {
+        makerTraits = makerTraits.allowPartialFills();
+        const startTime = Math.floor(Date.now() / 1000);
+        const endTime = startTime + form.twapRunningTimeHours * 3600;
+        const numberOfOrders = form.twapRunningTimeHours;
+        console.log('startTime', startTime);
+        console.log('endTime', endTime);
+        console.log('numberOfOrders', numberOfOrders);
+        extensionData.makingAmountData =  ethers.solidityPacked(
+                    ['address', 'uint256', 'uint256', 'uint256'],
+                    [twapCalculatorAddress, startTime, endTime, numberOfOrders],
+                )
+        extensionData.takingAmountData =  ethers.solidityPacked(
+                    ['address'],
+                    [twapCalculatorAddress],
+                )
+      }
+
 
       const extensions = new Extension(extensionData);
 
@@ -588,6 +613,43 @@ export default function CreateOrder() {
                       />
                     </button>
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-gray-300">
+                      TWAP Order
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, useTwapOrder: !prev.useTwapOrder }))}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
+                        form.useTwapOrder ? 'bg-blue-600' : 'bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          form.useTwapOrder ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {form.useTwapOrder && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium mb-2">Running Time (hours)</label>
+                      <input
+                        type="number"
+                        name="twapRunningTimeHours"
+                        value={form.twapRunningTimeHours}
+                        onChange={handleChange}
+                        min="1"
+                        max="168"
+                        step="1"
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="1"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">TWAP will execute over this time period (1-168 hours)</p>
+                    </div>
+                  )}
 
                   {form.useLendingProtocol && (
                     <div className="mt-3">

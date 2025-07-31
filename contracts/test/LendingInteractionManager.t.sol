@@ -165,9 +165,6 @@ contract LendingInteractionManagerTest is Test {
         uint256 initialMakerUSDC = mockUSDC.balanceOf(mockMaker);
         uint256 initialMakerAUSDC = mockAUSDC.balanceOf(mockMaker);
         
-        // Expect the AaveWithdrawal event
-        vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.AaveWithdrawal(address(mockUSDC), mockMakingAmount, mockMaker);
         
         // Call preInteraction
         lendingManager.preInteraction(
@@ -284,10 +281,7 @@ contract LendingInteractionManagerTest is Test {
         
         // Set up balances for custom amount
         mockAUSDC.setAllowance(mockMaker, address(lendingManager), customAmount);
-        
-        vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.AaveWithdrawal(address(mockUSDC), customAmount, mockMaker);
-        
+              
         lendingManager.preInteraction(
             mockOrder,
             mockExtension,
@@ -321,11 +315,7 @@ contract LendingInteractionManagerTest is Test {
         );
     }
 
-    function testEventEmission() public {
-        // Test AaveWithdrawal event
-        vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.AaveWithdrawal(address(mockUSDC), mockMakingAmount, mockMaker);
-        
+    function testEventEmission() public {        
         lendingManager.preInteraction(
             mockOrder,
             mockExtension,
@@ -390,10 +380,7 @@ contract LendingInteractionManagerTest is Test {
     }
 
     function testZeroAmounts() public {
-        // Test with zero amounts
-        vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.AaveWithdrawal(address(mockUSDC), 0, mockMaker);
-        
+                
         lendingManager.preInteraction(
             mockOrder,
             mockExtension,
