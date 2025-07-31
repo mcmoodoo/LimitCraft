@@ -566,7 +566,7 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       step="0.000001"
                       min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                       placeholder="0.0"
                       required
                     />
@@ -696,7 +696,7 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       step="0.000001"
                       min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                       placeholder="0.0"
                       required
                     />
