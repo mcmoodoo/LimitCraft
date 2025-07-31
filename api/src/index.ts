@@ -11,7 +11,7 @@ import {
   updateOrderStatus,
 } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
-import { fetchTokensWithMoralis } from './services/tokens';
+import { fetchTokensWithMoralis, fetchTokensWith1inch } from './services/tokens';
 
 interface SignedOrderRequest {
   orderHash: string;
@@ -297,8 +297,14 @@ const app = new Elysia()
             };
           }
 
-          // Fetch tokens using Moralis (can be extended to use other sources with fallback)
-          const result = await fetchTokensWithMoralis(address, chainId);
+          // Try 1inch first, fallback to Moralis if it fails
+          let result = await fetchTokensWith1inch(address, chainId);
+          
+          // If 1inch fails, try Moralis as fallback
+          if (!result.success) {
+            console.log('1inch API failed, falling back to Moralis:', result.error);
+            result = await fetchTokensWithMoralis(address, chainId);
+          }
 
           if (!result.success) {
             set.status = result.error?.includes('Unsupported chain') ? 400 : 500;

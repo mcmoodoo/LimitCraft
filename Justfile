@@ -40,6 +40,10 @@ one-inch-token-details contractAddress="0xaf88d065e77c8cc2239327c5edb3a432268e58
       accept:application/json \
       content-type:application/json
 
+uniswap-token-list-arbitrum:
+    xh https://tokens.uniswap.org/ | jq '.tokens[] | select(.chainId == 42161) | {logoURI, address}'
+
+
 # Spin up a local podman container running psql 16
 postgres-container-run:
     podman run --name our-limit-order-db \
