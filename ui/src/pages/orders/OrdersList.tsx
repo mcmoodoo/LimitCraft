@@ -36,9 +36,11 @@ export default function OrdersList() {
     }
 
     try {
-      const url = new URL(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`);
+      const url = new URL(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders`
+      );
       url.searchParams.append('maker', address);
-      
+
       const response = await fetch(url.toString());
       const result = await response.json();
 

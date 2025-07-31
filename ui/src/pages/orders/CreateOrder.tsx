@@ -188,34 +188,35 @@ export default function CreateOrder() {
   useEffect(() => {
     const fetchTokens = async () => {
       if (!address) return;
-      
+
       try {
         setTokensLoading(true);
         const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}?chainId=${chainId}`;
         console.log('Fetching tokens from:', url);
-        
+
         const response = await fetch(url);
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error('API Response Error:', response.status, errorText);
           throw new Error(`Failed to fetch tokens: ${response.status} ${errorText}`);
         }
-        
+
         const data = await response.json();
         console.log('API Response:', data);
         setTokens(data.data?.tokens || []);
-        
+
         // Set default tokens if available
         const tokens = data.data?.tokens || [];
         if (tokens.length > 0) {
           const usdcToken = tokens.find((token: Token) => token.symbol === 'USDC');
           const wethToken = tokens.find((token: Token) => token.symbol === 'WETH');
-          
-          setForm(prev => ({
+
+          setForm((prev) => ({
             ...prev,
             makerAsset: usdcToken?.token_address || tokens[0].token_address,
-            takerAsset: wethToken?.token_address || (tokens[1]?.token_address || tokens[0].token_address),
+            takerAsset:
+              wethToken?.token_address || tokens[1]?.token_address || tokens[0].token_address,
           }));
         }
       } catch (err) {
@@ -247,7 +248,11 @@ export default function CreateOrder() {
     lendingInteractionManagerAddress,
     address
   );
-  const takerApproval = useTokenApproval(form.takerAsset, lendingInteractionManagerAddress, address);
+  const takerApproval = useTokenApproval(
+    form.takerAsset,
+    lendingInteractionManagerAddress,
+    address
+  );
 
   // Calculate required amounts
   const requiredAmounts = useMemo(() => {
@@ -438,17 +443,23 @@ export default function CreateOrder() {
       // Only enable pre-interaction if "Use Lending Position" is toggled on
       if (form.useLendingProtocol) {
         makerTraits = makerTraits.enablePreInteraction().withExtension();
-        const preInteraction = new Interaction(new Address(lendingInteractionManagerAddress), '0x00');
+        const preInteraction = new Interaction(
+          new Address(lendingInteractionManagerAddress),
+          '0x00'
+        );
         extensionData.preInteraction = preInteraction.encode();
       }
 
       // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
       if (form.supplyToLendingProtocol) {
         makerTraits = makerTraits.enablePostInteraction().withExtension();
-        const postInteraction = new Interaction(new Address(lendingInteractionManagerAddress), '0x00');
+        const postInteraction = new Interaction(
+          new Address(lendingInteractionManagerAddress),
+          '0x00'
+        );
         extensionData.postInteraction = postInteraction.encode();
       }
-      
+
       if (form.useTwapOrder) {
         makerTraits = makerTraits.allowPartialFills();
         const startTime = Math.floor(Date.now() / 1000);
@@ -457,16 +468,15 @@ export default function CreateOrder() {
         console.log('startTime', startTime);
         console.log('endTime', endTime);
         console.log('numberOfOrders', numberOfOrders);
-        extensionData.makingAmountData =  ethers.solidityPacked(
-                    ['address', 'uint256', 'uint256', 'uint256'],
-                    [twapCalculatorAddress, startTime, endTime, numberOfOrders],
-                )
-        extensionData.takingAmountData =  ethers.solidityPacked(
-                    ['address'],
-                    [twapCalculatorAddress],
-                )
+        extensionData.makingAmountData = ethers.solidityPacked(
+          ['address', 'uint256', 'uint256', 'uint256'],
+          [twapCalculatorAddress, startTime, endTime, numberOfOrders]
+        );
+        extensionData.takingAmountData = ethers.solidityPacked(
+          ['address'],
+          [twapCalculatorAddress]
+        );
       }
-
 
       const extensions = new Extension(extensionData);
 
@@ -544,21 +554,25 @@ export default function CreateOrder() {
     }));
   };
 
-  const handleTokenSelect = (tokenAddress: string, symbol: string, field: 'makerAsset' | 'takerAsset') => {
+  const handleTokenSelect = (
+    tokenAddress: string,
+    symbol: string,
+    field: 'makerAsset' | 'takerAsset'
+  ) => {
     setForm((prev) => ({
       ...prev,
       [field]: tokenAddress,
     }));
   };
 
-  const tokenOptions = tokens.map(token => {
+  const tokenOptions = tokens.map((token) => {
     // Ensure we have a proper formatted balance, fallback to manual calculation if needed
-    const formattedBalance = token.balance_formatted || 
-      (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6);
-    
+    const formattedBalance =
+      token.balance_formatted || (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6);
+
     // Remove trailing zeros and unnecessary decimal point
     const cleanBalance = parseFloat(formattedBalance).toString();
-    
+
     return {
       value: token.token_address,
       label: `${token.symbol} (${cleanBalance})`,
@@ -601,90 +615,91 @@ export default function CreateOrder() {
           <div className="lg:col-span-2">
             <div className="bg-gray-800 rounded-lg p-6">
               <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-6">
-              <div className="border border-gray-600 rounded-lg p-4">
-                <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
+                <div className="space-y-6">
+                  <div className="border border-gray-600 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
 
-                <div className="space-y-4">
-                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                    <select
-                      id="makerAsset"
-                      name="makerAsset"
-                      value={form.makerAsset}
-                      onChange={handleChange}
-                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
-                      required
-                      disabled={tokensLoading}
-                    >
-                      {tokensLoading ? (
-                        <option>Loading...</option>
-                      ) : (
-                        tokenOptions.map((token) => (
-                          <option key={token.value} value={token.value}>
-                            {token.label}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    <input
-                      id="makingAmount"
-                      type="number"
-                      name="makingAmount"
-                      value={form.makingAmount}
-                      onChange={handleChange}
-                      step="0.000001"
-                      min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                      placeholder="0.0"
-                      required
-                    />
+                    <div className="space-y-4">
+                      <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                        <select
+                          id="makerAsset"
+                          name="makerAsset"
+                          value={form.makerAsset}
+                          onChange={handleChange}
+                          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
+                          required
+                          disabled={tokensLoading}
+                        >
+                          {tokensLoading ? (
+                            <option>Loading...</option>
+                          ) : (
+                            tokenOptions.map((token) => (
+                              <option key={token.value} value={token.value}>
+                                {token.label}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <input
+                          id="makingAmount"
+                          type="number"
+                          name="makingAmount"
+                          value={form.makingAmount}
+                          onChange={handleChange}
+                          step="0.000001"
+                          min="0"
+                          className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                          placeholder="0.0"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                </div>
-              </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
-
-                <div className="space-y-4">
-                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                    <select
-                      id="takerAsset"
-                      name="takerAsset"
-                      value={form.takerAsset}
-                      onChange={handleChange}
-                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
-                      required
-                      disabled={tokensLoading}
-                    >
-                      {tokensLoading ? (
-                        <option>Loading...</option>
-                      ) : (
-                        tokenOptions.map((token) => (
-                          <option key={token.value} value={token.value}>
-                            {token.label}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    <input
-                      id="takingAmount"
-                      type="number"
-                      name="takingAmount"
-                      value={form.takingAmount}
-                      onChange={handleChange}
-                      step="0.000001"
-                      min="0"
-                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                      placeholder="0.0"
-                      required
-                    />
+                    <div className="space-y-4">
+                      <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                        <select
+                          id="takerAsset"
+                          name="takerAsset"
+                          value={form.takerAsset}
+                          onChange={handleChange}
+                          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
+                          required
+                          disabled={tokensLoading}
+                        >
+                          {tokensLoading ? (
+                            <option>Loading...</option>
+                          ) : (
+                            tokenOptions.map((token) => (
+                              <option key={token.value} value={token.value}>
+                                {token.label}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <input
+                          id="takingAmount"
+                          type="number"
+                          name="takingAmount"
+                          value={form.takingAmount}
+                          onChange={handleChange}
+                          step="0.000001"
+                          min="0"
+                          className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                          placeholder="0.0"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-300">Withdraw from Lending Position</span>
+                    <span className="text-sm font-medium text-gray-300">
+                      Withdraw from Lending Position
+                    </span>
                     <button
                       type="button"
                       onClick={() =>
@@ -741,12 +756,12 @@ export default function CreateOrder() {
                   )}
 
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">
-                      TWAP Order
-                    </label>
+                    <label className="text-sm font-medium text-gray-300">TWAP Order</label>
                     <button
                       type="button"
-                      onClick={() => setForm(prev => ({ ...prev, useTwapOrder: !prev.useTwapOrder }))}
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, useTwapOrder: !prev.useTwapOrder }))
+                      }
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 ${
                         form.useTwapOrder ? 'bg-blue-600' : 'bg-gray-600'
                       }`}
@@ -773,7 +788,9 @@ export default function CreateOrder() {
                         className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="1"
                       />
-                      <p className="text-xs text-gray-500 mt-1">TWAP will execute over this time period (1-168 hours)</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        TWAP will execute over this time period (1-168 hours)
+                      </p>
                     </div>
                   )}
 
@@ -838,61 +855,65 @@ export default function CreateOrder() {
                       </div>
                     </div>
                   )}
-            </div>
+                </div>
 
-            <div>
-              <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
-                Expiration
-              </label>
-              <select
-                id="expiresIn"
-                name="expiresIn"
-                value={form.expiresIn}
-                onChange={handleChange}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                {expirationOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
+                    Expiration
+                  </label>
+                  <select
+                    id="expiresIn"
+                    name="expiresIn"
+                    value={form.expiresIn}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    {expirationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            {approvalStatus && (
-              <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
-                <p className="text-blue-400">{approvalStatus}</p>
-              </div>
-            )}
+                {approvalStatus && (
+                  <div className="bg-blue-900/20 border border-blue-500 rounded-lg p-4">
+                    <p className="text-blue-400">{approvalStatus}</p>
+                  </div>
+                )}
 
-            {error && (
-              <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
-                <p className="text-red-400">{error}</p>
-              </div>
-            )}
+                {error && (
+                  <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
+                    <p className="text-red-400">{error}</p>
+                  </div>
+                )}
 
-            {success && (
-              <div className="bg-green-900/20 border border-green-500 rounded-lg p-4">
-                <p className="text-green-400">{success}</p>
-              </div>
-            )}
+                {success && (
+                  <div className="bg-green-900/20 border border-green-500 rounded-lg p-4">
+                    <p className="text-green-400">{success}</p>
+                  </div>
+                )}
 
-            <div className="flex space-x-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                {loading ? (approvalStatus ? approvalStatus : 'Creating Order...') : 'Create Order'}
-              </button>
+                <div className="flex space-x-4">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    {loading
+                      ? approvalStatus
+                        ? approvalStatus
+                        : 'Creating Order...'
+                      : 'Create Order'}
+                  </button>
 
-              <Link
-                to={navigationHelpers.toOrders()}
-                className="px-6 py-3 border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors text-center"
-              >
-                Cancel
-              </Link>
+                  <Link
+                    to={navigationHelpers.toOrders()}
+                    className="px-6 py-3 border border-gray-600 rounded-lg hover:bg-gray-700 transition-colors text-center"
+                  >
+                    Cancel
+                  </Link>
                 </div>
               </form>
             </div>

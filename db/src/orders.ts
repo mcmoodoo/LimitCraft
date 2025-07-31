@@ -21,7 +21,11 @@ export async function getAllOrders(limit = 100, offset = 0): Promise<Order[]> {
   return await db.select().from(orders).orderBy(desc(orders.createdAt)).limit(limit).offset(offset);
 }
 
-export async function getOrdersByMaker(makerAddress: string, limit = 100, offset = 0): Promise<Order[]> {
+export async function getOrdersByMaker(
+  makerAddress: string,
+  limit = 100,
+  offset = 0
+): Promise<Order[]> {
   return await db
     .select()
     .from(orders)

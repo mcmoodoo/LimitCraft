@@ -2,35 +2,35 @@
 export const CHAIN_ID_TO_MORALIS: Record<number, string> = {
   // Ethereum Mainnet
   1: 'eth',
-  
+
   // Polygon
   137: 'polygon',
-  
+
   // Arbitrum One
   42161: 'arbitrum',
-  
+
   // Optimism
   10: 'optimism',
-  
+
   // Base
   8453: 'base',
-  
+
   // BSC
   56: 'bsc',
-  
+
   // Avalanche
   43114: 'avalanche',
-  
+
   // Fantom
   250: 'fantom',
-  
+
   // Cronos
   25: 'cronos',
-  
+
   // Testnet chains
-  5: 'goerli',           // Goerli (deprecated)
-  11155111: 'sepolia',   // Sepolia
-  80001: 'mumbai',       // Polygon Mumbai
+  5: 'goerli', // Goerli (deprecated)
+  11155111: 'sepolia', // Sepolia
+  80001: 'mumbai', // Polygon Mumbai
   421614: 'arbitrum-sepolia', // Arbitrum Sepolia
 };
 

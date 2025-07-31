@@ -57,14 +57,14 @@ export default function TokenBalances({ address, chainId, onTokenSelect }: Token
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <h3 className="text-lg font-semibold mb-4">Your Token Balances ({balances.length})</h3>
-      
+
       <div className="max-h-64 overflow-y-auto space-y-2">
         {balances.map((token) => (
           <div
             key={token.token_address}
             className={`flex items-center justify-between p-3 rounded-lg border ${
-              onTokenSelect 
-                ? 'border-gray-600 hover:border-blue-500 cursor-pointer hover:bg-gray-700' 
+              onTokenSelect
+                ? 'border-gray-600 hover:border-blue-500 cursor-pointer hover:bg-gray-700'
                 : 'border-gray-700 bg-gray-700'
             } transition-colors`}
             onClick={() => onTokenSelect?.(token.token_address, token.symbol)}
@@ -86,7 +86,7 @@ export default function TokenBalances({ address, chainId, onTokenSelect }: Token
                 <div className="text-xs text-gray-400 truncate max-w-32">{token.name}</div>
               </div>
             </div>
-            
+
             <div className="text-right">
               <div className="font-medium text-white">{formatBalance(token.balance_formatted)}</div>
               <div className="text-xs text-gray-400">
@@ -98,7 +98,7 @@ export default function TokenBalances({ address, chainId, onTokenSelect }: Token
           </div>
         ))}
       </div>
-      
+
       <div className="mt-4 pt-4 border-t border-gray-700">
         <p className="text-xs text-gray-500">
           💡 Click on a token to use it in your order. Only verified tokens are shown.

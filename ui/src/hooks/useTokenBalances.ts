@@ -42,9 +42,11 @@ export function useTokenBalances(address: string | undefined, chainId: number | 
     setError(null);
 
     try {
-      const url = new URL(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}`);
+      const url = new URL(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}`
+      );
       url.searchParams.append('chainId', chainId.toString());
-      
+
       const response = await fetch(url.toString());
       const result: TokenBalancesResponse = await response.json();
 
