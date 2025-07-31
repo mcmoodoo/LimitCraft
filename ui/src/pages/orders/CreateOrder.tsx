@@ -542,13 +542,13 @@ export default function CreateOrder() {
                 <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                     <select
                       id="makerAsset"
                       name="makerAsset"
                       value={form.makerAsset}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
                       required
                     >
                       {tokenOptions.map((token) => (
@@ -557,12 +557,7 @@ export default function CreateOrder() {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="makingAmount" className="block text-sm font-medium mb-2">
-                      Amount
-                    </label>
+                    <div className="w-px bg-gray-600"></div>
                     <input
                       id="makingAmount"
                       type="number"
@@ -571,7 +566,7 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       step="0.000001"
                       min="0"
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none"
                       placeholder="0.0"
                       required
                     />
@@ -677,13 +672,13 @@ export default function CreateOrder() {
                 <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                     <select
                       id="takerAsset"
                       name="takerAsset"
                       value={form.takerAsset}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
                       required
                     >
                       {tokenOptions.map((token) => (
@@ -692,12 +687,7 @@ export default function CreateOrder() {
                         </option>
                       ))}
                     </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="takingAmount" className="block text-sm font-medium mb-2">
-                      Amount
-                    </label>
+                    <div className="w-px bg-gray-600"></div>
                     <input
                       id="takingAmount"
                       type="number"
@@ -706,7 +696,7 @@ export default function CreateOrder() {
                       onChange={handleChange}
                       step="0.000001"
                       min="0"
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none"
                       placeholder="0.0"
                       required
                     />
