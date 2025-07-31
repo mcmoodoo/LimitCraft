@@ -158,6 +158,8 @@ export default function CreateOrder() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokensLoading, setTokensLoading] = useState(true);
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
+  const [rateFlipped, setRateFlipped] = useState(false);
+  const [customRate, setCustomRate] = useState<string>('');
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -277,6 +279,98 @@ export default function CreateOrder() {
     if (usdValue < 1000) return usdValue.toFixed(2);
     if (usdValue < 1000000) return `${(usdValue / 1000).toFixed(2)}K`;
     return `${(usdValue / 1000000).toFixed(2)}M`;
+  };
+
+  // Calculate exchange rate between two tokens
+  const calculateExchangeRate = (): string => {
+    // If user has set a custom rate, use that
+    if (customRate !== '') return customRate;
+    
+    if (!form.makingAmount || !form.takingAmount || parseFloat(form.makingAmount) === 0) return '0';
+    
+    const makingNum = parseFloat(form.makingAmount);
+    const takingNum = parseFloat(form.takingAmount);
+    
+    if (rateFlipped) {
+      // Show taker/maker rate
+      return (makingNum / takingNum).toFixed(6);
+    } else {
+      // Show maker/taker rate  
+      return (takingNum / makingNum).toFixed(6);
+    }
+  };
+
+  // Calculate market rate percentage difference
+  const calculateMarketRatePercentage = (): string => {
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return '0.00';
+    
+    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!makerPrice || !takerPrice) return '0.00';
+    
+    const makingNum = parseFloat(form.makingAmount);
+    const takingNum = parseFloat(form.takingAmount);
+    
+    if (makingNum === 0 || takingNum === 0) return '0.00';
+    
+    // Market rate: how much taker token should be received for 1 maker token
+    const marketRate = makerPrice / takerPrice;
+    // User's rate: how much taker token user gets for 1 maker token
+    const userRate = takingNum / makingNum;
+    
+    const percentageDiff = ((userRate - marketRate) / marketRate) * 100;
+    
+    return percentageDiff >= 0 ? `+${percentageDiff.toFixed(2)}` : percentageDiff.toFixed(2);
+  };
+
+  // Handle rate input change
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomRate(value);
+    
+    // Recalculate taking amount based on the new rate
+    if (value && form.makingAmount) {
+      const rate = parseFloat(value);
+      const makingNum = parseFloat(form.makingAmount);
+      
+      if (!isNaN(rate) && !isNaN(makingNum) && makingNum > 0) {
+        let newTakingAmount: number;
+        
+        if (rateFlipped) {
+          // Rate is taker/maker, so: takingAmount = makingAmount / rate
+          newTakingAmount = makingNum / rate;
+        } else {
+          // Rate is maker/taker, so: takingAmount = makingAmount * rate
+          newTakingAmount = makingNum * rate;
+        }
+        
+        const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+        setForm(prev => ({ 
+          ...prev, 
+          takingAmount: newTakingAmount.toFixed(takerDecimals) 
+        }));
+      }
+    }
+  };
+
+  // Set to market rate
+  const setToMarketRate = () => {
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
+    
+    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!makerPrice || !takerPrice) return;
+    
+    const makingNum = parseFloat(form.makingAmount);
+    if (makingNum === 0) return;
+    
+    const marketRate = makerPrice / takerPrice;
+    const marketTakingAmount = (makingNum * marketRate).toFixed(6);
+    
+    setForm(prev => ({ ...prev, takingAmount: marketTakingAmount }));
+    setCustomRate(''); // Clear custom rate when setting to market
   };
 
   // Get aToken address for the makerAsset
@@ -634,6 +728,9 @@ export default function CreateOrder() {
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenAddress: string) => {
     const { name, value } = e.target;
     
+    // Clear custom rate when user manually changes amounts
+    setCustomRate('');
+    
     // Allow empty value
     if (value === '') {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -945,6 +1042,64 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
+                  {/* Rate Display */}
+                  <div className="border border-gray-600 rounded-lg p-4 space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-400">
+                          Pay {(() => {
+                            const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
+                            return selectedToken?.symbol || 'Token';
+                          })()} at rate ({calculateMarketRatePercentage()}%)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={setToMarketRate}
+                          className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                        >
+                          Set to market
+                        </button>
+                      </div>
+                      
+                      {/* Rate Input */}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="number"
+                          value={calculateExchangeRate()}
+                          onChange={handleRateChange}
+                          step="0.000001"
+                          min="0"
+                          placeholder="0.000000"
+                          className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-right focus:outline-none focus:ring-2 focus:ring-blue-500 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRateFlipped(!rateFlipped);
+                            setCustomRate(''); // Clear custom rate when flipping
+                          }}
+                          className="p-2 bg-gray-700 hover:bg-gray-600 border border-gray-600 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        </button>
+                        <span className="text-sm text-gray-400 min-w-16">
+                          {(() => {
+                            const makerToken = tokens.find(t => t.token_address === form.makerAsset);
+                            const takerToken = tokens.find(t => t.token_address === form.takerAsset);
+                            
+                            if (rateFlipped) {
+                              return makerToken?.symbol || 'Token';
+                            } else {
+                              return takerToken?.symbol || 'Token';
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-300">
                       Withdraw from Lending Position
@@ -1171,28 +1326,8 @@ export default function CreateOrder() {
           <div className="space-y-6">
 
             <div className="bg-gray-800 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Order Summary</h3>
-              <div className="text-sm text-gray-400 space-y-1">
-                <p>
-                  You will sell{' '}
-                  <span className="text-white font-medium">{form.makingAmount || '0'}</span> tokens
-                </p>
-                <p>
-                  You will receive{' '}
-                  <span className="text-white font-medium">{form.takingAmount || '0'}</span> tokens
-                </p>
-                <p>
-                  Order expires in{' '}
-                  <span className="text-white font-medium">
-                    {expirationOptions.find((opt) => opt.value === form.expiresIn)?.label}
-                  </span>
-                </p>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-gray-700">
-                <p className="text-xs text-gray-500">
-                  📝 Note: You may need to approve token spending before creating the order.
-                </p>
+              <div className="text-xs text-gray-500">
+                📝 Note: You may need to approve token spending before creating the order.
               </div>
             </div>
           </div>
