@@ -266,23 +266,6 @@ const app = new Elysia()
           };
         }
       })
-      .post('/admin/refresh-orders', async ({ set }) => {
-        try {
-          const result = await refreshExpiredOrders();
-
-          return {
-            success: true,
-            ...result,
-          };
-        } catch (error) {
-          console.error('Error refreshing orders:', error);
-          set.status = 500;
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error occurred',
-          };
-        }
-      })
       .get('/tokens/:address', async ({ params, query, set }) => {
         try {
           const { address } = params;
