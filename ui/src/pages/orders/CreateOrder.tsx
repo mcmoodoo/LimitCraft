@@ -816,7 +816,12 @@ export default function CreateOrder() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-6">
                   <div className="border border-gray-600 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4 text-green-400">You pay</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-green-400 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                      You pay
+                    </h3>
 
                     <div className="space-y-4">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
@@ -841,7 +846,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.makerAsset && (
-                        <div className="flex justify-between items-center text-base">
+                        <div className="flex justify-between items-center text-lg">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
@@ -876,7 +881,12 @@ export default function CreateOrder() {
                   </div>
 
                   <div className="border border-gray-600 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4 text-blue-400">You get</h3>
+                    <h3 className="text-lg font-semibold mb-4 text-blue-400 flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                      </svg>
+                      You get
+                    </h3>
 
                     <div className="space-y-4">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
@@ -901,7 +911,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.takerAsset && (
-                        <div className="flex justify-between items-center text-base">
+                        <div className="flex justify-between items-center text-lg">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
@@ -918,7 +928,7 @@ export default function CreateOrder() {
                                 return (
                                   <>
                                     <span className="text-white font-medium">{selectedToken.name}</span>
-                                    <span className="text-gray-400"> available: {formatBalance(selectedToken.balance_formatted)}</span>
+                                    <span className="text-gray-400"> balance: {formatBalance(selectedToken.balance_formatted)}</span>
                                   </>
                                 );
                               }
