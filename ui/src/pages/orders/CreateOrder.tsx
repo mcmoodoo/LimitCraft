@@ -1100,6 +1100,26 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
+                <div>
+                  <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
+                    Expiration
+                  </label>
+                  <select
+                    id="expiresIn"
+                    name="expiresIn"
+                    value={form.expiresIn}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    {expirationOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-300">
                       Withdraw from Lending Position
@@ -1259,26 +1279,6 @@ export default function CreateOrder() {
                       </div>
                     </div>
                   )}
-                </div>
-
-                <div>
-                  <label htmlFor="expiresIn" className="block text-sm font-medium mb-2">
-                    Expiration
-                  </label>
-                  <select
-                    id="expiresIn"
-                    name="expiresIn"
-                    value={form.expiresIn}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    {expirationOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 {approvalStatus && (
