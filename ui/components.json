@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "src/index.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@orderbook/api/components",
+    "utils": "@orderbook/api/lib/utils",
+    "ui": "@orderbook/api/components/ui",
+    "lib": "@orderbook/api/lib",
+    "hooks": "@orderbook/api/hooks"
+  },
+  "iconLibrary": "lucide"
+}
