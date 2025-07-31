@@ -22,6 +22,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      // Shadcn/ui aliases
+      "@": path.resolve(__dirname, "./src"),
+      "src": path.resolve(__dirname, "./src"),
+      // Existing aliases
       assert: "assert",
       buffer: "buffer",
       crypto: "crypto-browserify",

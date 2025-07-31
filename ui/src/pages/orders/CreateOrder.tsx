@@ -21,6 +21,7 @@ import {
 } from 'wagmi';
 import { ethers } from 'ethers';
 import { Slider } from '../../components/ui/slider';
+import { Input } from '../../components/ui/input';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -161,6 +162,7 @@ export default function CreateOrder() {
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
   const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
+  const [customExpiration, setCustomExpiration] = useState<string>('');
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -899,6 +901,47 @@ export default function CreateOrder() {
   const handleSliderChange = (value: number[]) => {
     const newExpiration = getExpirationFromSliderValue(value[0]);
     setForm(prev => ({ ...prev, expiresIn: newExpiration }));
+    setCustomExpiration(''); // Clear custom input when slider changes
+  };
+
+  // Convert seconds to human-readable format for input
+  const formatExpirationForInput = (seconds: number): string => {
+    const option = expirationOptions.find(opt => opt.value === seconds);
+    return option ? option.label : `${seconds} seconds`;
+  };
+
+  // Parse input text and convert to seconds
+  const parseExpirationInput = (inputValue: string): number => {
+    // Try to find matching option first
+    const option = expirationOptions.find(opt => 
+      opt.label.toLowerCase() === inputValue.toLowerCase()
+    );
+    if (option) return option.value;
+
+    // Parse custom formats like "30 minutes", "2 hours", etc.
+    const match = inputValue.match(/(\d+)\s*(minute|minutes|hour|hours|second|seconds)/i);
+    if (match) {
+      const value = parseInt(match[1]);
+      const unit = match[2].toLowerCase();
+      
+      if (unit.startsWith('second')) return value;
+      if (unit.startsWith('minute')) return value * 60;
+      if (unit.startsWith('hour')) return value * 3600;
+    }
+    
+    return form.expiresIn; // Return current value if parsing fails
+  };
+
+  // Handle input changes
+  const handleExpirationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomExpiration(value);
+    
+    // Try to parse and update form if valid
+    const parsedValue = parseExpirationInput(value);
+    if (parsedValue !== form.expiresIn && parsedValue > 0) {
+      setForm(prev => ({ ...prev, expiresIn: parsedValue }));
+    }
   };
 
   if (!isConnected) {
@@ -1119,20 +1162,38 @@ export default function CreateOrder() {
                 {/* Expiration Slider */}
                 <div>
                   <label className="block text-sm font-medium mb-2">
-                    Expiration: {expirationOptions.find(opt => opt.value === form.expiresIn)?.label}
+                    Expiration: {expirationOptions.find(opt => opt.value === form.expiresIn)?.label || `${form.expiresIn} seconds`}
                   </label>
-                  <div className="px-2 mb-4">
-                    <Slider
-                      value={[getSliderValueFromExpiration(form.expiresIn)]}
-                      onValueChange={handleSliderChange}
-                      max={expirationOptions.length - 1}
-                      min={0}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-2">
-                      <span>{expirationOptions[0].label}</span>
-                      <span>{expirationOptions[Math.floor((expirationOptions.length - 1) / 2)].label}</span>
-                      <span>{expirationOptions[expirationOptions.length - 1].label}</span>
+                  
+                  {/* Slider and Input Row */}
+                  <div className="flex items-center gap-3 mb-4">
+                    {/* Slider takes most of the width */}
+                    <div className="flex-1 px-2">
+                      <Slider
+                        value={[getSliderValueFromExpiration(form.expiresIn)]}
+                        onValueChange={handleSliderChange}
+                        max={expirationOptions.length - 1}
+                        min={0}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>{expirationOptions[0].label}</span>
+                        <span>{expirationOptions[Math.floor((expirationOptions.length - 1) / 2)].label}</span>
+                        <span>{expirationOptions[expirationOptions.length - 1].label}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Input takes minimal width needed */}
+                    <div className="w-32">
+                      <Input
+                        type="text"
+                        value={customExpiration || formatExpirationForInput(form.expiresIn)}
+                        onChange={handleExpirationInputChange}
+                        onFocus={() => setCustomExpiration(formatExpirationForInput(form.expiresIn))}
+                        onBlur={() => setCustomExpiration('')}
+                        className="text-sm"
+                        placeholder="Custom time"
+                      />
                     </div>
                   </div>
                 </div>
