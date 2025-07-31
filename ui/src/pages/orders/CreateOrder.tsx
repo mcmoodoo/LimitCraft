@@ -158,6 +158,7 @@ export default function CreateOrder() {
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokensLoading, setTokensLoading] = useState(true);
+  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -230,6 +231,26 @@ export default function CreateOrder() {
     fetchTokens();
   }, [address]);
 
+  // Fetch token prices
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/prices`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setTokenPrices(data.prices || {});
+        }
+      } catch (err) {
+        console.error('Error fetching prices:', err);
+      }
+    };
+
+    fetchPrices();
+  }, []);
+
   // Get selected token decimals for step calculation
   const getSelectedTokenDecimals = (tokenAddress: string): number => {
     const token = tokens.find(t => t.token_address === tokenAddress);
@@ -239,6 +260,24 @@ export default function CreateOrder() {
   // Generate step value based on token decimals
   const getStepForDecimals = (decimals: number): string => {
     return `0.${'0'.repeat(decimals - 1)}1`;
+  };
+
+  // Calculate USD value for a token amount
+  const calculateUsdValue = (amount: string, tokenAddress: string): string => {
+    if (!amount || !tokenAddress) return '0.00';
+    
+    const price = tokenPrices[tokenAddress.toLowerCase()];
+    if (!price) return '0.00';
+    
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount)) return '0.00';
+    
+    const usdValue = numAmount * price;
+    
+    if (usdValue < 0.01) return '<0.01';
+    if (usdValue < 1000) return usdValue.toFixed(2);
+    if (usdValue < 1000000) return `${(usdValue / 1000).toFixed(2)}K`;
+    return `${(usdValue / 1000000).toFixed(2)}M`;
   };
 
   // Get aToken address for the makerAsset
@@ -675,7 +714,7 @@ export default function CreateOrder() {
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
+          className="w-40 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
         >
           {disabled ? (
             <span className="text-gray-400">Loading...</span>
@@ -702,7 +741,7 @@ export default function CreateOrder() {
         </button>
 
         {isOpen && !disabled && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          <div className="absolute top-full left-0 w-80 z-50 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto">
             {tokens.map((token) => (
               <div
                 key={token.token_address}
@@ -725,7 +764,7 @@ export default function CreateOrder() {
                   )}
                   <div>
                     <div className="font-medium text-white text-sm">{token.symbol}</div>
-                    <div className="text-xs text-gray-400 truncate max-w-24">{token.name}</div>
+                    <div className="text-xs text-gray-400 truncate max-w-40">{token.name}</div>
                   </div>
                 </div>
 
@@ -802,6 +841,36 @@ export default function CreateOrder() {
                           required
                         />
                       </div>
+                      {form.makerAsset && form.makingAmount && (
+                        <div className="text-sm text-gray-500 text-right">
+                          ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
+                        </div>
+                      )}
+                      {form.makerAsset && (
+                        <div className="text-sm text-left">
+                          {(() => {
+                            const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
+                            if (selectedToken) {
+                              const formatBalance = (balance: string) => {
+                                const num = parseFloat(balance);
+                                if (num === 0) return '0';
+                                if (num < 0.000001) return '<0.000001';
+                                if (num < 1) return num.toFixed(6);
+                                if (num < 1000) return num.toFixed(4);
+                                if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
+                                return `${(num / 1000000).toFixed(2)}M`;
+                              };
+                              return (
+                                <>
+                                  <span className="text-white font-medium">{selectedToken.name}</span>
+                                  <span className="text-gray-400"> available {formatBalance(selectedToken.balance_formatted)}</span>
+                                </>
+                              );
+                            }
+                            return <span className="text-gray-400">Available to spend: 0</span>;
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
 
