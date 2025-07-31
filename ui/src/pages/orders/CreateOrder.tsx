@@ -7,7 +7,7 @@ import {
   MakerTraits,
   randBigInt,
 } from '@1inch/limit-order-sdk';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { navigationHelpers } from '../../router/navigation';
 import { maxUint256, parseUnits } from 'viem';
@@ -632,19 +632,113 @@ export default function CreateOrder() {
     }));
   };
 
-  const tokenOptions = tokens.map((token) => {
-    // Ensure we have a proper formatted balance, fallback to manual calculation if needed
-    const formattedBalance =
-      token.balance_formatted || (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6);
+  // Custom Token Dropdown Component
+  const TokenDropdown = ({ 
+    selectedTokenAddress, 
+    onTokenSelect, 
+    disabled 
+  }: { 
+    selectedTokenAddress: string; 
+    onTokenSelect: (address: string) => void; 
+    disabled: boolean; 
+  }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Remove trailing zeros and unnecessary decimal point
-    const cleanBalance = parseFloat(formattedBalance).toString();
+    const selectedToken = tokens.find(t => t.token_address === selectedTokenAddress);
 
-    return {
-      value: token.token_address,
-      label: `${token.symbol} (${cleanBalance})`,
+    const formatBalance = (balance: string) => {
+      const num = parseFloat(balance);
+      if (num === 0) return '0';
+      if (num < 0.000001) return '<0.000001';
+      if (num < 1) return num.toFixed(6);
+      if (num < 1000) return num.toFixed(4);
+      if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
+      return `${(num / 1000000).toFixed(2)}M`;
     };
-  });
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          type="button"
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          disabled={disabled}
+          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
+        >
+          {disabled ? (
+            <span className="text-gray-400">Loading...</span>
+          ) : selectedToken ? (
+            <div className="flex items-center space-x-2">
+              {selectedToken.logo && (
+                <img
+                  src={selectedToken.logo}
+                  alt={selectedToken.symbol}
+                  className="w-4 h-4 rounded-full"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
+              <span className="font-medium text-white text-sm truncate">{selectedToken.symbol}</span>
+            </div>
+          ) : (
+            <span className="text-gray-400">Select</span>
+          )}
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {isOpen && !disabled && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {tokens.map((token) => (
+              <div
+                key={token.token_address}
+                className="flex items-center justify-between p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
+                onClick={() => {
+                  onTokenSelect(token.token_address);
+                  setIsOpen(false);
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  {token.logo && (
+                    <img
+                      src={token.logo}
+                      alt={token.symbol}
+                      className="w-6 h-6 rounded-full"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <div>
+                    <div className="font-medium text-white text-sm">{token.symbol}</div>
+                    <div className="text-xs text-gray-400 truncate max-w-24">{token.name}</div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="font-medium text-white text-sm">{formatBalance(token.balance_formatted)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const expirationOptions = [
     { value: 60, label: '1 minute' },
@@ -688,25 +782,11 @@ export default function CreateOrder() {
 
                     <div className="space-y-4">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                        <select
-                          id="makerAsset"
-                          name="makerAsset"
-                          value={form.makerAsset}
-                          onChange={handleChange}
-                          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
-                          required
+                        <TokenDropdown
+                          selectedTokenAddress={form.makerAsset}
+                          onTokenSelect={(address) => setForm(prev => ({ ...prev, makerAsset: address }))}
                           disabled={tokensLoading}
-                        >
-                          {tokensLoading ? (
-                            <option>Loading...</option>
-                          ) : (
-                            tokenOptions.map((token) => (
-                              <option key={token.value} value={token.value}>
-                                {token.label}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                        />
                         <input
                           id="makingAmount"
                           type="number"
@@ -730,25 +810,11 @@ export default function CreateOrder() {
 
                     <div className="space-y-4">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                        <select
-                          id="takerAsset"
-                          name="takerAsset"
-                          value={form.takerAsset}
-                          onChange={handleChange}
-                          className="w-28 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none appearance-none"
-                          required
+                        <TokenDropdown
+                          selectedTokenAddress={form.takerAsset}
+                          onTokenSelect={(address) => setForm(prev => ({ ...prev, takerAsset: address }))}
                           disabled={tokensLoading}
-                        >
-                          {tokensLoading ? (
-                            <option>Loading...</option>
-                          ) : (
-                            tokenOptions.map((token) => (
-                              <option key={token.value} value={token.value}>
-                                {token.label}
-                              </option>
-                            ))
-                          )}
-                        </select>
+                        />
                         <input
                           id="takingAmount"
                           type="number"
