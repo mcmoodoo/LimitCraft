@@ -11,7 +11,7 @@ import {
   updateOrderStatus,
 } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
-import { getMoralisChainId } from './chains';
+import { fetchTokensWithMoralis } from './services/tokens';
 
 interface SignedOrderRequest {
   orderHash: string;
@@ -26,21 +26,6 @@ interface SignedOrderRequest {
   extension?: string;
 }
 
-interface TokenBalance {
-  token_address: string;
-  symbol: string;
-  name: string;
-  logo?: string;
-  thumbnail?: string;
-  decimals: number;
-  balance: string;
-  possible_spam: boolean;
-  verified_contract: boolean;
-  total_supply?: string;
-  total_supply_formatted?: string;
-  percentage_relative_to_total_supply?: number;
-  security_score?: number;
-}
 
 // Database connection for order refresh functionality
 const connectionString = `postgresql://postgres:postgres@localhost:5432/our-limit-order-db`;
@@ -312,61 +297,15 @@ const app = new Elysia()
             };
           }
 
-          // Get Moralis chain identifier
-          const moralisChain = getMoralisChainId(chainId);
-          if (!moralisChain) {
-            set.status = 400;
-            return {
-              success: false,
-              error: `Unsupported chain ID: ${chainId}`,
-            };
+          // Fetch tokens using Moralis (can be extended to use other sources with fallback)
+          const result = await fetchTokensWithMoralis(address, chainId);
+
+          if (!result.success) {
+            set.status = result.error?.includes('Unsupported chain') ? 400 : 500;
+            return result;
           }
 
-          // Check for Moralis API key
-          const moralisApiKey = process.env.MORALIS_API_KEY;
-          if (!moralisApiKey) {
-            set.status = 500;
-            return {
-              success: false,
-              error: 'Moralis API key not configured',
-            };
-          }
-
-          // Fetch token balances from Moralis
-          const moralisUrl = `https://deep-index.moralis.io/api/v2.2/${address}/erc20?chain=${moralisChain}`;
-
-          const response = await fetch(moralisUrl, {
-            headers: {
-              'X-API-Key': moralisApiKey,
-            },
-          });
-
-          if (!response.ok) {
-            console.error('Moralis API error:', response.status, await response.text());
-            throw new Error(`Moralis API error: ${response.status}`);
-          }
-
-          const tokens = (await response.json()) as TokenBalance[];
-
-          // Filter out spam tokens and add formatted balance
-          const filteredTokens = tokens
-            .filter((token) => !token.possible_spam && token.verified_contract)
-            .map((token) => ({
-              ...token,
-              balance_formatted: (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6),
-            }))
-            .sort((a, b) => b.security_score || 0 - (a.security_score || 0)); // Sort by security score
-
-          return {
-            success: true,
-            data: {
-              address,
-              chainId,
-              moralisChain,
-              tokens: filteredTokens,
-              count: filteredTokens.length,
-            },
-          };
+          return result;
         } catch (error) {
           console.error('Error fetching token balances:', error);
           set.status = 500;
