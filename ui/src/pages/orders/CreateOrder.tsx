@@ -594,6 +594,43 @@ export default function CreateOrder() {
     setCustomRate(''); // Clear custom rate when setting to market
   };
 
+  // Switch token positions and flip amounts with +3% markup
+  const handleTokenSwitch = () => {
+    if (!form.makerAsset || !form.takerAsset || !form.takingAmount) return;
+    
+    const currentTakingAmount = parseFloat(form.takingAmount);
+    if (isNaN(currentTakingAmount) || currentTakingAmount <= 0) return;
+    
+    // Calculate new taking amount with +3% markup using spot prices
+    const oldMakerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const oldTakerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!oldMakerPrice || !oldTakerPrice) return;
+    
+    // After switch: old taker becomes new maker, old maker becomes new taker
+    const newMakerPrice = oldTakerPrice; // what was taker price
+    const newTakerPrice = oldMakerPrice; // what was maker price
+    
+    const spotRate = newMakerPrice / newTakerPrice;
+    const adjustedRate = spotRate * 1.03; // +3% markup
+    const newTakingAmount = currentTakingAmount * adjustedRate;
+    
+    // Get decimals for formatting
+    const newTakerDecimals = getSelectedTokenDecimals(form.makerAsset); // will become new taker
+    const formattedNewTakingAmount = newTakingAmount.toFixed(Math.min(newTakerDecimals, 8));
+    
+    // Switch the tokens and amounts
+    setForm(prev => ({
+      ...prev,
+      makerAsset: prev.takerAsset,
+      takerAsset: prev.makerAsset,
+      makingAmount: prev.takingAmount,
+      takingAmount: formattedNewTakingAmount
+    }));
+    
+    setCustomRate(''); // Clear custom rate
+  };
+
   // Get aToken address for the makerAsset
   const aaveReserveDataQuery = useReadContract({
     address: AAVE_V3_POOL_ADDRESS as `0x${string}`,
@@ -1235,6 +1272,21 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
+                  {/* Token Switch Button */}
+                  <div className="flex justify-center -my-2 relative z-10">
+                    <button
+                      type="button"
+                      onClick={handleTokenSwitch}
+                      disabled={!form.makerAsset || !form.takerAsset || !form.takingAmount}
+                      className="w-10 h-10 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                      title="Switch tokens and flip amounts"
+                    >
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                      </svg>
+                    </button>
+                  </div>
+
                   <div className="border border-gray-600 rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-4 text-blue-400 flex items-center gap-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1307,7 +1359,7 @@ export default function CreateOrder() {
                         {/* Exchange rate - left aligned */}
                         <div className="text-left">
                           <span className="text-sm font-medium text-gray-300">
-                            Exchange rate: 1 {(() => {
+                            1 {(() => {
                               const makerToken = tokens.find(t => t.token_address === form.makerAsset);
                               return makerToken?.symbol || 'Token';
                             })()} for {(() => {
