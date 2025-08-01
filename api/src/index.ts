@@ -12,6 +12,7 @@ import {
 } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
 import { fetchTokensWithMoralis, fetchTokensWith1inch } from './services/tokens';
+import { fetchPricesFrom1inch } from './services/prices';
 
 interface SignedOrderRequest {
   orderHash: string;
@@ -306,43 +307,33 @@ const app = new Elysia()
       })
       .get('/prices', async ({ query, set }) => {
         try {
-          // Mock prices - static values for now
-          const mockPrices: Record<string, number> = {
-            // USDC
-            '0xaf88d065e77c8cc2239327c5edb3a432268e5831': 1.0,
-            // WETH
-            '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': 3200.5,
-            // USDT
-            '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': 0.999,
-            // USDC.e
-            '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8': 0.998,
-          };
+          // Get token addresses from query params
+          const token1 = query.token1 as string;
+          const token2 = query.token2 as string;
+          const chainId = parseInt(query.chainId as string) || 42161; // Default to Arbitrum
 
-          // If specific tokens are requested via query params
-          const tokens = query.tokens?.split(',') || [];
-
-          if (tokens.length > 0) {
-            const requestedPrices: Record<string, number> = {};
-            tokens.forEach((token) => {
-              const address = token.toLowerCase();
-              requestedPrices[address] = mockPrices[address] || 0;
-            });
-
+          // Validate inputs
+          if (!token1 || !token2) {
+            set.status = 400;
             return {
-              success: true,
-              prices: requestedPrices,
-              source: 'mock',
-              timestamp: new Date().toISOString(),
+              success: false,
+              error: 'Both token1 and token2 addresses are required',
             };
           }
 
-          // Return all prices if no specific tokens requested
-          return {
-            success: true,
-            prices: mockPrices,
-            source: 'mock',
-            timestamp: new Date().toISOString(),
-          };
+          // Fetch prices from 1inch
+          const result = await fetchPricesFrom1inch([token1, token2], chainId);
+
+          if (!result.success) {
+            set.status = 500;
+            return {
+              success: false,
+              error: result.error,
+            };
+          }
+
+          // Return the price data directly as requested
+          return result.data;
         } catch (error) {
           console.error('Error fetching prices:', error);
           set.status = 500;

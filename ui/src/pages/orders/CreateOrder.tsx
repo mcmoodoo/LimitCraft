@@ -87,6 +87,7 @@ interface Token {
   balance_formatted: string;
   possible_spam: boolean;
   verified_contract: boolean;
+  logo?: string;
 }
 
 const ERC20_ABI = [
@@ -165,6 +166,7 @@ export default function CreateOrder() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokensLoading, setTokensLoading] = useState(true);
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
+  const [pricesLoading, setPricesLoading] = useState(false);
   const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
   const [customExpiration, setCustomExpiration] = useState<string>('');
@@ -193,6 +195,40 @@ export default function CreateOrder() {
     useTwapOrder: false,
     twapRunningTimeHours: 5,
   });
+
+  // Fetch prices from API
+  const fetchPrices = async (token1: string, token2: string) => {
+    if (!token1 || !token2) return;
+
+    try {
+      setPricesLoading(true);
+      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/prices?token1=${token1}&token2=${token2}&chainId=${chainId}`;
+      console.log('Fetching prices from:', url);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Price API Response Error:', response.status, errorText);
+        return;
+      }
+
+      const priceData = await response.json();
+      console.log('Price API Response:', priceData);
+      
+      // Convert string prices to numbers and store in state
+      const prices: Record<string, number> = {};
+      Object.entries(priceData).forEach(([address, price]) => {
+        prices[address.toLowerCase()] = parseFloat(price as string);
+      });
+      
+      setTokenPrices(prices);
+    } catch (err) {
+      console.error('Error fetching prices:', err);
+    } finally {
+      setPricesLoading(false);
+    }
+  };
 
   // Fetch tokens from API
   useEffect(() => {
@@ -240,25 +276,12 @@ export default function CreateOrder() {
     fetchTokens();
   }, [address]);
 
-  // Fetch token prices
+  // Fetch prices when both tokens are selected
   useEffect(() => {
-    const fetchPrices = async () => {
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/prices`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          setTokenPrices(data.prices || {});
-        }
-      } catch (err) {
-        console.error('Error fetching prices:', err);
-      }
-    };
-
-    fetchPrices();
-  }, []);
+    if (form.makerAsset && form.takerAsset && form.makerAsset !== form.takerAsset) {
+      fetchPrices(form.makerAsset, form.takerAsset);
+    }
+  }, [form.makerAsset, form.takerAsset, chainId]);
 
   // Get selected token decimals for step calculation
   const getSelectedTokenDecimals = (tokenAddress: string): number => {
