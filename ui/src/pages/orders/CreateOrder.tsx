@@ -263,6 +263,7 @@ export default function CreateOrder() {
             makerAsset: usdcToken?.token_address || tokens[0].token_address,
             takerAsset:
               wethToken?.token_address || tokens[1]?.token_address || tokens[0].token_address,
+            makingAmount: '1', // Default to 1 token
           }));
         }
       } catch (err) {
@@ -282,6 +283,13 @@ export default function CreateOrder() {
       fetchPrices(form.makerAsset, form.takerAsset);
     }
   }, [form.makerAsset, form.takerAsset, chainId]);
+
+  // Auto-calculate taking amount based on spot price when prices are loaded or making amount changes
+  useEffect(() => {
+    if (Object.keys(tokenPrices).length > 0 && form.makingAmount && !customRate) {
+      calculateTakingAmountFromSpot();
+    }
+  }, [tokenPrices, form.makingAmount, form.makerAsset, form.takerAsset, customRate]);
 
   // Get selected token decimals for step calculation
   const getSelectedTokenDecimals = (tokenAddress: string): number => {
@@ -421,6 +429,30 @@ export default function CreateOrder() {
     const percentage = positionToPercentage(position);
     updateAmountsFromPosition(percentage);
   };
+
+  // Calculate taking amount based on spot price
+  const calculateTakingAmountFromSpot = () => {
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
+    
+    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!makerPrice || !takerPrice) return;
+    
+    const makingNum = parseFloat(form.makingAmount);
+    if (isNaN(makingNum) || makingNum <= 0) return;
+    
+    // Calculate spot rate and taking amount
+    const spotRate = makerPrice / takerPrice;
+    const takingAmount = makingNum * spotRate;
+    
+    // Format to appropriate decimal places
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+    const formattedAmount = takingAmount.toFixed(Math.min(takerDecimals, 8));
+    
+    setForm(prev => ({ ...prev, takingAmount: formattedAmount }));
+  };
+
 
   // Handle rate input change
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1184,6 +1216,7 @@ export default function CreateOrder() {
                         <span className="text-sm font-medium text-gray-300">
                           Market Position
                         </span>
+                        <span className="text-gray-400 font-medium">Market Spot</span>
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-semibold ${
                             getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
@@ -1197,9 +1230,9 @@ export default function CreateOrder() {
                       
                       {/* Clean gradient slider */}
                       <div className="relative space-y-4">
-                        {/* Market spot indicator */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-                          <div className="w-3 h-3 bg-white border-2 border-gray-800 rounded-full shadow-md"></div>
+                        {/* Market spot indicator - pulsing triangle */}
+                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-5 border-transparent border-t-white shadow-md animate-pulse"></div>
                         </div>
                         
                         {/* Gradient Slider - track IS the gradient */}
@@ -1215,30 +1248,26 @@ export default function CreateOrder() {
                         {/* Labels */}
                         <div className="flex justify-between text-xs text-gray-500 mt-2">
                           <span>-50%</span>
-                          <span className="text-gray-400 font-medium">Market Spot</span>
+                            {/* Description text */}
+                            <div className="text-center">
+                              <p className="text-xs text-gray-400">
+                                {getMarketRatePercentageNum() > 15 ? (
+                                  <>🚀 Optimistic pricing - might take a while to fill</>
+                                ) : getMarketRatePercentageNum() > 5 ? (
+                                  <>📈 Above market - good for you if it fills</>
+                                ) : getMarketRatePercentageNum() > -5 ? (
+                                  <>🎯 Close to market rate - likely to fill quickly</>
+                                ) : getMarketRatePercentageNum() > -15 ? (
+                                  <>📉 Below market - generous offer</>
+                                ) : (
+                                  <>💸 Well below market - very generous!</>
+                                )}
+                              </p>
+                            </div>
                           <span>+50%</span>
                         </div>
                       </div>
                       
-                      {/* Description text */}
-                      <div className="text-center">
-                        <p className="text-xs text-gray-400">
-                          {getMarketRatePercentageNum() > 15 ? (
-                            <>🚀 Optimistic pricing - might take a while to fill</>
-                          ) : getMarketRatePercentageNum() > 5 ? (
-                            <>📈 Above market - good for you if it fills</>
-                          ) : getMarketRatePercentageNum() > -5 ? (
-                            <>🎯 Close to market rate - likely to fill quickly</>
-                          ) : getMarketRatePercentageNum() > -15 ? (
-                            <>📉 Below market - generous offer</>
-                          ) : (
-                            <>💸 Well below market - very generous!</>
-                          )}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          💡 Drag the slider to adjust your rate vs. market
-                        </p>
-                      </div>
                     </div>
                   )}
 
