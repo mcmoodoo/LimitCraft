@@ -1119,25 +1119,25 @@ export default function CreateOrder() {
           className="w-40 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
         >
           {disabled ? (
-            <span className="text-gray-400">Loading...</span>
+            <span className="text-gray-400 text-xs">Loading...</span>
           ) : selectedToken ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
               {selectedToken.logo && (
                 <img
                   src={selectedToken.logo}
                   alt={selectedToken.symbol}
-                  className="w-4 h-4 rounded-full"
+                  className="w-3 h-3 rounded-full"
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}
                 />
               )}
-              <span className="font-medium text-white text-sm truncate">{selectedToken.symbol}</span>
+              <span className="font-medium text-white text-xs truncate">{selectedToken.symbol}</span>
             </div>
           ) : (
-            <span className="text-gray-400">Select</span>
+            <span className="text-gray-400 text-xs">Select</span>
           )}
-          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -1147,18 +1147,18 @@ export default function CreateOrder() {
             {tokens.map((token) => (
               <div
                 key={token.token_address}
-                className="flex items-center justify-between p-3 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
+                className="flex items-center justify-between p-2 hover:bg-gray-700 cursor-pointer border-b border-gray-700 last:border-b-0"
                 onClick={() => {
                   onTokenSelect(token.token_address);
                   setIsOpen(false);
                 }}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
                   {token.logo && (
                     <img
                       src={token.logo}
                       alt={token.symbol}
-                      className="w-6 h-6 rounded-full"
+                      className="w-5 h-5 rounded-full"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -1242,28 +1242,28 @@ export default function CreateOrder() {
 
   return (
     <div>
-      <div className="flex items-center mb-6">
-        <Link to={navigationHelpers.toOrders()} className="text-blue-400 hover:text-blue-300 mr-4">
+      <div className="flex items-center mb-3">
+        <Link to={navigationHelpers.toOrders()} className="text-blue-400 hover:text-blue-300 mr-3">
           ← Back to Orders
         </Link>
-        <h1 className="text-3xl font-bold">Create Order</h1>
+        <h1 className="text-2xl font-bold">Create Order</h1>
       </div>
 
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-lg p-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-6">
-                  <div className="border border-gray-600 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4 text-green-400 flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-gray-800 rounded-lg p-4">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="space-y-3">
+                  <div className="border border-gray-600 rounded-lg p-3">
+                    <h3 className="text-base font-semibold mb-2 text-green-400 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                       </svg>
                       You pay
                     </h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                         <TokenDropdown
                           selectedTokenAddress={form.makerAsset}
@@ -1286,7 +1286,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.makerAsset && (
-                        <div className="flex justify-between items-center text-lg">
+                        <div className="flex justify-between items-center text-sm">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
@@ -1321,29 +1321,29 @@ export default function CreateOrder() {
                   </div>
 
                   {/* Token Switch Button */}
-                  <div className="flex justify-center -my-2 relative z-10">
+                  <div className="flex justify-center -my-1 relative z-10">
                     <button
                       type="button"
                       onClick={handleTokenSwitch}
                       disabled={!form.makerAsset || !form.takerAsset || !form.takingAmount}
-                      className="w-10 h-10 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200"
+                      className="w-8 h-8 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200"
                       title="Switch tokens and flip amounts"
                     >
-                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                       </svg>
                     </button>
                   </div>
 
-                  <div className="border border-gray-600 rounded-lg p-4">
-                    <h3 className="text-lg font-semibold mb-4 text-blue-400 flex items-center gap-2">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="border border-gray-600 rounded-lg p-3">
+                    <h3 className="text-base font-semibold mb-2 text-blue-400 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                       </svg>
                       You get
                     </h3>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                         <TokenDropdown
                           selectedTokenAddress={form.takerAsset}
@@ -1366,7 +1366,7 @@ export default function CreateOrder() {
                         />
                       </div>
                       {form.takerAsset && (
-                        <div className="flex justify-between items-center text-lg">
+                        <div className="flex justify-between items-center text-sm">
                           <div className="text-left">
                             {(() => {
                               const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
@@ -1402,8 +1402,8 @@ export default function CreateOrder() {
 
                   {/* Market Position Spectrum - Shadcn Slider Version */}
                   {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
-                    <div className="border border-gray-600 rounded-lg p-4 space-y-4">
-                      <div className="relative mb-3">
+                    <div className="border border-gray-600 rounded-lg p-2 space-y-2">
+                      <div className="relative mb-1">
                         {/* Exchange rate - left aligned */}
                         <div className="text-left">
                           <span className="text-sm font-medium text-gray-300">
@@ -1433,8 +1433,8 @@ export default function CreateOrder() {
                         
                         {/* Percentage - right aligned */}
                         <div className="absolute top-0 right-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold dynamic-percentage-text">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-semibold dynamic-percentage-text">
                               {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
                             </span>
                             <span className="text-xs text-gray-500">vs </span>
@@ -1450,10 +1450,10 @@ export default function CreateOrder() {
                       </div>
                       
                       {/* Clean gradient slider */}
-                      <div className="relative space-y-4">
+                      <div className="relative space-y-1">
                         {/* Market spot indicator - pulsing triangle */}
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
-                          <div className="w-0 h-0 border-l-8 border-r-8 border-t-10 border-transparent border-t-white shadow-md animate-pulse"></div>
+                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="w-0 h-0 border-l-6 border-r-6 border-t-8 border-transparent border-t-white shadow-md animate-pulse"></div>
                         </div>
                         
                         {/* Gradient Slider - track IS the gradient */}
@@ -1467,7 +1467,7 @@ export default function CreateOrder() {
                         />
                         
                         {/* Labels */}
-                        <div className="flex justify-between text-xs text-gray-500 mt-2">
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>-50%</span>
                             {/* Description text */}
                             <div className="text-center">
@@ -1494,14 +1494,14 @@ export default function CreateOrder() {
 
                 {/* Expiration Slider */}
                 <div>
-                  <Label className="block text-sm font-medium mb-2">
+                  <Label className="block text-xs font-medium mb-1">
                     Expiration: {getMinutesFromSeconds(form.expiresIn)} minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}
                   </Label>
                   
                   {/* Slider and Input Row */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
                     {/* Slider takes most of the width */}
-                    <div className="flex-1 px-2">
+                    <div className="flex-1 px-1">
                       <Slider
                         value={[getSliderValueFromExpiration(form.expiresIn)]}
                         onValueChange={handleSliderChange}
@@ -1509,7 +1509,7 @@ export default function CreateOrder() {
                         min={0}
                         className="w-full"
                       />
-                      <div className="flex justify-between text-xs text-gray-500 mt-2">
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>{expirationMinutes[0]}m</span>
                         <span>{expirationMinutes[Math.floor((expirationMinutes.length - 1) / 2)]}m</span>
                         <span>{expirationMinutes[expirationMinutes.length - 1]}m</span>
@@ -1517,7 +1517,7 @@ export default function CreateOrder() {
                     </div>
                     
                     {/* Input with label */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       <Input
                         type="number"
                         value={customExpiration || getMinutesFromSeconds(form.expiresIn)}
@@ -1526,17 +1526,17 @@ export default function CreateOrder() {
                         onBlur={() => setCustomExpiration('')}
                         min="1"
                         max="1440"
-                        className="w-20 text-sm"
+                        className="w-16 text-xs h-8"
                         placeholder="60"
                       />
-                      <span className="text-sm text-gray-400">minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}</span>
+                      <span className="text-xs text-gray-400">minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}</span>
                     </div>
                   </div>
                 </div>
 
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="useLendingProtocol" className="text-sm font-medium text-gray-300">
+                  <div className="flex items-center justify-between py-1">
+                    <Label htmlFor="useLendingProtocol" className="text-xs font-medium text-gray-300">
                       Withdraw from Lending Position
                     </Label>
                     <Switch
@@ -1552,8 +1552,8 @@ export default function CreateOrder() {
                   </div>
 
                   {form.useLendingProtocol && (
-                    <div className="mt-3">
-                      <Label htmlFor="lendingProtocol" className="block text-sm font-medium mb-2">
+                    <div className="mt-1">
+                      <Label htmlFor="lendingProtocol" className="block text-xs font-medium mb-1">
                         Protocol
                       </Label>
                       <Select
@@ -1583,8 +1583,8 @@ export default function CreateOrder() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="useTwapOrder" className="text-sm font-medium text-gray-300">TWAP Order</Label>
+                  <div className="flex items-center justify-between py-1">
+                    <Label htmlFor="useTwapOrder" className="text-xs font-medium text-gray-300">TWAP Order</Label>
                     <Switch
                       id="useTwapOrder"
                       checked={form.useTwapOrder}
@@ -1595,8 +1595,8 @@ export default function CreateOrder() {
                   </div>
 
                   {form.useTwapOrder && (
-                    <div className="mt-3">
-                      <Label className="block text-sm font-medium mb-2">Running Time (hours)</Label>
+                    <div className="mt-1">
+                      <Label className="block text-xs font-medium mb-1">Running Time (hours)</Label>
                       <Input
                         type="number"
                         name="twapRunningTimeHours"
@@ -1606,15 +1606,16 @@ export default function CreateOrder() {
                         max="168"
                         step="1"
                         placeholder="1"
+                        className="h-8 text-xs"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-0.5">
                         TWAP will execute over this time period (1-168 hours)
                       </p>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="supplyToLendingProtocol" className="text-sm font-medium text-gray-300">
+                  <div className="flex items-center justify-between py-1">
+                    <Label htmlFor="supplyToLendingProtocol" className="text-xs font-medium text-gray-300">
                       Supply to Lending Protocol
                     </Label>
                     <Switch
@@ -1630,10 +1631,10 @@ export default function CreateOrder() {
                   </div>
 
                   {form.supplyToLendingProtocol && (
-                    <div className="mt-3">
+                    <div className="mt-1">
                       <Label
                         htmlFor="supplyLendingProtocol"
-                        className="block text-sm font-medium mb-2"
+                        className="block text-xs font-medium mb-1"
                       >
                         Protocol
                       </Label>
@@ -1683,12 +1684,12 @@ export default function CreateOrder() {
                   </Alert>
                 )}
 
-                <div className="flex space-x-4">
+                <div className="flex space-x-2">
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="flex-1"
-                    size="lg"
+                    className="flex-1 h-9 text-sm"
+                    size="default"
                   >
                     {loading
                       ? approvalStatus
@@ -1699,7 +1700,8 @@ export default function CreateOrder() {
 
                   <Button
                     variant="outline"
-                    size="lg"
+                    size="default"
+                    className="h-9 text-sm"
                     asChild
                   >
                     <Link to={navigationHelpers.toOrders()}>
@@ -1711,8 +1713,8 @@ export default function CreateOrder() {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="bg-gray-800 rounded-lg p-4">
+          <div className="space-y-3">
+            <div className="bg-gray-800 rounded-lg p-3">
               <div className="text-xs text-gray-500">
                 📝 Note: You may need to approve token spending before creating the order.
               </div>
