@@ -172,8 +172,6 @@ export default function CreateOrder() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [tokensLoading, setTokensLoading] = useState(true);
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
-  const [pricesLoading, setPricesLoading] = useState(false);
-  const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
 
   const { writeContractAsync } = useWriteContract();
@@ -206,7 +204,6 @@ export default function CreateOrder() {
     if (!token1 || !token2) return;
 
     try {
-      setPricesLoading(true);
       const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/prices?token1=${token1}&token2=${token2}&chainId=${chainId}`;
       console.log('Fetching prices from:', url);
 
@@ -230,8 +227,6 @@ export default function CreateOrder() {
       setTokenPrices(prices);
     } catch (err) {
       console.error('Error fetching prices:', err);
-    } finally {
-      setPricesLoading(false);
     }
   };
 
@@ -363,49 +358,6 @@ export default function CreateOrder() {
     return `${(usdValue / 1000000).toFixed(2)}M`;
   };
 
-  // Calculate exchange rate between two tokens
-  const calculateExchangeRate = (): string => {
-    // If user has set a custom rate, use that
-    if (customRate !== '') return customRate;
-
-    if (!form.makingAmount || !form.takingAmount || parseFloat(form.makingAmount) === 0) return '0';
-
-    const makingNum = parseFloat(form.makingAmount);
-    const takingNum = parseFloat(form.takingAmount);
-
-    if (rateFlipped) {
-      // Show taker/maker rate
-      return (makingNum / takingNum).toFixed(6);
-    } else {
-      // Show maker/taker rate
-      return (takingNum / makingNum).toFixed(6);
-    }
-  };
-
-  // Calculate market rate percentage difference
-  const calculateMarketRatePercentage = (): string => {
-    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount)
-      return '0.00';
-
-    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
-    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-
-    if (!makerPrice || !takerPrice) return '0.00';
-
-    const makingNum = parseFloat(form.makingAmount);
-    const takingNum = parseFloat(form.takingAmount);
-
-    if (makingNum === 0 || takingNum === 0) return '0.00';
-
-    // Market rate: how much taker token should be received for 1 maker token
-    const marketRate = makerPrice / takerPrice;
-    // User's rate: how much taker token user gets for 1 maker token
-    const userRate = takingNum / makingNum;
-
-    const percentageDiff = ((userRate - marketRate) / marketRate) * 100;
-
-    return percentageDiff >= 0 ? `+${percentageDiff.toFixed(2)}` : percentageDiff.toFixed(2);
-  };
 
   // Get numerical percentage difference for logic
   const getMarketRatePercentageNum = (): number => {
@@ -444,11 +396,8 @@ export default function CreateOrder() {
 
     if (marketPercentage < 0) {
       // Left side: Red to Light Green
-      const normalizedPos = Math.abs(marketPercentage) / 50; // 0 to 1 (1 = -50%, 0 = 0%)
-
       if (marketPercentage >= -5) {
         // -5% to 0%: Light Red to Orange to Light Green transition
-        const factor = Math.abs(marketPercentage) / 5; // 1 at -5%, 0 at 0%
 
         if (marketPercentage >= -2.5) {
           // -2.5% to 0%: Orange to Light Green
@@ -598,35 +547,6 @@ export default function CreateOrder() {
     setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
   };
 
-  // Handle rate input change
-  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCustomRate(value);
-
-    // Recalculate taking amount based on the new rate
-    if (value && form.makingAmount) {
-      const rate = parseFloat(value);
-      const makingNum = parseFloat(form.makingAmount);
-
-      if (!isNaN(rate) && !isNaN(makingNum) && makingNum > 0) {
-        let newTakingAmount: number;
-
-        if (rateFlipped) {
-          // Rate is taker/maker, so: takingAmount = makingAmount / rate
-          newTakingAmount = makingNum / rate;
-        } else {
-          // Rate is maker/taker, so: takingAmount = makingAmount * rate
-          newTakingAmount = makingNum * rate;
-        }
-
-        const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
-        setForm((prev) => ({
-          ...prev,
-          takingAmount: newTakingAmount.toFixed(takerDecimals),
-        }));
-      }
-    }
-  };
 
   // Set to market rate
   const setToMarketRate = () => {
@@ -1088,17 +1008,6 @@ export default function CreateOrder() {
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
-  };
-
-  const handleTokenSelect = (
-    tokenAddress: string,
-    symbol: string,
-    field: 'makerAsset' | 'takerAsset'
-  ) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: tokenAddress,
-    }));
   };
 
   // Custom Token Dropdown Component

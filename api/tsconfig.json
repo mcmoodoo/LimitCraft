@@ -2,12 +2,12 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
-    "rootDir": "./src",
+    "rootDir": "..",
     "outDir": "./dist",
     // API uses CommonJS for compatibility
     "module": "commonjs",
     "noEmit": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../db/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
