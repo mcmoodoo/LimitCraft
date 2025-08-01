@@ -107,8 +107,9 @@ export async function fetchPricesFrom1inch(
       // Combine results into single response object
       const priceData: PriceResponse = {};
       tokenAddresses.forEach((address, index) => {
-        if (getResults[index].price) {
-          priceData[address] = getResults[index].price!;
+        const price = getResults[index].price;
+        if (price) {
+          priceData[address] = price;
         }
       });
 

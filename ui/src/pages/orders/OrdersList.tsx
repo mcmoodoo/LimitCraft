@@ -219,7 +219,7 @@ export default function OrdersList() {
     switch (order.status) {
       case 'pending':
         return (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Pending order">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -230,13 +230,13 @@ export default function OrdersList() {
         );
       case 'filled':
         return (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Filled order">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         );
       case 'cancelled':
         return (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Cancelled order">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -247,7 +247,7 @@ export default function OrdersList() {
         );
       case 'expired':
         return (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Expired order">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -258,7 +258,7 @@ export default function OrdersList() {
         );
       default:
         return (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Unknown order status">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -323,7 +323,7 @@ export default function OrdersList() {
         <div className="text-center py-12">
           <h1 className="text-3xl font-bold mb-6">Orders</h1>
           <Alert className="bg-yellow-900/20 border-yellow-500 max-w-md mx-auto">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Warning">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -356,7 +356,7 @@ export default function OrdersList() {
     return (
       <div className="max-w-6xl mx-auto">
         <Alert variant="destructive" className="max-w-md mx-auto mt-12">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="Error">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -391,6 +391,7 @@ export default function OrdersList() {
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
+              aria-label="No orders"
             >
               <path
                 strokeLinecap="round"
@@ -441,6 +442,7 @@ export default function OrdersList() {
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
+                              aria-label="Maker address"
                             >
                               <path
                                 strokeLinecap="round"
@@ -457,6 +459,7 @@ export default function OrdersList() {
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
+                              aria-label="Creation date"
                             >
                               <path
                                 strokeLinecap="round"
@@ -478,6 +481,7 @@ export default function OrdersList() {
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-label="Arrow right"
                         >
                           <path
                             strokeLinecap="round"
@@ -499,6 +503,7 @@ export default function OrdersList() {
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            aria-label="You pay"
                           >
                             <path
                               strokeLinecap="round"
@@ -530,6 +535,7 @@ export default function OrdersList() {
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
+                            aria-label="You get"
                           >
                             <path
                               strokeLinecap="round"
@@ -562,6 +568,7 @@ export default function OrdersList() {
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-label="Order issue"
                         >
                           <path
                             strokeLinecap="round"

@@ -44,7 +44,7 @@ export const extractRouteParams = (pathname: string, routePattern: string): Rout
 
   paramNames.forEach((param, index) => {
     const paramName = param.slice(1) as keyof RouteParams;
-    params[paramName] = match[index + 1] as any;
+    params[paramName] = match[index + 1];
   });
 
   return params as RouteParams;

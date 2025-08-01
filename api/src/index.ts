@@ -187,7 +187,7 @@ const app = new Elysia()
           };
         }
       })
-      .post('/orders', async ({ body, set }: { body: SignedOrderRequest; set: any }) => {
+      .post('/orders', async ({ body, set }: { body: SignedOrderRequest; set: { status: number } }) => {
         try {
           // Calculate expiration
           const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
