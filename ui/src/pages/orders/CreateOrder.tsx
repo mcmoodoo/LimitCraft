@@ -20,6 +20,34 @@ import {
   useWriteContract,
 } from 'wagmi';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+// Constants and utilities
+import {
+  AAVE_V3_POOL_ADDRESS,
+  AAVE_V3_POOL_ABI,
+  ERC20_ABI,
+  LENDING_INTERACTION_MANAGER_ADDRESS,
+  TWAP_CALCULATOR_ADDRESS,
+  EXPIRATION_MINUTES,
+} from '../../constants/order-constants';
+import {
+  type Token,
+  getSelectedTokenDecimals,
+  getStepForDecimals,
+  formatBalance,
+  calculateUsdValue,
+} from '../../utils/token-utils';
+import {
+  getMarketRatePercentageNum,
+  getSpectrumPosition,
+  getSliderColor,
+  positionToPercentage,
+} from '../../utils/price-utils';
+import { handleKeyDown, validateAmountInput } from '../../utils/validation-utils';
+import {
+  getSliderValueFromExpiration,
+  getExpirationFromSliderValue,
+  formatExpirationTime,
+} from '../../utils/time-utils';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -35,41 +63,6 @@ import { Switch } from '../../components/ui/switch';
 import { navigationHelpers } from '../../router/navigation';
 import { usePermit2, type Permit2Data } from '../../hooks/usePermit2';
 
-// Aave V3 Pool address on Arbitrum
-const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
-
-// Aave V3 Pool ABI for getReserveData function
-const AAVE_V3_POOL_ABI = [
-  {
-    type: 'function',
-    name: 'getReserveData',
-    stateMutability: 'view',
-    inputs: [{ name: 'asset', type: 'address' }],
-    outputs: [
-      {
-        name: '',
-        type: 'tuple',
-        components: [
-          { name: 'configuration', type: 'uint256' },
-          { name: 'liquidityIndex', type: 'uint128' },
-          { name: 'currentLiquidityRate', type: 'uint128' },
-          { name: 'variableBorrowIndex', type: 'uint128' },
-          { name: 'currentVariableBorrowRate', type: 'uint128' },
-          { name: 'currentStableBorrowRate', type: 'uint128' },
-          { name: 'lastUpdateTimestamp', type: 'uint40' },
-          { name: 'id', type: 'uint16' },
-          { name: 'aTokenAddress', type: 'address' },
-          { name: 'stableDebtTokenAddress', type: 'address' },
-          { name: 'variableDebtTokenAddress', type: 'address' },
-          { name: 'interestRateStrategyAddress', type: 'address' },
-          { name: 'accruedToTreasury', type: 'uint128' },
-          { name: 'unbacked', type: 'uint128' },
-          { name: 'isolationModeTotalDebt', type: 'uint128' },
-        ],
-      },
-    ],
-  },
-] as const;
 
 interface CreateOrderForm {
   makerAsset: string;
@@ -86,40 +79,6 @@ interface CreateOrderForm {
   usePermit2: boolean;
 }
 
-interface Token {
-  token_address: string;
-  symbol: string;
-  name: string;
-  decimals: number;
-  balance: string;
-  balance_formatted: string;
-  possible_spam: boolean;
-  verified_contract: boolean;
-  logo?: string;
-}
-
-const ERC20_ABI = [
-  {
-    type: 'function',
-    name: 'allowance',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-    ],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    type: 'function',
-    name: 'approve',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-  },
-] as const;
 
 // Custom hook for token approval management
 const useTokenApproval = (
@@ -160,8 +119,8 @@ interface ApprovalItem {
 }
 
 export default function CreateOrder() {
-  const lendingInteractionManagerAddress = '0x3195796c0999cee134ad7e957ad9767f89869b2c';
-  const twapCalculatorAddress = '0x1DE87041738c30bc133a54DC1f8322Cf9A80a6B8';
+  const lendingInteractionManagerAddress = LENDING_INTERACTION_MANAGER_ADDRESS;
+  const twapCalculatorAddress = TWAP_CALCULATOR_ADDRESS;
 
   const navigate = useNavigate();
   const { address, isConnected } = useAccount();
@@ -304,7 +263,7 @@ export default function CreateOrder() {
 
   // Apply dynamic color to slider based on position
   useEffect(() => {
-    const position = getSpectrumPosition();
+    const position = getSpectrumPositionLocal();
     const color = getSliderColor(position);
 
     // Color the track
@@ -340,132 +299,33 @@ export default function CreateOrder() {
     }
   }, [form.makingAmount, form.takingAmount, form.makerAsset, form.takerAsset, tokenPrices]);
 
-  // Get selected token decimals for step calculation
-  const getSelectedTokenDecimals = (tokenAddress: string): number => {
-    const token = tokens.find((t) => t.token_address === tokenAddress);
-    return token?.decimals || 18; // default to 18 if not found
+  // Using imported utility functions
+
+  // Using imported calculateUsdValue utility
+
+  // Using imported getMarketRatePercentageNum utility
+  const getMarketRatePercentageNumLocal = (): number => {
+    return getMarketRatePercentageNum(
+      form.makerAsset,
+      form.takerAsset,
+      form.makingAmount,
+      form.takingAmount,
+      tokenPrices
+    );
   };
 
-  // Generate step value based on token decimals
-  const getStepForDecimals = (decimals: number): string => {
-    return `0.${'0'.repeat(decimals - 1)}1`;
+  // Using imported getSpectrumPosition utility
+  const getSpectrumPositionLocal = (): number => {
+    return getSpectrumPosition(
+      form.makerAsset,
+      form.takerAsset,
+      form.makingAmount,
+      form.takingAmount,
+      tokenPrices
+    );
   };
 
-  // Calculate USD value for a token amount
-  const calculateUsdValue = (amount: string, tokenAddress: string): string => {
-    if (!amount || !tokenAddress) return '0.00';
-
-    const price = tokenPrices[tokenAddress.toLowerCase()];
-    if (!price) return '0.00';
-
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount)) return '0.00';
-
-    const usdValue = numAmount * price;
-
-    if (usdValue < 0.01) return '<0.01';
-    if (usdValue < 1000) return usdValue.toFixed(2);
-    if (usdValue < 1000000) return `${(usdValue / 1000).toFixed(2)}K`;
-    return `${(usdValue / 1000000).toFixed(2)}M`;
-  };
-
-  // Get numerical percentage difference for logic
-  const getMarketRatePercentageNum = (): number => {
-    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return 0;
-
-    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
-    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-
-    if (!makerPrice || !takerPrice) return 0;
-
-    const makingNum = parseFloat(form.makingAmount);
-    const takingNum = parseFloat(form.takingAmount);
-
-    if (makingNum === 0 || takingNum === 0) return 0;
-
-    const marketRate = makerPrice / takerPrice;
-    const userRate = takingNum / makingNum;
-
-    return ((userRate - marketRate) / marketRate) * 100;
-  };
-
-  // Get position for spectrum slider (0-100% positioning) - Fixed formula
-  const getSpectrumPosition = (): number => {
-    const percentage = getMarketRatePercentageNum();
-    // Clamp between -50% and +50%, then convert to 0-100% scale for positioning
-    const clampedPercentage = Math.max(-50, Math.min(50, percentage));
-    return clampedPercentage + 50; // Simplified from ((clampedPercentage + 50) / 100) * 100
-  };
-
-  // Get color based on slider position with non-linear transitions
-  const getSliderColor = (position: number): string => {
-    const clampedPosition = Math.max(0, Math.min(100, position));
-
-    // Convert position (0-100) to market percentage (-50% to +50%)
-    const marketPercentage = (clampedPosition / 100) * 100 - 50;
-
-    if (marketPercentage < 0) {
-      // Left side: Red to Light Green
-      if (marketPercentage >= -5) {
-        // -5% to 0%: Light Red to Orange to Light Green transition
-
-        if (marketPercentage >= -2.5) {
-          // -2.5% to 0%: Orange to Light Green
-          const orangeToGreenFactor = Math.abs(marketPercentage) / 2.5;
-          // Orange (255,165,0) to Light Green (144,238,144)
-          const red = Math.round(255 * orangeToGreenFactor + 144 * (1 - orangeToGreenFactor));
-          const green = Math.round(165 * orangeToGreenFactor + 238 * (1 - orangeToGreenFactor));
-          const blue = Math.round(0 * orangeToGreenFactor + 144 * (1 - orangeToGreenFactor));
-          return `rgb(${red}, ${green}, ${blue})`;
-        } else {
-          // -5% to -2.5%: Light Red to Orange
-          const lightRedToOrangeFactor = (Math.abs(marketPercentage) - 2.5) / 2.5;
-          // Light Red (255,128,128) to Orange (255,165,0)
-          const red = 255;
-          const green = Math.round(128 + (165 - 128) * (1 - lightRedToOrangeFactor));
-          const blue = Math.round(128 * lightRedToOrangeFactor);
-          return `rgb(${red}, ${green}, ${blue})`;
-        }
-      } else {
-        // -50% to -5%: Complete Red to Light Red
-        const factor = (Math.abs(marketPercentage) - 5) / 45; // 0 at -5%, 1 at -50%
-        // Complete Red (255,0,0) to Light Red (255,128,128)
-        const red = 255;
-        const green = Math.round(128 * (1 - factor));
-        const blue = Math.round(128 * (1 - factor));
-        return `rgb(${red}, ${green}, ${blue})`;
-      }
-    } else if (marketPercentage === 0) {
-      // Exactly at 0%: Light Green
-      return 'rgb(144, 238, 144)';
-    } else {
-      // Right side: Light Green to Dark Green (0% to +50%)
-      const normalizedPos = marketPercentage / 50; // 0 to 1
-
-      let factor;
-      if (normalizedPos <= 0.04) {
-        // 0% to +2% (slow transition)
-        factor = (normalizedPos / 0.04) * 0.3; // Light green range
-      } else {
-        // +2% to +50% (accelerate to dark green)
-        const remaining = (normalizedPos - 0.04) / 0.96;
-        factor = 0.3 + remaining * 0.7; // Accelerate to dark green
-      }
-
-      // Light Green (144,238,144) to Dark Green (0,100,0)
-      const red = Math.round(144 * (1 - factor));
-      const green = Math.round(238 - 138 * factor); // 238 to 100
-      const blue = Math.round(144 * (1 - factor));
-      return `rgb(${red}, ${green}, ${blue})`;
-    }
-  };
-
-  // Convert mouse position to market percentage
-  const positionToPercentage = (position: number): number => {
-    // Position is 0-100%, convert to -50% to +50% market percentage
-    const clampedPosition = Math.max(0, Math.min(100, position));
-    return (clampedPosition / 100) * 100 - 50;
-  };
+  // Using imported getSliderColor and positionToPercentage utilities
 
   // Update token amounts based on market percentage
   const updateAmountsFromPosition = (marketPercentage: number) => {
@@ -485,7 +345,7 @@ export default function CreateOrder() {
     const newTakingAmount = makingNum * adjustedRate;
 
     // Format to appropriate decimal places
-    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset, tokens);
     const formattedAmount = newTakingAmount.toFixed(Math.min(takerDecimals, 8));
 
     setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
@@ -551,7 +411,7 @@ export default function CreateOrder() {
     const takingAmount = makingNum * adjustedRate;
 
     // Format to appropriate decimal places
-    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset, tokens);
     const formattedAmount = takingAmount.toFixed(Math.min(takerDecimals, 8));
 
     setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
@@ -598,7 +458,7 @@ export default function CreateOrder() {
     const newTakingAmount = currentTakingAmount * adjustedRate;
 
     // Get decimals for formatting
-    const newTakerDecimals = getSelectedTokenDecimals(form.makerAsset); // will become new taker
+    const newTakerDecimals = getSelectedTokenDecimals(form.makerAsset, tokens); // will become new taker
     const formattedNewTakingAmount = newTakingAmount.toFixed(Math.min(newTakerDecimals, 8));
 
     // Switch the tokens and amounts
@@ -642,8 +502,8 @@ export default function CreateOrder() {
     if (!form.makingAmount || !form.takingAmount || !form.makerAsset || !form.takerAsset)
       return null;
 
-    const makerDecimals = getSelectedTokenDecimals(form.makerAsset);
-    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+    const makerDecimals = getSelectedTokenDecimals(form.makerAsset, tokens);
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset, tokens);
 
     const makingAmountWei = parseUnits(form.makingAmount, makerDecimals);
     const takingAmountWei = parseUnits(form.takingAmount, takerDecimals);
@@ -980,46 +840,7 @@ export default function CreateOrder() {
     }));
   };
 
-  // Handler to prevent invalid key presses
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    const allowedKeys = [
-      '0',
-      '1',
-      '2',
-      '3',
-      '4',
-      '5',
-      '6',
-      '7',
-      '8',
-      '9',
-      '.',
-      'Backspace',
-      'Delete',
-      'ArrowLeft',
-      'ArrowRight',
-      'ArrowUp',
-      'ArrowDown',
-      'Tab',
-      'Enter',
-      'Escape',
-    ];
-
-    // Allow Ctrl/Cmd combinations (copy, paste, select all, etc.)
-    if (e.ctrlKey || e.metaKey) {
-      return;
-    }
-
-    if (!allowedKeys.includes(e.key)) {
-      e.preventDefault();
-      return;
-    }
-
-    // Prevent multiple decimal points
-    if (e.key === '.' && e.currentTarget.value.includes('.')) {
-      e.preventDefault();
-    }
-  };
+  // Using imported handleKeyDown utility
 
   // Custom handler for amount inputs that validates decimal places and format
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenAddress: string) => {
@@ -1028,33 +849,11 @@ export default function CreateOrder() {
     // Clear custom rate when user manually changes amounts
     setCustomRate('');
 
-    // Allow empty value
-    if (value === '') {
-      setForm((prev) => ({ ...prev, [name]: value }));
-      return;
-    }
+    const decimals = getSelectedTokenDecimals(tokenAddress, tokens);
+    const validatedValue = validateAmountInput(value, decimals);
 
-    // Prevent leading zeros (except for decimal numbers like 0.5)
-    if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
-      return; // Don't update state for invalid leading zeros like 01, 000, etc.
-    }
-
-    // Regex to allow only digits and single decimal point
-    const regex = /^\d*\.?\d*$/;
-    if (!regex.test(value)) {
-      return; // Don't update if invalid format
-    }
-
-    const decimals = getSelectedTokenDecimals(tokenAddress);
-    const decimalParts = value.split('.');
-
-    // If there's a decimal part, check if it exceeds allowed decimals
-    if (decimalParts.length === 2 && decimalParts[1].length > decimals) {
-      // Truncate to allowed decimal places
-      const truncatedValue = `${decimalParts[0]}.${decimalParts[1].substring(0, decimals)}`;
-      setForm((prev) => ({ ...prev, [name]: truncatedValue }));
-    } else {
-      setForm((prev) => ({ ...prev, [name]: value }));
+    if (validatedValue !== null) {
+      setForm((prev) => ({ ...prev, [name]: validatedValue }));
     }
   };
 
@@ -1073,15 +872,7 @@ export default function CreateOrder() {
 
     const selectedToken = tokens.find((t) => t.token_address === selectedTokenAddress);
 
-    const formatBalance = (balance: string) => {
-      const num = parseFloat(balance);
-      if (num === 0) return '0';
-      if (num < 0.000001) return '<0.000001';
-      if (num < 1) return num.toFixed(6);
-      if (num < 1000) return num.toFixed(4);
-      if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-      return `${(num / 1000000).toFixed(2)}M`;
-    };
+    // Using imported formatBalance utility
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -1175,29 +966,10 @@ export default function CreateOrder() {
     );
   };
 
-  // Expiration options in minutes (will be converted to seconds for form.expiresIn)
-  const expirationMinutes = [1, 2, 3, 4, 5, 10, 15, 20, 30, 60, 120, 300, 600, 1440]; // 1 min to 24 hours
-
-  // Helper functions for slider synchronization (working with minutes)
-  const getSliderValueFromExpiration = (expiresIn: number): number => {
-    const minutes = Math.round(expiresIn / 60);
-    const index = expirationMinutes.findIndex((min) => min === minutes);
-    return index >= 0 ? index : 4; // Default to 60 minutes index
-  };
-
-  const getExpirationFromSliderValue = (sliderValue: number): number => {
-    const minutes = expirationMinutes[sliderValue] || 60; // Default to 60 minutes
-    return minutes * 60; // Convert to seconds for form.expiresIn
-  };
-
+  // Using imported time utilities
   const handleSliderChange = (value: number[]) => {
     const newExpiration = getExpirationFromSliderValue(value[0]);
     setForm((prev) => ({ ...prev, expiresIn: newExpiration }));
-  };
-
-  // Convert seconds to minutes for display
-  const getMinutesFromSeconds = (seconds: number): number => {
-    return Math.round(seconds / 60);
   };
 
   if (!isConnected) {
@@ -1263,7 +1035,7 @@ export default function CreateOrder() {
                             value={form.makingAmount}
                             onChange={(e) => handleAmountChange(e, form.makerAsset)}
                             onKeyDown={handleKeyDown}
-                            step={getStepForDecimals(getSelectedTokenDecimals(form.makerAsset))}
+                            step={getStepForDecimals(getSelectedTokenDecimals(form.makerAsset, tokens))}
                             min="0"
                             inputMode="decimal"
                             className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
@@ -1279,15 +1051,6 @@ export default function CreateOrder() {
                                   (t) => t.token_address === form.makerAsset
                                 );
                                 if (selectedToken) {
-                                  const formatBalance = (balance: string) => {
-                                    const num = parseFloat(balance);
-                                    if (num === 0) return '0';
-                                    if (num < 0.000001) return '<0.000001';
-                                    if (num < 1) return num.toFixed(6);
-                                    if (num < 1000) return num.toFixed(4);
-                                    if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-                                    return `${(num / 1000000).toFixed(2)}M`;
-                                  };
                                   return (
                                     <>
                                       <span className="text-white font-medium">
@@ -1305,7 +1068,7 @@ export default function CreateOrder() {
                             </div>
                             {form.makingAmount && (
                               <div className="text-gray-500">
-                                ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
+                                ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset, tokenPrices)} USD
                               </div>
                             )}
                           </div>
@@ -1372,7 +1135,7 @@ export default function CreateOrder() {
                             value={form.takingAmount}
                             onChange={(e) => handleAmountChange(e, form.takerAsset)}
                             onKeyDown={handleKeyDown}
-                            step={getStepForDecimals(getSelectedTokenDecimals(form.takerAsset))}
+                            step={getStepForDecimals(getSelectedTokenDecimals(form.takerAsset, tokens))}
                             min="0"
                             inputMode="decimal"
                             className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
@@ -1388,15 +1151,6 @@ export default function CreateOrder() {
                                   (t) => t.token_address === form.takerAsset
                                 );
                                 if (selectedToken) {
-                                  const formatBalance = (balance: string) => {
-                                    const num = parseFloat(balance);
-                                    if (num === 0) return '0';
-                                    if (num < 0.000001) return '<0.000001';
-                                    if (num < 1) return num.toFixed(6);
-                                    if (num < 1000) return num.toFixed(4);
-                                    if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-                                    return `${(num / 1000000).toFixed(2)}M`;
-                                  };
                                   return (
                                     <>
                                       <span className="text-white font-medium">
@@ -1414,7 +1168,7 @@ export default function CreateOrder() {
                             </div>
                             {form.takingAmount && (
                               <div className="text-gray-500">
-                                ≈ ${calculateUsdValue(form.takingAmount, form.takerAsset)} USD
+                                ≈ ${calculateUsdValue(form.takingAmount, form.takerAsset, tokenPrices)} USD
                               </div>
                             )}
                           </div>
@@ -1467,8 +1221,8 @@ export default function CreateOrder() {
                           <div className="absolute top-0 right-0">
                             <div className="flex items-center gap-1">
                               <span className="text-xs font-semibold dynamic-percentage-text">
-                                {getMarketRatePercentageNum() > 0 ? '+' : ''}
-                                {getMarketRatePercentageNum().toFixed(1)}%
+                                {getMarketRatePercentageNumLocal() > 0 ? '+' : ''}
+                                {getMarketRatePercentageNumLocal().toFixed(1)}%
                               </span>
                               <span className="text-xs text-gray-500">vs </span>
                               <button
@@ -1491,7 +1245,7 @@ export default function CreateOrder() {
 
                           {/* Gradient Slider - track IS the gradient */}
                           <Slider
-                            value={[getSpectrumPosition()]}
+                            value={[getSpectrumPositionLocal()]}
                             onValueChange={handleSpectrumSliderChange}
                             max={100}
                             min={0}
@@ -1505,13 +1259,13 @@ export default function CreateOrder() {
                             {/* Description text */}
                             <div className="text-center">
                               <p className="text-xs text-gray-400">
-                                {getMarketRatePercentageNum() > 15 ? (
+                                {getMarketRatePercentageNumLocal() > 15 ? (
                                   <>🚀 Optimistic pricing - might take a while to fill</>
-                                ) : getMarketRatePercentageNum() > 5 ? (
+                                ) : getMarketRatePercentageNumLocal() > 5 ? (
                                   <>📈 Above market - good for you if it fills</>
-                                ) : getMarketRatePercentageNum() > -5 ? (
+                                ) : getMarketRatePercentageNumLocal() > -5 ? (
                                   <>🎯 Close to market rate - likely to fill quickly</>
-                                ) : getMarketRatePercentageNum() > -15 ? (
+                                ) : getMarketRatePercentageNumLocal() > -15 ? (
                                   <>📉 Below market - generous offer</>
                                 ) : (
                                   <>💸 Well below market - very generous!</>
@@ -1527,22 +1281,14 @@ export default function CreateOrder() {
                   {/* Expiration Slider */}
                   <div className="mt-8">
                     <Label className="block text-xs font-medium mb-1">
-                      Expiration: {(() => {
-                        const minutes = getMinutesFromSeconds(form.expiresIn);
-                        if (minutes < 60) {
-                          return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-                        } else {
-                          const hours = minutes / 60;
-                          return `${hours} hour${hours !== 1 ? 's' : ''}`;
-                        }
-                      })()}
+                      Expiration: {formatExpirationTime(form.expiresIn)}
                     </Label>
 
                     <div className="px-1">
                       <Slider
                         value={[getSliderValueFromExpiration(form.expiresIn)]}
                         onValueChange={handleSliderChange}
-                        max={expirationMinutes.length - 1}
+                        max={EXPIRATION_MINUTES.length - 1}
                         min={0}
                         className="w-full"
                       />
