@@ -124,37 +124,18 @@ body {
   }
 }
 
-/* Market Spectrum Slider - Custom gradient styling */
+/* Dynamic slider coloring - override all slider backgrounds */
 .spectrum-gradient-slider [data-orientation="horizontal"] {
-  background: linear-gradient(to right, rgb(239 68 68), rgb(234 179 8), rgb(34 197 94));
-  height: 8px;
-  border-radius: 9999px;
-  border: none;
+  background: red !important; /* This will be overridden by JS */
 }
 
-.spectrum-gradient-slider [data-orientation="horizontal"] .slider-range {
+.spectrum-gradient-slider [data-orientation="horizontal"] > * {
   background: transparent !important;
 }
 
-.spectrum-gradient-slider [data-orientation="horizontal"] .slider-track {
-  background: transparent;
-}
-
+/* Thumb styling - will be dynamically colored */
 .spectrum-gradient-slider [role="slider"] {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgb(55 65 81);
-  background: rgb(255 255 255);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  transition: all 0.2s ease;
+  background: red !important; /* This will be overridden by JS */
+  border: 3px solid white !important;
 }
 
-.spectrum-gradient-slider [role="slider"]:hover {
-  transform: scale(1.1);
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-
-.spectrum-gradient-slider [role="slider"]:focus {
-  outline: 2px solid rgb(59 130 246);
-  outline-offset: 2px;
-}

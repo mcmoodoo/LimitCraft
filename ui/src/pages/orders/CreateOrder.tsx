@@ -291,6 +291,35 @@ export default function CreateOrder() {
     }
   }, [tokenPrices, form.makingAmount, form.makerAsset, form.takerAsset, customRate]);
 
+  // Apply dynamic color to slider based on position
+  useEffect(() => {
+    const position = getSpectrumPosition();
+    const color = getSliderColor(position);
+    
+    // Color the track
+    const selectors = [
+      '.spectrum-gradient-slider [data-orientation="horizontal"]',
+      '.spectrum-gradient-slider span[data-orientation="horizontal"]'
+    ];
+    
+    for (const selector of selectors) {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (element) {
+        element.style.background = color;
+        element.style.setProperty('background', color, 'important');
+        console.log('Applied color to:', selector, color);
+        break;
+      }
+    }
+    
+    // Color the thumb
+    const thumb = document.querySelector('.spectrum-gradient-slider [role="slider"]') as HTMLElement;
+    if (thumb) {
+      thumb.style.background = color;
+      thumb.style.setProperty('background', color, 'important');
+    }
+  }, [form.makingAmount, form.takingAmount, form.makerAsset, form.takerAsset, tokenPrices]);
+
   // Get selected token decimals for step calculation
   const getSelectedTokenDecimals = (tokenAddress: string): number => {
     const token = tokens.find(t => t.token_address === tokenAddress);
@@ -383,12 +412,34 @@ export default function CreateOrder() {
     return ((userRate - marketRate) / marketRate) * 100;
   };
 
-  // Get position for spectrum slider (0-100% positioning)
+
+  // Get position for spectrum slider (0-100% positioning) - Fixed formula
   const getSpectrumPosition = (): number => {
     const percentage = getMarketRatePercentageNum();
     // Clamp between -50% and +50%, then convert to 0-100% scale for positioning
     const clampedPercentage = Math.max(-50, Math.min(50, percentage));
-    return ((clampedPercentage + 50) / 100) * 100;
+    return clampedPercentage + 50; // Simplified from ((clampedPercentage + 50) / 100) * 100
+  };
+
+  // Get color based on slider position (0-100)
+  const getSliderColor = (position: number): string => {
+    const clampedPosition = Math.max(0, Math.min(100, position));
+    
+    if (clampedPosition <= 50) {
+      // Left side: Red to Yellow (0-50%)
+      const factor = clampedPosition / 50;
+      const red = 255;
+      const green = Math.round(factor * 255);
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
+    } else {
+      // Right side: Yellow to Green (50-100%)
+      const factor = (clampedPosition - 50) / 50;
+      const red = Math.round(255 * (1 - factor));
+      const green = 255;
+      const blue = 0;
+      return `rgb(${red}, ${green}, ${blue})`;
+    }
   };
 
   // Convert mouse position to market percentage
@@ -428,6 +479,31 @@ export default function CreateOrder() {
     const position = value[0]; // 0-100
     const percentage = positionToPercentage(position);
     updateAmountsFromPosition(percentage);
+    
+    // Update slider color immediately
+    const color = getSliderColor(position);
+    
+    // Color the track
+    const selectors = [
+      '.spectrum-gradient-slider [data-orientation="horizontal"]',
+      '.spectrum-gradient-slider span[data-orientation="horizontal"]'
+    ];
+    
+    for (const selector of selectors) {
+      const element = document.querySelector(selector) as HTMLElement;
+      if (element) {
+        element.style.background = color;
+        element.style.setProperty('background', color, 'important');
+        break;
+      }
+    }
+    
+    // Color the thumb
+    const thumb = document.querySelector('.spectrum-gradient-slider [role="slider"]') as HTMLElement;
+    if (thumb) {
+      thumb.style.background = color;
+      thumb.style.setProperty('background', color, 'important');
+    }
   };
 
   // Calculate taking amount based on spot price
