@@ -116,7 +116,7 @@ export async function fetchTokensWith1inch(address: string, chainId: number): Pr
     // Fetch token details in parallel for all tokens with balances
     const tokenDetailsPromises = tokensWithBalance.map(async ({ address: tokenAddress, balance }) => {
       try {
-        const detailsUrl = `https://api.1inch.dev/token-details/v1.0/details/${chainId}/${tokenAddress}`;
+        const detailsUrl = `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`;
         const detailsResponse = await fetch(detailsUrl, {
           headers: {
             'Authorization': `Bearer ${oneInchApiKey}`,
@@ -135,19 +135,15 @@ export async function fetchTokensWith1inch(address: string, chainId: number): Pr
         // Convert 1inch data to our TokenBalance format
         const tokenBalance: TokenBalance = {
           token_address: tokenAddress,
-          symbol: details.assets.symbol,
-          name: details.assets.name,
-          decimals: details.assets.decimals,
+          symbol: details.symbol,
+          name: details.name,
+          logo: details.logoURI,
+          decimals: details.decimals,
           balance: balance,
-          balance_formatted: (Number(balance) / Math.pow(10, details.assets.decimals)).toFixed(6),
+          balance_formatted: (Number(balance) / Math.pow(10, details.decimals)).toFixed(6),
           possible_spam: false, // 1inch doesn't provide spam detection
-          verified_contract: details.assets.status === 'active',
-          total_supply: details.details.totalSupply?.toString(),
-          total_supply_formatted: details.details.totalSupply?.toLocaleString(),
-          // Calculate percentage if total supply is available
-          percentage_relative_to_total_supply: details.details.totalSupply 
-            ? (Number(balance) / Math.pow(10, details.assets.decimals)) / details.details.totalSupply * 100
-            : undefined,
+          verified_contract: details.rating >= 5, // Use rating as a proxy for verification
+          security_score: details.rating,
         };
 
         return tokenBalance;

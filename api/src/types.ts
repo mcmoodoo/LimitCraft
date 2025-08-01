@@ -17,30 +17,21 @@ export interface TokenBalance {
 
 // 1inch API response types
 export interface OneInchTokenDetails {
-  details: {
-    circulatingSupply?: number;
-    totalSupply?: number;
-    vol24?: number;
-    marketCap?: number;
-    provider?: string;
-    providerURL?: string;
-  };
-  assets: {
-    name: string;
-    type: string;
-    symbol: string;
-    decimals: number;
-    website?: string;
-    description?: string;
-    explorer?: string;
-    status?: string;
-    id: string;
-    links?: Array<{
-      name: string;
-      url: string;
-    }>;
-    tags?: string[];
-  };
+  symbol: string;
+  name: string;
+  address: string;
+  chainId: number;
+  decimals: number;
+  logoURI: string;
+  isFoT: boolean;
+  displayedSymbol: string;
+  rating: number;
+  eip2612: boolean;
+  tags: Array<{
+    value: string;
+    provider: string;
+  }>;
+  providers: string[];
 }
 
 export type OneInchBalancesResponse = Record<string, string>;

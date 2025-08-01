@@ -1115,7 +1115,7 @@ export default function CreateOrder() {
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className="w-24 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
+          className="w-32 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
         >
           {disabled ? (
             <span className="text-gray-400 text-xs">Loading...</span>

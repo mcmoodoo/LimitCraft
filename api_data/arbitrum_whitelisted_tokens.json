@@ -1,0 +1,1473 @@
+{
+  "0x32eb7902d4134bf98a28b963d26de779af92a212": {
+    "chainId": 42161,
+    "symbol": "rDPX",
+    "name": "Dopex Rebate Token",
+    "address": "0x32eb7902d4134bf98a28b963d26de779af92a212",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x32eb7902d4134bf98a28b963d26de779af92a212.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x539bde0d7dbd336b79148aa742883198bbf60342": {
+    "chainId": 42161,
+    "symbol": "MAGIC",
+    "name": "MAGIC",
+    "address": "0x539bde0d7dbd336b79148aa742883198bbf60342",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x539bde0d7dbd336b79148aa742883198bbf60342_0xe9e31a0fba443dcd7fb135649f0dfafe7dbb1f1fa9fd3fcf791b516ef93768f4.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xb766039cc6db368759c1e56b79affe831d0cc507": {
+    "chainId": 42161,
+    "symbol": "RPL",
+    "name": "Rocket Pool Protocol",
+    "address": "0xb766039cc6db368759c1e56b79affe831d0cc507",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xb766039cc6db368759c1e56b79affe831d0cc507.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:RPL",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x9e758b8a98a42d612b3d38b66a22074dc03d7370": {
+    "chainId": 42161,
+    "symbol": "SIS",
+    "name": "Symbiosis",
+    "address": "0x9e758b8a98a42d612b3d38b66a22074dc03d7370",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x9e758b8a98a42d612b3d38b66a22074dc03d7370.png",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:SIS",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xba5ddd1f9d7f570dc94a51479a000e3bce967196": {
+    "chainId": 42161,
+    "symbol": "AAVE",
+    "name": "Aave Token",
+    "address": "0xba5ddd1f9d7f570dc94a51479a000e3bce967196",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xba5ddd1f9d7f570dc94a51479a000e3bce967196_0xf2282eb0e0faf962bfa2208551e825ea2a0708ae8c379b33cfc62a8f4376ac01.webp",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:AAVE",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8": {
+    "chainId": 42161,
+    "symbol": "rETH",
+    "name": "Rocket Pool ETH",
+    "address": "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8.png",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:rETH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x55ff62567f09906a85183b866df84bf599a4bf70": {
+    "chainId": 42161,
+    "symbol": "KROM",
+    "name": "Kromatika",
+    "address": "0x55ff62567f09906a85183b866df84bf599a4bf70",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x55ff62567f09906a85183b866df84bf599a4bf70.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:KROM",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xaf88d065e77c8cc2239327c5edb3a432268e5831": {
+    "chainId": 42161,
+    "symbol": "USDC_1",
+    "name": "USD Coin",
+    "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    "decimals": 6,
+    "logoURI": "https://tokens.1inch.io/0xaf88d065e77c8cc2239327c5edb3a432268e5831.png",
+    "providers": [
+      "1inch",
+      "Roll Social Money"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDC",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ],
+    "displayedSymbol": "USDC"
+  },
+  "0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07": {
+    "chainId": 42161,
+    "symbol": "JOE",
+    "name": "JoeToken",
+    "address": "0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x371c7ec6d8039ff7933a2aa28eb827ffe1f52f07.png",
+    "providers": [
+      "1inch",
+      "Roll Social Money",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:JOE",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8": {
+    "chainId": 42161,
+    "symbol": "PENDLE",
+    "name": "Pendle",
+    "address": "0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x0c880f6761f1af8d9aa9c466984b80dab9a8c9e8_0xa46614aa504d59b8f70f7d820585ebd70945a5e2b19ebdd7b0d405ce788c0635.webp",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:PENDLE",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x9623063377ad1b27544c965ccd7342f7ea7e88c7": {
+    "chainId": 42161,
+    "symbol": "GRT",
+    "name": "Graph Token",
+    "address": "0x9623063377ad1b27544c965ccd7342f7ea7e88c7",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xc944e90c64b2c07662a292be6244bdf05cda44a7.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:GRT",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x088cd8f5ef3652623c22d48b1605dcfe860cd704": {
+    "chainId": 42161,
+    "symbol": "VELA",
+    "name": "VelaToken",
+    "address": "0x088cd8f5ef3652623c22d48b1605dcfe860cd704",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x088cd8f5ef3652623c22d48b1605dcfe860cd704.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x123389c2f0e9194d9ba98c21e63c375b67614108": {
+    "chainId": 42161,
+    "symbol": "EMAX",
+    "name": "EthereumMax",
+    "address": "0x123389c2f0e9194d9ba98c21e63c375b67614108",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x123389c2f0e9194d9ba98c21e63c375b67614108.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": true,
+    "tags": [
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xeeeeeb57642040be42185f49c52f7e9b38f8eeee": {
+    "chainId": 42161,
+    "symbol": "ELK",
+    "name": "Elk",
+    "address": "0xeeeeeb57642040be42185f49c52f7e9b38f8eeee",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xeeeeeb57642040be42185f49c52f7e9b38f8eeee.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era",
+      "BA ERC20 SEC Action",
+      "BORGSWAP",
+      "CMC Stablecoin",
+      "CoinGecko",
+      "Coinmarketcap",
+      "Compound",
+      "Curve Token List",
+      "Defiprime",
+      "Furucombo",
+      "Gemini Token List",
+      "Kleros Tokens",
+      "MyCrypto Token List",
+      "Roll Social Money",
+      "Trust Wallet Assets",
+      "Uniswap Labs Default",
+      "Venus Default List",
+      "Wrapped Tokens"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ELK",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55": {
+    "chainId": 42161,
+    "symbol": "DPX",
+    "name": "Dopex Governance Token",
+    "address": "0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x6c2c06790b3e3e3c38e12ee22f8183b37a13ee55.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x6694340fc020c5e6b96567843da2df01b2ce1eb6": {
+    "chainId": 42161,
+    "symbol": "STG",
+    "name": "StargateToken",
+    "address": "0x6694340fc020c5e6b96567843da2df01b2ce1eb6",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x6694340fc020c5e6b96567843da2df01b2ce1eb6.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:STG",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x93c15cd7de26f07265f0272e0b831c5d7fab174f": {
+    "chainId": 42161,
+    "symbol": "LIQD",
+    "name": "Liquid",
+    "address": "0x93c15cd7de26f07265f0272e0b831c5d7fab174f",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x93c15cd7de26f07265f0272e0b831c5d7fab174f.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x5979d7b546e38e414f7e9822514be443a4800529": {
+    "chainId": 42161,
+    "symbol": "wstETH",
+    "name": "Wrapped liquid staked Ether 2.0",
+    "address": "0x5979d7b546e38e414f7e9822514be443a4800529",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x5979d7b546e38e414f7e9822514be443a4800529.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:Wst ETH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xd74f5255d557944cf7dd0e45ff521520002d5748": {
+    "chainId": 42161,
+    "symbol": "USDs_2",
+    "name": "Sperax USD",
+    "address": "0xd74f5255d557944cf7dd0e45ff521520002d5748",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xd74f5255d557944cf7dd0e45ff521520002d5748.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ],
+    "displayedSymbol": "USDs"
+  },
+  "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0": {
+    "chainId": 42161,
+    "symbol": "UNI",
+    "name": "Uniswap",
+    "address": "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x1f9840a85d5af5bf1d1762f925bdaddc4201f984.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:UNI",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": {
+    "chainId": 42161,
+    "symbol": "USD₮0",
+    "name": "USD₮0",
+    "address": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+    "decimals": 6,
+    "logoURI": "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Roll Social Money"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDT",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8": {
+    "chainId": 42161,
+    "symbol": "USDC",
+    "name": "USD Coin (Arb1)",
+    "address": "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8",
+    "decimals": 6,
+    "logoURI": "https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDC.e",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f": {
+    "chainId": 42161,
+    "symbol": "WBTC",
+    "name": "Wrapped BTC",
+    "address": "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f",
+    "decimals": 8,
+    "logoURI": "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:WBTC",
+      "PEG:BTC",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x82af49447d8a07e3bd95bd0d56f35241523fbab1": {
+    "chainId": 42161,
+    "symbol": "WETH",
+    "name": "Wrapped Ether",
+    "address": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Roll Social Money",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:WETH",
+      "PEG:ETH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1": {
+    "chainId": 42161,
+    "symbol": "DAI",
+    "name": "Dai Stablecoin",
+    "address": "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x6b175474e89094c44da98b954eedeac495271d0f.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:DAI",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af": {
+    "chainId": 42161,
+    "symbol": "SPELL",
+    "name": "Spell Token",
+    "address": "0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x3e6648c5a70a150a88bce65f4ad4d506fe15d2af.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:SPELL",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x1ddcaa4ed761428ae348befc6718bcb12e63bfaa": {
+    "chainId": 42161,
+    "symbol": "deUSDC",
+    "name": "deBridge USD Coin",
+    "address": "0x1ddcaa4ed761428ae348befc6718bcb12e63bfaa",
+    "decimals": 6,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x1ddcaa4ed761428ae348befc6718bcb12e63bfaa_0xa423b6ae51ec40f187f7b2304d346259ae16ef5f4a95c11f6520c634944aaffd.jpg",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:deUSDC",
+      "PEG:USD",
+      "RISK:suspicious",
+      "tokens"
+    ]
+  },
+  "0xfa5ed56a203466cbbc2430a43c66b9d8723528e7": {
+    "chainId": 42161,
+    "symbol": "EURA",
+    "name": "EURA (previously agEUR)",
+    "address": "0xfa5ed56a203466cbbc2430a43c66b9d8723528e7",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xfa5ed56a203466cbbc2430a43c66b9d8723528e7.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:EURA",
+      "PEG:EUR",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x13ad51ed4f1b7e9dc168d8a00cb3f4ddd85efa60": {
+    "chainId": 42161,
+    "symbol": "LDO",
+    "name": "Lido DAO Token",
+    "address": "0x13ad51ed4f1b7e9dc168d8a00cb3f4ddd85efa60",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x13ad51ed4f1b7e9dc168d8a00cb3f4ddd85efa60.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:LDO",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a": {
+    "chainId": 42161,
+    "symbol": "MIM",
+    "name": "Magic Internet Money",
+    "address": "0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:MIM",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a": {
+    "chainId": 42161,
+    "symbol": "GMX",
+    "name": "GMX",
+    "address": "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:GMX",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xf97f4df75117a78c1a5a0dbb814af92458539fb4": {
+    "chainId": 42161,
+    "symbol": "LINK",
+    "name": "ChainLink Token",
+    "address": "0xf97f4df75117a78c1a5a0dbb814af92458539fb4",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x514910771af9ca656af840dff83e8264ecf986ca.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:LINK",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x4e352cf164e64adcbad318c3a1e222e9eba4ce42": {
+    "chainId": 42161,
+    "symbol": "MCB",
+    "name": "MUX Protocol",
+    "address": "0x4e352cf164e64adcbad318c3a1e222e9eba4ce42",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x4e352cf164e64adcbad318c3a1e222e9eba4ce42_0x4e455cb9507032371f1489c9ba971442b607361794589510715c1631710c82d5.webp",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Roll Social Money",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "defi",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x2e9a6df78e42a30712c10a9dc4b1c8656f8f2879": {
+    "chainId": 42161,
+    "symbol": "4d4b520000000000000000000000000000000000000000000000000000000000",
+    "name": "4d616b6572000000000000000000000000000000000000000000000000000000",
+    "address": "0x2e9a6df78e42a30712c10a9dc4b1c8656f8f2879",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:MKR",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee": {
+    "chainId": 42161,
+    "symbol": "ETH",
+    "name": "Ether",
+    "address": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era",
+      "BA ERC20 SEC Action",
+      "BORGSWAP",
+      "CMC Stablecoin",
+      "CoinGecko",
+      "Coinmarketcap",
+      "Compound",
+      "Curve Token List",
+      "Defiprime",
+      "Furucombo",
+      "Gemini Token List",
+      "Kleros Tokens",
+      "Messari Verified",
+      "MyCrypto Token List",
+      "PancakeSwap Default List",
+      "Roll Social Money",
+      "SpookySwap Default List",
+      "Trust Wallet Assets",
+      "Uniswap Labs Default",
+      "Wrapped Tokens"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ETH",
+      "native",
+      "PEG:ETH",
+      "RISK:availability"
+    ]
+  },
+  "0xbfa641051ba0a0ad1b0acf549a89536a0d76472e": {
+    "chainId": 42161,
+    "symbol": "BADGER",
+    "name": "Badger",
+    "address": "0xbfa641051ba0a0ad1b0acf549a89536a0d76472e",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x3472a5a71965499acd81997a54bba8d852c6e53d.png",
+    "providers": [
+      "1inch",
+      "Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:BADGER",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8": {
+    "chainId": 42161,
+    "symbol": "BAL",
+    "name": "Balancer",
+    "address": "0x040d1edc9569d4bab2d15287dc5a4f10f56a56b8",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xba100000625a3754423978a60c9317c58a424e3d.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:BAL",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x51fc0f6660482ea73330e414efd7808811a57fa2": {
+    "chainId": 42161,
+    "symbol": "PREMIA",
+    "name": "Premia",
+    "address": "0x51fc0f6660482ea73330e414efd7808811a57fa2",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x6399c842dd2be3de30bf99bc7d1bbf6fa3650e70.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:PREMIA",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xd4d42f0b6def4ce0383636770ef773390d85c61a": {
+    "chainId": 42161,
+    "symbol": "SUSHI",
+    "name": "SushiToken",
+    "address": "0xd4d42f0b6def4ce0383636770ef773390d85c61a",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x6b3595068778dd592e39a122f4f5a5cf09c90fe2.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:SUSHI",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xe80772eaf6e2e18b651f160bc9158b2a5cafca65": {
+    "chainId": 42161,
+    "symbol": "xUSD",
+    "name": "xUSD",
+    "address": "0xe80772eaf6e2e18b651f160bc9158b2a5cafca65",
+    "decimals": 6,
+    "logoURI": "https://tokens.1inch.io/0xe80772eaf6e2e18b651f160bc9158b2a5cafca65.png",
+    "providers": [
+      "1inch",
+      "BORGSWAP",
+      "Coinmarketcap",
+      "Compound",
+      "Defiprime",
+      "Dharma Token List",
+      "Furucombo",
+      "Gemini Token List",
+      "Kleros Tokens",
+      "MyCrypto Token List",
+      "PancakeSwap Default List",
+      "PancakeSwap Extended",
+      "PancakeSwap Top 100",
+      "Quickswap Token List",
+      "Roll Social Money",
+      "Synthetix",
+      "Trust Wallet Assets",
+      "Uniswap Labs Default",
+      "Venus Default List",
+      "Wrapped Tokens",
+      "Zerion"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USD+",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x354a6da3fcde098f8389cad84b0182725c6c91de": {
+    "chainId": 42161,
+    "symbol": "COMP",
+    "name": "Compound",
+    "address": "0x354a6da3fcde098f8389cad84b0182725c6c91de",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xc00e94cb662c3520282e6f5717214004a7f26888.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:COMP",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x11cdb42b0eb46d95f990bedd4695a6e3fa034978": {
+    "chainId": 42161,
+    "symbol": "CRV",
+    "name": "Curve DAO Token",
+    "address": "0x11cdb42b0eb46d95f990bedd4695a6e3fa034978",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xd533a949740bb3306d119cc777fa900ba034cd52.png",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:CRV",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xd77b108d4f6cefaa0cae9506a934e825becca46e": {
+    "chainId": 42161,
+    "symbol": "WINR",
+    "name": "WINR",
+    "address": "0xd77b108d4f6cefaa0cae9506a934e825becca46e",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0xd77b108d4f6cefaa0cae9506a934e825becca46e.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x3082cc23568ea640225c2467653db90e9250aaa0": {
+    "chainId": 42161,
+    "symbol": "RDNT",
+    "name": "Radiant",
+    "address": "0x3082cc23568ea640225c2467653db90e9250aaa0",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x3082cc23568ea640225c2467653db90e9250aaa0.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:RDNT",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x09199d9a5f4448d0848e4395d065e1ad9c4a1f74": {
+    "chainId": 42161,
+    "symbol": "Bonk",
+    "name": "Bonk",
+    "address": "0x09199d9a5f4448d0848e4395d065e1ad9c4a1f74",
+    "decimals": 5,
+    "logoURI": "https://assets.coingecko.com/coins/images/28600/large/bonk.jpg?1672304290",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "GROUP:BONK",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x912ce59144191c1204e64559fe8253a0e49e6548": {
+    "chainId": 42161,
+    "symbol": "ARB",
+    "name": "Arbitrum",
+    "address": "0x912ce59144191c1204e64559fe8253a0e49e6548",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x912ce59144191c1204e64559fe8253a0e49e6548.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ARB",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x9ed7e4b1bff939ad473da5e7a218c771d1569456": {
+    "chainId": 42161,
+    "symbol": "REUNI",
+    "name": "Reunit Token",
+    "address": "0x9ed7e4b1bff939ad473da5e7a218c771d1569456",
+    "decimals": 6,
+    "logoURI": "https://tokens.1inch.io/0x9ed7e4b1bff939ad473da5e7a218c771d1569456.png",
+    "providers": [
+      "1inch",
+      "CMC200 ERC20",
+      "MyCrypto Token List",
+      "PancakeSwap Top 100",
+      "Quickswap Token List",
+      "Roll Social Money",
+      "Trust Wallet Assets",
+      "Uniswap Labs Default",
+      "Venus Default List",
+      "Wrapped Tokens",
+      "Zerion"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5": {
+    "chainId": 42161,
+    "symbol": "crvUSD",
+    "name": "Curve.Fi USD Stablecoin",
+    "address": "0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x498bf2b1e120fed3ad3d42ea2165e9b73f99c1e5.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:crvUSD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x58b9cb810a68a7f3e1e4f8cb45d1b9b3c79705e8": {
+    "chainId": 42161,
+    "symbol": "CLEAR",
+    "name": "Everclear",
+    "address": "0x58b9cb810a68a7f3e1e4f8cb45d1b9b3c79705e8",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x58b9cb810a68a7f3e1e4f8cb45d1b9b3c79705e8.png",
+    "providers": [
+      "1inch",
+      "BA ERC20 SEC Action",
+      "CMC200 ERC20",
+      "CMC DeFi",
+      "CMC Stablecoin",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x17a8541b82bf67e10b0874284b4ae66858cb1fd5": {
+    "chainId": 42161,
+    "symbol": "PSM",
+    "name": "Possum",
+    "address": "0x17a8541b82bf67e10b0874284b4ae66858cb1fd5",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x17a8541b82bf67e10b0874284b4ae66858cb1fd5.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x27f485b62c4a7e635f561a87560adf5090239e93": {
+    "chainId": 42161,
+    "symbol": "DFX",
+    "name": "DFX Token (L2)",
+    "address": "0x27f485b62c4a7e635f561a87560adf5090239e93",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x27f485b62c4a7e635f561a87560adf5090239e93_0x301782a00f1572e0e9e08434f1adbdf2ac9ad9a11dc56a400c114c380468a6a7.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:DFX",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x35751007a407ca6feffe80b3cb397736d2cf4dbe": {
+    "chainId": 42161,
+    "symbol": "weETH",
+    "name": "Wrapped eETH",
+    "address": "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x35751007a407ca6feffe80b3cb397736d2cf4dbe_0x8cb6afd0f99fe522e72009a3bf18804e3b508ad212400ae2f9d15c3cd8934e64.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:weETH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66": {
+    "chainId": 42161,
+    "symbol": "XAI",
+    "name": "Xai",
+    "address": "0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x4cb9a7ae498cedcbb5eae9f25736ae7d428c9d66_0xd41b319cd576b0993c55574030a9922869bf61bcdaba18bfdf5799784fb07be3.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x59d9356e565ab3a36dd77763fc0d87feaf85508c": {
+    "chainId": 42161,
+    "symbol": "USDM",
+    "name": "Mountain Protocol USD",
+    "address": "0x59d9356e565ab3a36dd77763fc0d87feaf85508c",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x59d9356e565ab3a36dd77763fc0d87feaf85508c_0x8817d438647a69b787dd5cd8f94f49c69978d8c74b5a1f5c0e430554568ca4fd.png",
+    "providers": [
+      "1inch",
+      "Roll Social Money",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDM",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x2416092f143378750bb29b79ed961ab195cceea5": {
+    "chainId": 42161,
+    "symbol": "ezETH",
+    "name": "Renzo Restaked ETH",
+    "address": "0x2416092f143378750bb29b79ed961ab195cceea5",
+    "decimals": 18,
+    "logoURI": "https://tokens.1inch.io/0x2416092f143378750bb29b79ed961ab195cceea5.png",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ezETH",
+      "PEG:ETH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34": {
+    "chainId": 42161,
+    "symbol": "USDe",
+    "name": "USDe",
+    "address": "0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34_0x96d2130a835750e4aaa46525bef9b7dc212a188d996fd335f165156869dea0c5.webp",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDe",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x7cfadfd5645b50be87d546f42699d863648251ad": {
+    "chainId": 42161,
+    "symbol": "stataArbUSDCn",
+    "name": "Static Aave Arbitrum USDCn",
+    "address": "0x7cfadfd5645b50be87d546f42699d863648251ad",
+    "decimals": 6,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x7cfadfd5645b50be87d546f42699d863648251ad_0xd760107ff003e6dc41c006a6dddca17f2dd996c901d13fb33701fb87a463fc64.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified"
+    ]
+  },
+  "0x050c24dbf1eec17babe5fc585f06116a259cc77a": {
+    "chainId": 42161,
+    "symbol": "IBTC",
+    "name": "iBTC",
+    "address": "0x050c24dbf1eec17babe5fc585f06116a259cc77a",
+    "decimals": 8,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x050c24dbf1eec17babe5fc585f06116a259cc77a_0x5bd9e136769445790c44bb88344ddc34cff17203ce6d37c2968e29a7facc8305.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP: DLCBTC",
+      "PEG:BTC",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xb0ffa8000886e57f86dd5264b9582b2ad87b2b91": {
+    "chainId": 42161,
+    "symbol": "W",
+    "name": "Wormhole Token",
+    "address": "0xb0ffa8000886e57f86dd5264b9582b2ad87b2b91",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xb0ffa8000886e57f86dd5264b9582b2ad87b2b91_0xf8bad2cc15ab677b612e66d92ccabc50c289b7d71355f96477bd7221523c4473.webp",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:W",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xc87b37a581ec3257b734886d9d3a581f5a9d056c": {
+    "chainId": 42161,
+    "symbol": "ATH",
+    "name": "Aethir Token",
+    "address": "0xc87b37a581ec3257b734886d9d3a581f5a9d056c",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xc87b37a581ec3257b734886d9d3a581f5a9d056c_0xc6831a3d148e7e839f20a96a1bbc58bbf28e04dc47cfabb3ceb16b8260d93303.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ATH",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x7189fb5b6504bbff6a852b13b7b82a3c118fdc27": {
+    "chainId": 42161,
+    "symbol": "ETHFI",
+    "name": "ether.fi governance token",
+    "address": "0x7189fb5b6504bbff6a852b13b7b82a3c118fdc27",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x7189fb5b6504bbff6a852b13b7b82a3c118fdc27_0x2f18badae3acd8887f9f468af7a8936a743c44848230f7808a533b760020bbe3.jpg",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33": {
+    "chainId": 42161,
+    "symbol": "GHO",
+    "name": "Gho Token",
+    "address": "0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x7dff72693f6a4149b17e7c6314655f6a9f7c8b33_0x7aa05d4eda699cd84569ea5051f9fb7f1cc2d4e0ccee3d62245e1e56826e0b3c.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:GHO",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xb2f30a7c980f052f02563fb518dcc39e6bf38175": {
+    "chainId": 42161,
+    "symbol": "USDx",
+    "name": "Synthetix USD",
+    "address": "0xb2f30a7c980f052f02563fb518dcc39e6bf38175",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xb2f30a7c980f052f02563fb518dcc39e6bf38175_0x8260b60ef943c112184d4bafbcfbf6c2c6b1b18f358b801d03c5c70230d2b704.jpg",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xb08d8becab1bf76a9ce3d2d5fa946f65ec1d3e83": {
+    "chainId": 42161,
+    "symbol": "GS",
+    "name": "GammaSwap",
+    "address": "0xb08d8becab1bf76a9ce3d2d5fa946f65ec1d3e83",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xb08d8becab1bf76a9ce3d2d5fa946f65ec1d3e83_0x23ee3e3cef9bc343173e99b4840305d747a1db75ceb9e40291f6be2f6f00e2d5.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x1b896893dfc86bb67cf57767298b9073d2c1ba2c": {
+    "chainId": 42161,
+    "symbol": "Cake",
+    "name": "PancakeSwap Token",
+    "address": "0x1b896893dfc86bb67cf57767298b9073d2c1ba2c",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x1b896893dfc86bb67cf57767298b9073d2c1ba2c_0x52a7b87aa7a79e44f3b9c31d706d5c8cb72fd31cbfa8ac69f32669f49a5adb4e.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:Cake",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf": {
+    "chainId": 42161,
+    "symbol": "cbBTC",
+    "name": "Coinbase Wrapped BTC",
+    "address": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+    "decimals": 8,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf_0x86679d8b1e8bc75e857bb46a7e792886bf5a46f242870b7ff774aa8e15378e95.webp",
+    "providers": [
+      "1inch",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:CBBTC",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x65c101e95d7dd475c7966330fa1a803205ff92ab": {
+    "chainId": 42161,
+    "symbol": "HOL",
+    "name": "Hall of Legends",
+    "address": "0x65c101e95d7dd475c7966330fa1a803205ff92ab",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x65c101e95d7dd475c7966330fa1a803205ff92ab_0x324c884f52384656f606de03723ce6bd29f258c07961cb547b0634d1082996a6.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x37a645648df29205c6261289983fb04ecd70b4b3": {
+    "chainId": 42161,
+    "symbol": "ANIME",
+    "name": "Animecoin",
+    "address": "0x37a645648df29205c6261289983fb04ecd70b4b3",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x37a645648df29205c6261289983fb04ecd70b4b3_0x1bcc091e1c24ce6e12ae4c1c855bcc8350c9171ad85dc712cff0a265fa8ba668.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:ANIME",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x6491c05a82219b8d1479057361ff1654749b876b": {
+    "chainId": 42161,
+    "symbol": "USDS",
+    "name": "USDS Stablecoin",
+    "address": "0x6491c05a82219b8d1479057361ff1654749b876b",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x6491c05a82219b8d1479057361ff1654749b876b_0xe485643173cc23dc2042e46e0f7a03e259e37067defcc6404a5b86e616ebe105.webp",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:USDS",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0xddb46999f8891663a8f2828d25298f70416d7610": {
+    "chainId": 42161,
+    "symbol": "sUSDS",
+    "name": "Savings USDS",
+    "address": "0xddb46999f8891663a8f2828d25298f70416d7610",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0xddb46999f8891663a8f2828d25298f70416d7610_0xeaf157414768f8779c1f1eff6a61b27c3a6e485b5969a9cffd6543f0c220ea5a.png",
+    "providers": [
+      "1inch"
+    ],
+    "eip2612": true,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:sUSDS",
+      "PEG:USD",
+      "RISK:unverified",
+      "tokens"
+    ]
+  },
+  "0x61dbbbb552dc893ab3aad09f289f811e67cef285": {
+    "chainId": 42161,
+    "symbol": "SKATE",
+    "name": "Skate",
+    "address": "0x61dbbbb552dc893ab3aad09f289f811e67cef285",
+    "decimals": 18,
+    "logoURI": "https://tokens-data.1inch.io/images/42161/0x61dbbbb552dc893ab3aad09f289f811e67cef285_0x3761a2ae5b31f491b07e81b31aa8b493edc37189a7d335913f8aada8571edae6.jpg",
+    "providers": [
+      "1inch",
+      "Arbed Arb Whitelist Era",
+      "Trust Wallet Assets"
+    ],
+    "eip2612": false,
+    "isFoT": false,
+    "tags": [
+      "crosschain",
+      "GROUP:SKATE",
+      "RISK:unverified",
+      "tokens"
+    ]
+  }
+}
