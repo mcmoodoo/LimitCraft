@@ -165,7 +165,7 @@ export class OrderFiller {
         data: calldata,
         gasLimit: 1_000_000, // Set explicit gas limit for complex DeFi operations
         maxFeePerGas: parseUnits(config.resolver.maxGasPrice, 'wei'),
-        maxPriorityFeePerGas: parseUnits('2', 'gwei'), // 2 gwei priority fee
+        maxPriorityFeePerGas: parseUnits('0.01', 'gwei'), // 0.01 gwei (Arbitrum-optimized)
       });
 
       console.log(`📤 Fill transaction sent: ${tx.hash}`);
@@ -363,7 +363,7 @@ export class OrderFiller {
         {
           gasLimit: 100_000, // Standard approval gas limit
           maxFeePerGas: parseUnits(config.resolver.maxGasPrice, 'wei'),
-          maxPriorityFeePerGas: parseUnits('2', 'gwei'),
+          maxPriorityFeePerGas: parseUnits('0.01', 'gwei'), // 0.01 gwei (Arbitrum-optimized)
         }
       );
 

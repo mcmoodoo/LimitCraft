@@ -36,7 +36,7 @@ export class WalletManager {
   async checkSufficientBalance(): Promise<boolean> {
     try {
       const balance = await this.getBalance();
-      const minBalance = BigInt('5000000000000000'); // 0.005 ETH for gas
+      const minBalance = BigInt('500000000000000'); // 0.0005 ETH for gas
 
       if (balance < minBalance) {
         console.warn(`⚠️ Low ETH balance: ${this.formatEther(balance)} ETH`);
