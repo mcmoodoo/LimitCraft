@@ -1288,27 +1288,47 @@ export default function CreateOrder() {
                   {/* Market Position Spectrum - Shadcn Slider Version */}
                   {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
                     <div className="border border-gray-600 rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm font-medium text-gray-300">
-                          Market Position
-                        </span>
-                        <span className="text-gray-400 font-medium">Market Spot</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-sm font-semibold ${
-                            getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
-                            getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
-                          }`}>
-                            {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
+                      <div className="relative mb-3">
+                        {/* Exchange rate - left aligned */}
+                        <div className="text-left">
+                          <span className="text-sm font-medium text-gray-300">
+                            Exchange rate: 1 {(() => {
+                              const makerToken = tokens.find(t => t.token_address === form.makerAsset);
+                              return makerToken?.symbol || 'Token';
+                            })()} for {(() => {
+                              const makingNum = parseFloat(form.makingAmount) || 1;
+                              const takingNum = parseFloat(form.takingAmount) || 0;
+                              const rate = makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0';
+                              const takerToken = tokens.find(t => t.token_address === form.takerAsset);
+                              return `${rate} ${takerToken?.symbol || 'Token'}`;
+                            })()}
                           </span>
-                          <span className="text-xs text-gray-500">vs spot</span>
+                        </div>
+                        
+                        {/* Market Spot - always centered */}
+                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+                          <span className="text-gray-400 font-medium">Market Spot</span>
+                        </div>
+                        
+                        {/* Percentage - right aligned */}
+                        <div className="absolute top-0 right-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-sm font-semibold ${
+                              getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
+                              getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
+                            }`}>
+                              {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
+                            </span>
+                            <span className="text-xs text-gray-500">vs spot</span>
+                          </div>
                         </div>
                       </div>
                       
                       {/* Clean gradient slider */}
                       <div className="relative space-y-4">
                         {/* Market spot indicator - pulsing triangle */}
-                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
-                          <div className="w-0 h-0 border-l-4 border-r-4 border-t-5 border-transparent border-t-white shadow-md animate-pulse"></div>
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="w-0 h-0 border-l-8 border-r-8 border-t-10 border-transparent border-t-white shadow-md animate-pulse"></div>
                         </div>
                         
                         {/* Gradient Slider - track IS the gradient */}
