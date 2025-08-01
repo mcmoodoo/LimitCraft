@@ -1,6 +1,6 @@
-# Orderly - 1inch Limit Order Protocol
+# Orderly
 
-A complete orderbook application for creating and managing 1inch limit orders on Arbitrum. Features include order creation, automated order filling, and a React frontend with Web3 wallet integration.
+A complete DEX orderbook platform built on 1inch Limit Order Protocol. Create and manage limit orders on Arbitrum with automated filling and a modern Web3 frontend.
 
 ## Project Structure
 
