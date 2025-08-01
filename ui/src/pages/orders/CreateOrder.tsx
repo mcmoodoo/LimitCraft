@@ -1669,13 +1669,6 @@ export default function CreateOrder() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <div className="bg-gray-800 rounded-lg p-3">
-              <div className="text-xs text-gray-500">
-                📝 Note: You may need to approve token spending before creating the order.
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

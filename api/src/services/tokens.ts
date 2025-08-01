@@ -94,17 +94,11 @@ export async function fetchTokensWith1inch(address: string, chainId: number): Pr
 
     const balances = (await balancesResponse.json()) as OneInchBalancesResponse;
 
-    // Filter tokens with non-zero balances and handle ETH placeholder
+    // Filter tokens with non-zero balances
     const tokensWithBalance = Object.entries(balances)
       .filter(([_, balance]) => balance !== '0')
       .map(([address, balance]) => {
-        // Replace ETH placeholder with WETH address for Arbitrum
-        const normalizedAddress = address.toLowerCase();
-        if (normalizedAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-          // WETH address on Arbitrum
-          return { address: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', balance };
-        }
-        return { address: normalizedAddress, balance };
+        return { address: address.toLowerCase(), balance };
       });
 
     if (tokensWithBalance.length === 0) {
