@@ -170,6 +170,8 @@ export default function CreateOrder() {
   const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
   const [customExpiration, setCustomExpiration] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -381,6 +383,106 @@ export default function CreateOrder() {
     // Clamp between -50% and +50%, then convert to 0-100% scale for positioning
     const clampedPercentage = Math.max(-50, Math.min(50, percentage));
     return ((clampedPercentage + 50) / 100) * 100;
+  };
+
+  // Convert mouse position to market percentage
+  const positionToPercentage = (position: number): number => {
+    // Position is 0-100%, convert to -50% to +50% market percentage
+    const clampedPosition = Math.max(0, Math.min(100, position));
+    return ((clampedPosition / 100) * 100) - 50;
+  };
+
+  // Update token amounts based on market percentage
+  const updateAmountsFromPosition = (marketPercentage: number) => {
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
+    
+    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!makerPrice || !takerPrice) return;
+    
+    const makingNum = parseFloat(form.makingAmount);
+    if (isNaN(makingNum) || makingNum <= 0) return;
+    
+    // Calculate market rate and adjust by percentage
+    const marketRate = makerPrice / takerPrice;
+    const adjustedRate = marketRate * (1 + marketPercentage / 100);
+    const newTakingAmount = makingNum * adjustedRate;
+    
+    // Format to appropriate decimal places
+    const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
+    const formattedAmount = newTakingAmount.toFixed(Math.min(takerDecimals, 8));
+    
+    setForm(prev => ({ ...prev, takingAmount: formattedAmount }));
+    setCustomRate(''); // Clear custom rate when using spectrum
+  };
+
+  // Handle spectrum bar click
+  const handleSpectrumClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const position = ((e.clientX - rect.left) / rect.width) * 100;
+    const percentage = positionToPercentage(position);
+    updateAmountsFromPosition(percentage);
+  };
+
+  // Handle spectrum drag start
+  const handleSpectrumMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDragging(true);
+    handleSpectrumClick(e);
+    
+    const spectrumBar = e.currentTarget;
+    
+    // Add global mouse move and up listeners
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = spectrumBar.getBoundingClientRect();
+      const position = ((e.clientX - rect.left) / rect.width) * 100;
+      const percentage = positionToPercentage(position);
+      updateAmountsFromPosition(percentage);
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // Handle spectrum drag (for continuous updates during drag)
+  const handleSpectrumDrag = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const position = ((e.clientX - rect.left) / rect.width) * 100;
+    const percentage = positionToPercentage(position);
+    updateAmountsFromPosition(percentage);
+  };
+
+  // Handle touch events for mobile
+  const handleSpectrumTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+    const position = ((touch.clientX - rect.left) / rect.width) * 100;
+    const percentage = positionToPercentage(position);
+    updateAmountsFromPosition(percentage);
+    setIsDragging(true);
+  };
+
+  const handleSpectrumTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    e.preventDefault(); // Prevent scrolling
+    
+    const touch = e.touches[0];
+    const rect = e.currentTarget.getBoundingClientRect();
+    const position = ((touch.clientX - rect.left) / rect.width) * 100;
+    const percentage = positionToPercentage(position);
+    updateAmountsFromPosition(percentage);
+  };
+
+  const handleSpectrumTouchEnd = () => {
+    setIsDragging(false);
   };
 
   // Handle rate input change
@@ -1158,8 +1260,21 @@ export default function CreateOrder() {
                       
                       {/* Spectrum Bar Container */}
                       <div className="relative">
-                        {/* Background gradient bar */}
-                        <div className="h-3 w-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full opacity-80"></div>
+                        {/* Interactive Background gradient bar */}
+                        <div 
+                          className={`h-3 w-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full transition-all duration-200 cursor-pointer select-none ${
+                            isDragging ? 'opacity-100 scale-105' : 
+                            isHovering ? 'opacity-90 shadow-lg' : 'opacity-80'
+                          }`}
+                          onClick={handleSpectrumClick}
+                          onMouseDown={handleSpectrumMouseDown}
+                          onMouseMove={handleSpectrumDrag}
+                          onMouseEnter={() => setIsHovering(true)}
+                          onMouseLeave={() => setIsHovering(false)}
+                          onTouchStart={handleSpectrumTouchStart}
+                          onTouchMove={handleSpectrumTouchMove}
+                          onTouchEnd={handleSpectrumTouchEnd}
+                        ></div>
                         
                         {/* Market spot indicator (center) */}
                         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -1175,10 +1290,14 @@ export default function CreateOrder() {
                           style={{ left: `${getSpectrumPosition()}%` }}
                         >
                           <div className="transform -translate-x-1/2">
-                            {/* Marker circle */}
-                            <div className={`w-5 h-5 rounded-full border-3 shadow-lg transition-colors duration-300 ${
+                            {/* Marker circle with enhanced feedback */}
+                            <div className={`rounded-full border-3 shadow-lg transition-all duration-300 ${
+                              isDragging ? 'w-7 h-7 border-4' : 'w-5 h-5 border-3'
+                            } ${
                               getMarketRatePercentageNum() > 0 ? 'bg-green-400 border-green-600' : 
                               getMarketRatePercentageNum() < 0 ? 'bg-red-400 border-red-600' : 'bg-yellow-400 border-yellow-600'
+                            } ${
+                              isDragging ? 'scale-110 shadow-xl' : isHovering ? 'scale-105' : 'scale-100'
                             }`}></div>
                             
                             {/* Arrow pointer */}
@@ -1200,28 +1319,33 @@ export default function CreateOrder() {
                         </div>
                         
                         {/* Scale labels */}
-                        <div className="flex justify-between text-xs text-gray-500 mt-8 px-1">
-                          <span>-50%</span>
-                          <span className="text-gray-400">0%</span>
-                          <span>+50%</span>
-                        </div>
                       </div>
                       
-                      {/* Description text */}
+                      {/* Interactive description text */}
                       <div className="text-center">
-                        <p className="text-xs text-gray-400">
-                          {getMarketRatePercentageNum() > 15 ? (
-                            <>🚀 Optimistic pricing - might take a while to fill</>
-                          ) : getMarketRatePercentageNum() > 5 ? (
-                            <>📈 Above market - good for you if it fills</>
-                          ) : getMarketRatePercentageNum() > -5 ? (
-                            <>🎯 Close to market rate - likely to fill quickly</>
-                          ) : getMarketRatePercentageNum() > -15 ? (
-                            <>📉 Below market - generous offer</>
-                          ) : (
-                            <>💸 Well below market - very generous!</>
-                          )}
-                        </p>
+                        {isDragging ? (
+                          <p className="text-xs text-blue-400 animate-pulse font-medium">
+                            🎮 Drag to adjust your rate vs. market
+                          </p>
+                        ) : isHovering ? (
+                          <p className="text-xs text-gray-300 font-medium">
+                            💡 Click or drag to set your desired rate
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-400">
+                            {getMarketRatePercentageNum() > 15 ? (
+                              <>🚀 Optimistic pricing - might take a while to fill</>
+                            ) : getMarketRatePercentageNum() > 5 ? (
+                              <>📈 Above market - good for you if it fills</>
+                            ) : getMarketRatePercentageNum() > -5 ? (
+                              <>🎯 Close to market rate - likely to fill quickly</>
+                            ) : getMarketRatePercentageNum() > -15 ? (
+                              <>📉 Below market - generous offer</>
+                            ) : (
+                              <>💸 Well below market - very generous!</>
+                            )}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
