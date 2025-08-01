@@ -1,12 +1,13 @@
 import { getLimitOrderContract } from '@1inch/limit-order-sdk';
 import { AllowanceTransfer, MaxAllowanceTransferAmount, type PermitSingle } from '@uniswap/permit2-sdk';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   useAccount,
   useChainId,
   usePublicClient,
   useReadContract,
   useSignTypedData,
+  useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
 import { getContract, type Address } from 'viem';
@@ -83,6 +84,7 @@ export interface UsePermit2Return {
   refetchPermit2Allowance: () => void;
   permit2Loading: boolean;
   permit2Error: Error | null;
+  approvalPending: boolean;
 }
 
 const toDeadline = (expiration: number = 30 * 60): number => {
@@ -95,11 +97,17 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
   const publicClient = usePublicClient();
   const { signTypedDataAsync } = useSignTypedData();
   const { writeContractAsync } = useWriteContract();
+  const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
 
   // Get the 1inch limit order contract address for current chain
   const limitOrderContractAddress = useMemo(() => {
     return getLimitOrderContract(chainId);
   }, [chainId]);
+
+  // Wait for approval transaction confirmation
+  const { isSuccess: approvalSuccess, isLoading: approvalPending } = useWaitForTransactionReceipt({
+    hash: approvalTxHash as `0x${string}` | undefined,
+  });
 
   // Read current token allowance to Permit2 contract
   const {
@@ -134,6 +142,15 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
       enabled: !!address && !!tokenAddress && !!limitOrderContractAddress,
     },
   });
+
+  // Refetch allowances when approval transaction succeeds
+  useEffect(() => {
+    if (approvalSuccess) {
+      refetchTokenAllowance();
+      refetchPermit2Allowance();
+      setApprovalTxHash(null); // Clear the transaction hash
+    }
+  }, [approvalSuccess, refetchTokenAllowance, refetchPermit2Allowance]);
 
   // Check if current allowance is sufficient
   const needsPermit2Approval = useCallback(
@@ -173,21 +190,20 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
     }
 
     try {
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address: tokenAddress as Address,
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [config.contracts.permit2 as Address, BigInt(MaxAllowanceTransferAmount.toString())],
       });
 
-      // Refetch allowances after approval
-      await refetchTokenAllowance();
-      await refetchPermit2Allowance();
+      // Store transaction hash to monitor confirmation
+      setApprovalTxHash(txHash);
     } catch (error) {
       console.error('Failed to approve token to Permit2:', error);
       throw error;
     }
-  }, [tokenAddress, address, writeContractAsync, refetchTokenAllowance, refetchPermit2Allowance]);
+  }, [tokenAddress, address, writeContractAsync]);
 
   // Generate Permit2 signature
   const generatePermit2Signature = useCallback(
@@ -286,5 +302,6 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
     refetchPermit2Allowance,
     permit2Loading,
     permit2Error: permit2Error as Error | null,
+    approvalPending,
   };
 };

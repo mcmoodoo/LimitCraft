@@ -208,6 +208,7 @@ export default function CreateOrder() {
     generatePermit2Signature,
     permit2Loading,
     permit2Error,
+    approvalPending,
   } = usePermit2(form.makerAsset);
 
   // Get the limit order contract address for the current chain
@@ -1603,6 +1604,8 @@ export default function CreateOrder() {
                               <span className="text-yellow-400">Checking...</span>
                             ) : permit2Error ? (
                               <span className="text-red-400">Error</span>
+                            ) : approvalPending ? (
+                              <span className="text-yellow-400">Approving...</span>
                             ) : needsTokenApprovalToPermit2 ? (
                               <span className="text-orange-400">Token approval needed</span>
                             ) : isPermit2Approved ? (
@@ -1614,6 +1617,8 @@ export default function CreateOrder() {
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
                           {form.usePermit2 && !permit2Loading && !permit2Error && (
+                            approvalPending ?
+                              "Waiting for token approval confirmation..." :
                             needsTokenApprovalToPermit2 ?
                               "First time using Permit2? You'll need to approve the token once" :
                             isPermit2Approved ? 
@@ -1621,7 +1626,7 @@ export default function CreateOrder() {
                               "You'll need to sign a Permit2 message when creating the order"
                           )}
                         </div>
-                        {needsTokenApprovalToPermit2 && form.makerAsset && (
+                        {needsTokenApprovalToPermit2 && form.makerAsset && !approvalPending && (
                           <div className="mt-2">
                             <Button
                               type="button"
