@@ -1115,7 +1115,7 @@ export default function CreateOrder() {
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className="w-40 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
+          className="w-24 px-3 py-2 bg-transparent border-0 rounded-l-lg focus:outline-none flex items-center justify-between text-left"
         >
           {disabled ? (
             <span className="text-gray-400 text-xs">Loading...</span>
@@ -1131,7 +1131,7 @@ export default function CreateOrder() {
                   }}
                 />
               )}
-              <span className="font-medium text-white text-xs truncate">{selectedToken.symbol}</span>
+              <span className="font-medium text-white text-sm truncate">{selectedToken.symbol}</span>
             </div>
           ) : (
             <span className="text-gray-400 text-xs">Select</span>
@@ -1164,7 +1164,7 @@ export default function CreateOrder() {
                     />
                   )}
                   <div>
-                    <div className="font-medium text-white text-sm">{token.symbol}</div>
+                    <div className="font-medium text-white text-base">{token.symbol}</div>
                     <div className="text-xs text-gray-400 truncate max-w-40">{token.name}</div>
                   </div>
                 </div>
@@ -1232,148 +1232,151 @@ export default function CreateOrder() {
             <div className="bg-gray-800 rounded-lg p-4">
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="space-y-3">
-                  <div className="border border-gray-600 rounded-lg p-3">
-                    <h3 className="text-base font-semibold mb-2 text-green-400 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                      </svg>
-                      You pay
-                    </h3>
+                  {/* Token sections with reduced spacing */}
+                  <div className="space-y-1 relative">
+                    <div className="border border-gray-600 rounded-lg p-3">
+                      <h3 className="text-base font-semibold mb-2 text-green-400 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                        You pay
+                      </h3>
 
-                    <div className="space-y-2">
-                      <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                        <TokenDropdown
-                          selectedTokenAddress={form.makerAsset}
-                          onTokenSelect={(address) => setForm(prev => ({ ...prev, makerAsset: address }))}
-                          disabled={tokensLoading}
-                        />
-                        <input
-                          id="makingAmount"
-                          type="number"
-                          name="makingAmount"
-                          value={form.makingAmount}
-                          onChange={(e) => handleAmountChange(e, form.makerAsset)}
-                          onKeyDown={handleKeyDown}
-                          step={getStepForDecimals(getSelectedTokenDecimals(form.makerAsset))}
-                          min="0"
-                          inputMode="decimal"
-                          className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                          placeholder="0.0"
-                          required
-                        />
-                      </div>
-                      {form.makerAsset && (
-                        <div className="flex justify-between items-center text-sm">
-                          <div className="text-left">
-                            {(() => {
-                              const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
-                              if (selectedToken) {
-                                const formatBalance = (balance: string) => {
-                                  const num = parseFloat(balance);
-                                  if (num === 0) return '0';
-                                  if (num < 0.000001) return '<0.000001';
-                                  if (num < 1) return num.toFixed(6);
-                                  if (num < 1000) return num.toFixed(4);
-                                  if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-                                  return `${(num / 1000000).toFixed(2)}M`;
-                                };
-                                return (
-                                  <>
-                                    <span className="text-white font-medium">{selectedToken.name}</span>
-                                    <span className="text-gray-400"> available: {formatBalance(selectedToken.balance_formatted)}</span>
-                                  </>
-                                );
-                              }
-                              return <span className="text-gray-400">Available: 0</span>;
-                            })()}
-                          </div>
-                          {form.makingAmount && (
-                            <div className="text-gray-500">
-                              ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
-                            </div>
-                          )}
+                      <div className="space-y-2">
+                        <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                          <TokenDropdown
+                            selectedTokenAddress={form.makerAsset}
+                            onTokenSelect={(address) => setForm(prev => ({ ...prev, makerAsset: address }))}
+                            disabled={tokensLoading}
+                          />
+                          <input
+                            id="makingAmount"
+                            type="number"
+                            name="makingAmount"
+                            value={form.makingAmount}
+                            onChange={(e) => handleAmountChange(e, form.makerAsset)}
+                            onKeyDown={handleKeyDown}
+                            step={getStepForDecimals(getSelectedTokenDecimals(form.makerAsset))}
+                            min="0"
+                            inputMode="decimal"
+                            className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                            placeholder="0.0"
+                            required
+                          />
                         </div>
-                      )}
+                        {form.makerAsset && (
+                          <div className="flex justify-between items-center text-sm">
+                            <div className="text-left">
+                              {(() => {
+                                const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
+                                if (selectedToken) {
+                                  const formatBalance = (balance: string) => {
+                                    const num = parseFloat(balance);
+                                    if (num === 0) return '0';
+                                    if (num < 0.000001) return '<0.000001';
+                                    if (num < 1) return num.toFixed(6);
+                                    if (num < 1000) return num.toFixed(4);
+                                    if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
+                                    return `${(num / 1000000).toFixed(2)}M`;
+                                  };
+                                  return (
+                                    <>
+                                      <span className="text-white font-medium">{selectedToken.name}</span>
+                                      <span className="text-gray-400"> available: {formatBalance(selectedToken.balance_formatted)}</span>
+                                    </>
+                                  );
+                                }
+                                return <span className="text-gray-400">Available: 0</span>;
+                              })()}
+                            </div>
+                            {form.makingAmount && (
+                              <div className="text-gray-500">
+                                ≈ ${calculateUsdValue(form.makingAmount, form.makerAsset)} USD
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Token Switch Button */}
-                  <div className="flex justify-center -my-1 relative z-10">
-                    <button
-                      type="button"
-                      onClick={handleTokenSwitch}
-                      disabled={!form.makerAsset || !form.takerAsset || !form.takingAmount}
-                      className="w-8 h-8 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200"
-                      title="Switch tokens and flip amounts"
-                    >
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                      </svg>
-                    </button>
-                  </div>
+                    {/* Token Switch Button - positioned to overlap both sections */}
+                    <div className="flex justify-center absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+                      <button
+                        type="button"
+                        onClick={handleTokenSwitch}
+                        disabled={!form.makerAsset || !form.takerAsset || !form.takingAmount}
+                        className="w-10 h-10 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                        title="Switch tokens and flip amounts"
+                      >
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        </svg>
+                      </button>
+                    </div>
 
-                  <div className="border border-gray-600 rounded-lg p-3">
-                    <h3 className="text-base font-semibold mb-2 text-blue-400 flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                      </svg>
-                      You get
-                    </h3>
+                    <div className="border border-gray-600 rounded-lg p-3">
+                      <h3 className="text-base font-semibold mb-2 text-blue-400 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        </svg>
+                        You get
+                      </h3>
 
-                    <div className="space-y-2">
-                      <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
-                        <TokenDropdown
-                          selectedTokenAddress={form.takerAsset}
-                          onTokenSelect={(address) => setForm(prev => ({ ...prev, takerAsset: address }))}
-                          disabled={tokensLoading}
-                        />
-                        <input
-                          id="takingAmount"
-                          type="number"
-                          name="takingAmount"
-                          value={form.takingAmount}
-                          onChange={(e) => handleAmountChange(e, form.takerAsset)}
-                          onKeyDown={handleKeyDown}
-                          step={getStepForDecimals(getSelectedTokenDecimals(form.takerAsset))}
-                          min="0"
-                          inputMode="decimal"
-                          className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                          placeholder="0.0"
-                          required
-                        />
-                      </div>
-                      {form.takerAsset && (
-                        <div className="flex justify-between items-center text-sm">
-                          <div className="text-left">
-                            {(() => {
-                              const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
-                              if (selectedToken) {
-                                const formatBalance = (balance: string) => {
-                                  const num = parseFloat(balance);
-                                  if (num === 0) return '0';
-                                  if (num < 0.000001) return '<0.000001';
-                                  if (num < 1) return num.toFixed(6);
-                                  if (num < 1000) return num.toFixed(4);
-                                  if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
-                                  return `${(num / 1000000).toFixed(2)}M`;
-                                };
-                                return (
-                                  <>
-                                    <span className="text-white font-medium">{selectedToken.name}</span>
-                                    <span className="text-gray-400"> balance: {formatBalance(selectedToken.balance_formatted)}</span>
-                                  </>
-                                );
-                              }
-                              return <span className="text-gray-400">Available: 0</span>;
-                            })()}
-                          </div>
-                          {form.takingAmount && (
-                            <div className="text-gray-500">
-                              ≈ ${calculateUsdValue(form.takingAmount, form.takerAsset)} USD
-                            </div>
-                          )}
+                      <div className="space-y-2">
+                        <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
+                          <TokenDropdown
+                            selectedTokenAddress={form.takerAsset}
+                            onTokenSelect={(address) => setForm(prev => ({ ...prev, takerAsset: address }))}
+                            disabled={tokensLoading}
+                          />
+                          <input
+                            id="takingAmount"
+                            type="number"
+                            name="takingAmount"
+                            value={form.takingAmount}
+                            onChange={(e) => handleAmountChange(e, form.takerAsset)}
+                            onKeyDown={handleKeyDown}
+                            step={getStepForDecimals(getSelectedTokenDecimals(form.takerAsset))}
+                            min="0"
+                            inputMode="decimal"
+                            className="flex-1 px-3 py-2 bg-transparent border-0 rounded-r-lg focus:outline-none text-right [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                            placeholder="0.0"
+                            required
+                          />
                         </div>
-                      )}
+                        {form.takerAsset && (
+                          <div className="flex justify-between items-center text-sm">
+                            <div className="text-left">
+                              {(() => {
+                                const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
+                                if (selectedToken) {
+                                  const formatBalance = (balance: string) => {
+                                    const num = parseFloat(balance);
+                                    if (num === 0) return '0';
+                                    if (num < 0.000001) return '<0.000001';
+                                    if (num < 1) return num.toFixed(6);
+                                    if (num < 1000) return num.toFixed(4);
+                                    if (num < 1000000) return `${(num / 1000).toFixed(2)}K`;
+                                    return `${(num / 1000000).toFixed(2)}M`;
+                                  };
+                                  return (
+                                    <>
+                                      <span className="text-white font-medium">{selectedToken.name}</span>
+                                      <span className="text-gray-400"> balance: {formatBalance(selectedToken.balance_formatted)}</span>
+                                    </>
+                                  );
+                                }
+                                return <span className="text-gray-400">Available: 0</span>;
+                              })()}
+                            </div>
+                            {form.takingAmount && (
+                              <div className="text-gray-500">
+                                ≈ ${calculateUsdValue(form.takingAmount, form.takerAsset)} USD
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
