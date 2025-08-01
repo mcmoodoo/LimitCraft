@@ -318,6 +318,13 @@ export default function CreateOrder() {
       thumb.style.background = color;
       thumb.style.setProperty('background', color, 'important');
     }
+    
+    // Color the percentage text
+    const percentageText = document.querySelector('.dynamic-percentage-text') as HTMLElement;
+    if (percentageText) {
+      percentageText.style.color = color;
+      percentageText.style.setProperty('color', color, 'important');
+    }
   }, [form.makingAmount, form.takingAmount, form.makerAsset, form.takerAsset, tokenPrices]);
 
   // Get selected token decimals for step calculation
@@ -504,9 +511,16 @@ export default function CreateOrder() {
       thumb.style.background = color;
       thumb.style.setProperty('background', color, 'important');
     }
+    
+    // Color the percentage text
+    const percentageText = document.querySelector('.dynamic-percentage-text') as HTMLElement;
+    if (percentageText) {
+      percentageText.style.color = color;
+      percentageText.style.setProperty('color', color, 'important');
+    }
   };
 
-  // Calculate taking amount based on spot price
+  // Calculate taking amount based on spot price with +3% markup
   const calculateTakingAmountFromSpot = () => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
     
@@ -518,9 +532,10 @@ export default function CreateOrder() {
     const makingNum = parseFloat(form.makingAmount);
     if (isNaN(makingNum) || makingNum <= 0) return;
     
-    // Calculate spot rate and taking amount
+    // Calculate spot rate with +3% markup for better pricing
     const spotRate = makerPrice / takerPrice;
-    const takingAmount = makingNum * spotRate;
+    const adjustedRate = spotRate * 1.03; // +3% above market
+    const takingAmount = makingNum * adjustedRate;
     
     // Format to appropriate decimal places
     const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
@@ -1298,7 +1313,7 @@ export default function CreateOrder() {
                             })()} for {(() => {
                               const makingNum = parseFloat(form.makingAmount) || 1;
                               const takingNum = parseFloat(form.takingAmount) || 0;
-                              const rate = makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0';
+                              const rate = makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
                               const takerToken = tokens.find(t => t.token_address === form.takerAsset);
                               return `${rate} ${takerToken?.symbol || 'Token'}`;
                             })()}
@@ -1313,10 +1328,7 @@ export default function CreateOrder() {
                         {/* Percentage - right aligned */}
                         <div className="absolute top-0 right-0">
                           <div className="flex items-center gap-2">
-                            <span className={`text-sm font-semibold ${
-                              getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
-                              getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
-                            }`}>
+                            <span className="text-sm font-semibold dynamic-percentage-text">
                               {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
                             </span>
                             <span className="text-xs text-gray-500">vs spot</span>
