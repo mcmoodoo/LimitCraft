@@ -358,7 +358,6 @@ export default function CreateOrder() {
     return `${(usdValue / 1000000).toFixed(2)}M`;
   };
 
-
   // Get numerical percentage difference for logic
   const getMarketRatePercentageNum = (): number => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return 0;
@@ -546,7 +545,6 @@ export default function CreateOrder() {
 
     setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
   };
-
 
   // Set to market rate
   const setToMarketRate = () => {

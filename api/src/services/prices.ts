@@ -28,7 +28,7 @@ async function fetchPriceWithGET(
       };
     }
 
-    const data = await response.json() as Record<string, string>;
+    const data = (await response.json()) as Record<string, string>;
     return {
       success: true,
       price: data[tokenAddress],
@@ -68,7 +68,7 @@ async function fetchPricesWithPOST(
       };
     }
 
-    const data = await response.json() as PriceResponse;
+    const data = (await response.json()) as PriceResponse;
     return {
       success: true,
       data,
