@@ -7,6 +7,7 @@ import {
   usePublicClient,
   useReadContract,
   useSignTypedData,
+  useWriteContract,
 } from 'wagmi';
 import { getContract, type Address } from 'viem';
 import { config } from '../config';
@@ -41,6 +42,29 @@ const PERMIT2_ABI = [
   },
 ] as const;
 
+const ERC20_ABI = [
+  {
+    type: 'function',
+    name: 'allowance',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'approve',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
+
 export interface Permit2Data {
   permitSingle: PermitSingle;
   signature: string;
@@ -49,6 +73,8 @@ export interface Permit2Data {
 export interface UsePermit2Return {
   isPermit2Approved: boolean;
   needsPermit2Approval: (amount: bigint) => boolean;
+  needsTokenApprovalToPermit2: boolean;
+  approveTokenToPermit2: () => Promise<void>;
   generatePermit2Signature: (
     tokenAddress: string,
     amount: bigint,
@@ -68,11 +94,26 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
   const chainId = useChainId();
   const publicClient = usePublicClient();
   const { signTypedDataAsync } = useSignTypedData();
+  const { writeContractAsync } = useWriteContract();
 
   // Get the 1inch limit order contract address for current chain
   const limitOrderContractAddress = useMemo(() => {
     return getLimitOrderContract(chainId);
   }, [chainId]);
+
+  // Read current token allowance to Permit2 contract
+  const {
+    data: tokenAllowance,
+    refetch: refetchTokenAllowance,
+  } = useReadContract({
+    address: tokenAddress as Address,
+    abi: ERC20_ABI,
+    functionName: 'allowance',
+    args: [address as Address, config.contracts.permit2 as Address],
+    query: {
+      enabled: !!address && !!tokenAddress,
+    },
+  });
 
   // Read current Permit2 allowance
   const {
@@ -108,6 +149,13 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
     [permit2Allowance]
   );
 
+  // Check if token needs approval to Permit2 contract
+  const needsTokenApprovalToPermit2 = useMemo(() => {
+    if (!tokenAllowance) return true;
+    // Need approval if allowance is less than max allowance
+    return tokenAllowance < BigInt(MaxAllowanceTransferAmount.toString());
+  }, [tokenAllowance]);
+
   const isPermit2Approved = useMemo(() => {
     if (!permit2Allowance) return false;
     
@@ -117,6 +165,29 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
     // Consider approved if has max allowance or sufficient allowance that's not expired
     return amount >= BigInt(MaxAllowanceTransferAmount.toString()) && expiration.toString() !== '0' && Number(expiration.toString()) > currentTime;
   }, [permit2Allowance]);
+
+  // Function to approve token to Permit2 contract
+  const approveTokenToPermit2 = useCallback(async () => {
+    if (!tokenAddress || !address) {
+      throw new Error('Token address and wallet address required');
+    }
+
+    try {
+      await writeContractAsync({
+        address: tokenAddress as Address,
+        abi: ERC20_ABI,
+        functionName: 'approve',
+        args: [config.contracts.permit2 as Address, BigInt(MaxAllowanceTransferAmount.toString())],
+      });
+
+      // Refetch allowances after approval
+      await refetchTokenAllowance();
+      await refetchPermit2Allowance();
+    } catch (error) {
+      console.error('Failed to approve token to Permit2:', error);
+      throw error;
+    }
+  }, [tokenAddress, address, writeContractAsync, refetchTokenAllowance, refetchPermit2Allowance]);
 
   // Generate Permit2 signature
   const generatePermit2Signature = useCallback(
@@ -209,6 +280,8 @@ export const usePermit2 = (tokenAddress?: string): UsePermit2Return => {
   return {
     isPermit2Approved,
     needsPermit2Approval,
+    needsTokenApprovalToPermit2,
+    approveTokenToPermit2,
     generatePermit2Signature,
     refetchPermit2Allowance,
     permit2Loading,

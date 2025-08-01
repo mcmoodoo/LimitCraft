@@ -203,6 +203,8 @@ export default function CreateOrder() {
   // Permit2 integration
   const {
     isPermit2Approved,
+    needsTokenApprovalToPermit2,
+    approveTokenToPermit2,
     generatePermit2Signature,
     permit2Loading,
     permit2Error,
@@ -1601,10 +1603,10 @@ export default function CreateOrder() {
                               <span className="text-yellow-400">Checking...</span>
                             ) : permit2Error ? (
                               <span className="text-red-400">Error</span>
+                            ) : needsTokenApprovalToPermit2 ? (
+                              <span className="text-orange-400">Token approval needed</span>
                             ) : isPermit2Approved ? (
-                              <>
-                                <span className="text-green-400">✓ Ready</span>
-                              </>
+                              <span className="text-green-400">✓ Ready</span>
                             ) : (
                               <span className="text-orange-400">Signature needed</span>
                             )}
@@ -1612,11 +1614,32 @@ export default function CreateOrder() {
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
                           {form.usePermit2 && !permit2Loading && !permit2Error && (
+                            needsTokenApprovalToPermit2 ?
+                              "First time using Permit2? You'll need to approve the token once" :
                             isPermit2Approved ? 
                               "You can create orders without approval transactions" :
                               "You'll need to sign a Permit2 message when creating the order"
                           )}
                         </div>
+                        {needsTokenApprovalToPermit2 && form.makerAsset && (
+                          <div className="mt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await approveTokenToPermit2();
+                                } catch (error) {
+                                  console.error('Approval failed:', error);
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              Approve Token to Permit2
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
