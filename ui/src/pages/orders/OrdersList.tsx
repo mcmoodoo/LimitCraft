@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import { navigationHelpers } from '../../router/navigation';
 import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
@@ -23,11 +23,90 @@ interface Order {
   signature: string;
 }
 
+interface TokenInfo {
+  symbol: string;
+  name: string;
+  decimals: number;
+  logoURI?: string;
+}
+
+// Common token registry for Arbitrum (chainId: 42161)
+const COMMON_TOKENS: Record<number, Record<string, TokenInfo>> = {
+  42161: { // Arbitrum
+    '0xaf88d065e77c8cc2239327c5edb3a432268e5831': { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
+    '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8': { symbol: 'USDC.e', name: 'USD Coin (Arb1)', decimals: 6 },
+    '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': { symbol: 'USDT', name: 'Tether USD', decimals: 6 },
+    '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f': { symbol: 'WBTC', name: 'Wrapped BTC', decimals: 8 },
+    '0x82af49447d8a07e3bd95bd0d56f35241523fbab1': { symbol: 'WETH', name: 'Wrapped Ether', decimals: 18 },
+    '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1': { symbol: 'DAI', name: 'Dai Stablecoin', decimals: 18 },
+    '0x17fc002b466eec40dae837fc4be5c67993ddbd6f': { symbol: 'FRAX', name: 'Frax', decimals: 18 },
+    '0x912ce59144191c1204e64559fe8253a0e49e6548': { symbol: 'ARB', name: 'Arbitrum', decimals: 18 },
+    '0xf97f4df75117a78c1a5a0dbb814af92458539fb4': { symbol: 'LINK', name: 'ChainLink Token', decimals: 18 },
+    '0xfea7a6a0b346362bf88a9e4a88416b77a57d6c2a': { symbol: 'MIM', name: 'Magic Internet Money', decimals: 18 },
+  }
+};
+
 export default function OrdersList() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tokenCache, setTokenCache] = useState<Record<string, TokenInfo>>({});
+
+  // Get token info from cache or common tokens
+  const getTokenInfo = useCallback(async (tokenAddress: string): Promise<TokenInfo> => {
+    const normalizedAddress = tokenAddress.toLowerCase();
+    
+    // Check cache first
+    if (tokenCache[normalizedAddress]) {
+      return tokenCache[normalizedAddress];
+    }
+    
+    // Check common tokens registry
+    const commonTokens = COMMON_TOKENS[chainId] || {};
+    if (commonTokens[normalizedAddress]) {
+      const tokenInfo = commonTokens[normalizedAddress];
+      setTokenCache(prev => ({ ...prev, [normalizedAddress]: tokenInfo }));
+      return tokenInfo;
+    }
+    
+    // Fetch from API as fallback
+    try {
+      const response = await fetch(
+        `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.REACT_APP_ONE_INCH_API_KEY || ''}`,
+            'accept': 'application/json',
+          },
+        }
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        const tokenInfo: TokenInfo = {
+          symbol: data.symbol || 'UNKNOWN',
+          name: data.name || 'Unknown Token',
+          decimals: data.decimals || 18,
+          logoURI: data.logoURI,
+        };
+        setTokenCache(prev => ({ ...prev, [normalizedAddress]: tokenInfo }));
+        return tokenInfo;
+      }
+    } catch (error) {
+      console.warn(`Failed to fetch token info for ${tokenAddress}:`, error);
+    }
+    
+    // Default fallback
+    const defaultInfo: TokenInfo = {
+      symbol: 'UNKNOWN',
+      name: 'Unknown Token',
+      decimals: 18,
+    };
+    setTokenCache(prev => ({ ...prev, [normalizedAddress]: defaultInfo }));
+    return defaultInfo;
+  }, [chainId, tokenCache]);
 
   const fetchOrders = useCallback(async () => {
     // Don't fetch orders if wallet is not connected
@@ -48,6 +127,18 @@ export default function OrdersList() {
 
       if (result.success) {
         setOrders(result.data);
+        
+        // Pre-fetch token info for all unique token addresses
+        const uniqueTokens = new Set<string>();
+        result.data.forEach((order: Order) => {
+          uniqueTokens.add(order.data.makerAsset.toLowerCase());
+          uniqueTokens.add(order.data.takerAsset.toLowerCase());
+        });
+        
+        // Fetch token info for all unique tokens
+        Array.from(uniqueTokens).forEach(async (tokenAddress) => {
+          await getTokenInfo(tokenAddress);
+        });
       } else {
         setError(result.error);
       }
@@ -56,7 +147,7 @@ export default function OrdersList() {
     } finally {
       setLoading(false);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, getTokenInfo]);
 
   useEffect(() => {
     fetchOrders();
@@ -131,10 +222,42 @@ export default function OrdersList() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const formatAmount = (amount: string) => {
+  // Format amount with proper decimals
+  const formatAmount = useCallback((amount: string, tokenAddress: string): string => {
+    const normalizedAddress = tokenAddress.toLowerCase();
+    const tokenInfo = tokenCache[normalizedAddress];
+    
+    if (!tokenInfo) {
+      // If we don't have token info yet, use 18 decimals as default
+      const num = BigInt(amount);
+      return (Number(num) / 1e18).toFixed(6);
+    }
+    
+    const decimals = tokenInfo.decimals;
+    const divisor = Math.pow(10, decimals);
     const num = BigInt(amount);
-    return (Number(num) / 1e18).toFixed(6);
-  };
+    const result = Number(num) / divisor;
+    
+    // Format based on the size of the number
+    if (result === 0) return '0';
+    if (result < 0.000001) return '<0.000001';
+    if (result < 1) return result.toFixed(Math.min(6, decimals));
+    if (result < 1000) return result.toFixed(Math.min(4, decimals));
+    if (result < 1000000) return `${(result / 1000).toFixed(2)}K`;
+    return `${(result / 1000000).toFixed(2)}M`;
+  }, [tokenCache]);
+
+  // Get token symbol and name
+  const getTokenDisplay = useCallback((tokenAddress: string): { symbol: string; name: string } => {
+    const normalizedAddress = tokenAddress.toLowerCase();
+    const tokenInfo = tokenCache[normalizedAddress];
+    
+    if (tokenInfo) {
+      return { symbol: tokenInfo.symbol, name: tokenInfo.name };
+    }
+    
+    return { symbol: formatAddress(tokenAddress), name: 'Unknown Token' };
+  }, [tokenCache]);
 
   if (!isConnected) {
     return (
@@ -270,9 +393,12 @@ export default function OrdersList() {
                         </div>
                         <div className="bg-gray-700 rounded-lg p-3">
                           <div className="text-lg font-semibold text-white mb-1">
-                            {formatAmount(order.data.makingAmount)}
+                            {formatAmount(order.data.makingAmount, order.data.makerAsset)} {getTokenDisplay(order.data.makerAsset).symbol}
                           </div>
-                          <div className="text-xs text-gray-400 font-mono">
+                          <div className="text-xs text-gray-400">
+                            {getTokenDisplay(order.data.makerAsset).name}
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono">
                             {formatAddress(order.data.makerAsset)}
                           </div>
                         </div>
@@ -287,9 +413,12 @@ export default function OrdersList() {
                         </div>
                         <div className="bg-gray-700 rounded-lg p-3">
                           <div className="text-lg font-semibold text-white mb-1">
-                            {formatAmount(order.data.takingAmount)}
+                            {formatAmount(order.data.takingAmount, order.data.takerAsset)} {getTokenDisplay(order.data.takerAsset).symbol}
                           </div>
-                          <div className="text-xs text-gray-400 font-mono">
+                          <div className="text-xs text-gray-400">
+                            {getTokenDisplay(order.data.takerAsset).name}
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono">
                             {formatAddress(order.data.takerAsset)}
                           </div>
                         </div>
