@@ -1195,24 +1195,21 @@ export default function CreateOrder() {
                         </div>
                       </div>
                       
-                      {/* Slider with gradient background */}
+                      {/* Clean gradient slider */}
                       <div className="relative space-y-4">
-                        {/* Gradient background track */}
-                        <div className="absolute top-2 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full opacity-60 pointer-events-none"></div>
-                        
                         {/* Market spot indicator */}
-                        <div className="absolute top-1.5 left-1/2 transform -translate-x-1/2">
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
                           <div className="w-3 h-3 bg-white border-2 border-gray-800 rounded-full shadow-md"></div>
                         </div>
                         
-                        {/* Shadcn Slider */}
+                        {/* Gradient Slider - track IS the gradient */}
                         <Slider
                           value={[getSpectrumPosition()]}
                           onValueChange={handleSpectrumSliderChange}
                           max={100}
                           min={0}
                           step={0.1}
-                          className="relative z-10 market-spectrum-slider"
+                          className="spectrum-gradient-slider"
                         />
                         
                         {/* Labels */}
