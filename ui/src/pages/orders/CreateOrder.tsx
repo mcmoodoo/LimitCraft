@@ -428,23 +428,66 @@ export default function CreateOrder() {
     return clampedPercentage + 50; // Simplified from ((clampedPercentage + 50) / 100) * 100
   };
 
-  // Get color based on slider position (0-100)
+  // Get color based on slider position with non-linear transitions
   const getSliderColor = (position: number): string => {
     const clampedPosition = Math.max(0, Math.min(100, position));
     
-    if (clampedPosition <= 50) {
-      // Left side: Red to Yellow (0-50%)
-      const factor = clampedPosition / 50;
-      const red = 255;
-      const green = Math.round(factor * 255);
-      const blue = 0;
-      return `rgb(${red}, ${green}, ${blue})`;
+    // Convert position (0-100) to market percentage (-50% to +50%)
+    const marketPercentage = ((clampedPosition / 100) * 100) - 50;
+    
+    if (marketPercentage < 0) {
+      // Left side: Red to Light Green
+      const normalizedPos = Math.abs(marketPercentage) / 50; // 0 to 1 (1 = -50%, 0 = 0%)
+      
+      if (marketPercentage >= -5) {
+        // -5% to 0%: Light Red to Orange to Light Green transition
+        const factor = Math.abs(marketPercentage) / 5; // 1 at -5%, 0 at 0%
+        
+        if (marketPercentage >= -2.5) {
+          // -2.5% to 0%: Orange to Light Green
+          const orangeToGreenFactor = Math.abs(marketPercentage) / 2.5;
+          // Orange (255,165,0) to Light Green (144,238,144)
+          const red = Math.round(255 * orangeToGreenFactor + 144 * (1 - orangeToGreenFactor));
+          const green = Math.round(165 * orangeToGreenFactor + 238 * (1 - orangeToGreenFactor));
+          const blue = Math.round(0 * orangeToGreenFactor + 144 * (1 - orangeToGreenFactor));
+          return `rgb(${red}, ${green}, ${blue})`;
+        } else {
+          // -5% to -2.5%: Light Red to Orange
+          const lightRedToOrangeFactor = (Math.abs(marketPercentage) - 2.5) / 2.5;
+          // Light Red (255,128,128) to Orange (255,165,0)
+          const red = 255;
+          const green = Math.round(128 + (165 - 128) * (1 - lightRedToOrangeFactor));
+          const blue = Math.round(128 * lightRedToOrangeFactor);
+          return `rgb(${red}, ${green}, ${blue})`;
+        }
+      } else {
+        // -50% to -5%: Complete Red to Light Red
+        const factor = (Math.abs(marketPercentage) - 5) / 45; // 0 at -5%, 1 at -50%
+        // Complete Red (255,0,0) to Light Red (255,128,128)
+        const red = 255;
+        const green = Math.round(128 * (1 - factor));
+        const blue = Math.round(128 * (1 - factor));
+        return `rgb(${red}, ${green}, ${blue})`;
+      }
+    } else if (marketPercentage === 0) {
+      // Exactly at 0%: Light Green
+      return 'rgb(144, 238, 144)';
     } else {
-      // Right side: Yellow to Green (50-100%)
-      const factor = (clampedPosition - 50) / 50;
-      const red = Math.round(255 * (1 - factor));
-      const green = 255;
-      const blue = 0;
+      // Right side: Light Green to Dark Green (0% to +50%)
+      const normalizedPos = marketPercentage / 50; // 0 to 1
+      
+      let factor;
+      if (normalizedPos <= 0.04) { // 0% to +2% (slow transition)
+        factor = normalizedPos / 0.04 * 0.3; // Light green range
+      } else { // +2% to +50% (accelerate to dark green)
+        const remaining = (normalizedPos - 0.04) / 0.96;
+        factor = 0.3 + remaining * 0.7; // Accelerate to dark green
+      }
+      
+      // Light Green (144,238,144) to Dark Green (0,100,0)
+      const red = Math.round(144 * (1 - factor));
+      const green = Math.round(238 - (138 * factor)); // 238 to 100
+      const blue = Math.round(144 * (1 - factor));
       return `rgb(${red}, ${green}, ${blue})`;
     }
   };
@@ -994,6 +1037,11 @@ export default function CreateOrder() {
       setForm((prev) => ({ ...prev, [name]: value }));
       return;
     }
+    
+    // Prevent leading zeros (except for decimal numbers like 0.5)
+    if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
+      return; // Don't update state for invalid leading zeros like 01, 000, etc.
+    }
 
     // Regex to allow only digits and single decimal point
     const regex = /^\d*\.?\d*$/;
@@ -1374,7 +1422,13 @@ export default function CreateOrder() {
                         
                         {/* Market Spot - always centered */}
                         <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                          <span className="text-gray-400 font-medium">Market Spot</span>
+                          <button
+                            type="button"
+                            onClick={setToMarketRate}
+                            className="text-gray-400 hover:text-gray-300 font-medium transition-colors"
+                          >
+                            Market Spot
+                          </button>
                         </div>
                         
                         {/* Percentage - right aligned */}
@@ -1383,7 +1437,14 @@ export default function CreateOrder() {
                             <span className="text-sm font-semibold dynamic-percentage-text">
                               {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
                             </span>
-                            <span className="text-xs text-gray-500">vs spot</span>
+                            <span className="text-xs text-gray-500">vs </span>
+                            <button
+                              type="button"
+                              onClick={setToMarketRate}
+                              className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
+                            >
+                              spot
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1430,66 +1491,6 @@ export default function CreateOrder() {
                       
                     </div>
                   )}
-
-                  {/* Rate Display */}
-                  <div className="border border-gray-600 rounded-lg p-4 space-y-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">
-                          Pay {(() => {
-                            const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
-                            return selectedToken?.symbol || 'Token';
-                          })()} at rate ({calculateMarketRatePercentage()}%)
-                        </span>
-                        <Button
-                          type="button"
-                          onClick={setToMarketRate}
-                          variant="secondary"
-                          size="sm"
-                        >
-                          Set to market
-                        </Button>
-                      </div>
-                      
-                      {/* Rate Input */}
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="number"
-                          value={calculateExchangeRate()}
-                          onChange={handleRateChange}
-                          step="0.000001"
-                          min="0"
-                          placeholder="0.000000"
-                          className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-right focus:outline-none focus:ring-2 focus:ring-blue-500 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            setRateFlipped(!rateFlipped);
-                            setCustomRate(''); // Clear custom rate when flipping
-                          }}
-                          variant="outline"
-                          size="icon"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                          </svg>
-                        </Button>
-                        <span className="text-sm text-gray-400 min-w-16">
-                          {(() => {
-                            const makerToken = tokens.find(t => t.token_address === form.makerAsset);
-                            const takerToken = tokens.find(t => t.token_address === form.takerAsset);
-                            
-                            if (rateFlipped) {
-                              return makerToken?.symbol || 'Token';
-                            } else {
-                              return takerToken?.symbol || 'Token';
-                            }
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
                 {/* Expiration Slider */}
                 <div>
