@@ -1380,9 +1380,9 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
-                  {/* Market Position Spectrum - Shadcn Slider Version */}
+                  {/* Market Position Spectrum */}
                   {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
-                    <div className="border border-gray-600 rounded-lg p-2 space-y-2">
+                    <div className="p-2 space-y-2">
                       <div className="relative mb-1">
                         {/* Exchange rate - left aligned */}
                         <div className="text-left">
@@ -1473,7 +1473,7 @@ export default function CreateOrder() {
                   )}
 
                 {/* Expiration Slider */}
-                <div>
+                <div className="mt-8">
                   <Label className="block text-xs font-medium mb-1">
                     Expiration: {(() => {
                       const minutes = getMinutesFromSeconds(form.expiresIn);
