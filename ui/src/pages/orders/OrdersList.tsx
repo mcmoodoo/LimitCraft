@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useChainId } from 'wagmi';
-import { navigationHelpers } from '../../router/navigation';
-import { Button } from '../../components/ui/button';
 import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Button } from '../../components/ui/button';
+import { navigationHelpers } from '../../router/navigation';
 
 interface Order {
   orderHash: string;
@@ -287,7 +287,7 @@ export default function OrdersList() {
       }
 
       const decimals = tokenInfo.decimals;
-      const divisor = Math.pow(10, decimals);
+      const divisor = 10 ** decimals;
       const num = BigInt(amount);
       const result = Number(num) / divisor;
 

@@ -1,7 +1,7 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Link } from 'react-router-dom';
-import { Navigation } from './Navigation';
 import { navigationHelpers } from '../../router/navigation';
+import { Navigation } from './Navigation';
 
 export function Header() {
   return (

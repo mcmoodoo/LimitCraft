@@ -11,8 +11,8 @@ import {
   updateOrderStatus,
 } from '../../db/src/index';
 import { orders } from '../../db/src/schema';
-import { fetchTokensWithMoralis, fetchTokensWith1inch } from './services/tokens';
 import { fetchPricesFrom1inch } from './services/prices';
+import { fetchTokensWith1inch, fetchTokensWithMoralis } from './services/tokens';
 
 interface SignedOrderRequest {
   orderHash: string;

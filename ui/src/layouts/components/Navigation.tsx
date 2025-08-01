@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ROUTES } from '../../router/routes';
 import { isActiveRoute } from '../../router/navigation';
+import { ROUTES } from '../../router/routes';
 
 interface NavigationItem {
   path: string;

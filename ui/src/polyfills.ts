@@ -21,5 +21,3 @@ if (typeof (globalThis as any).process === 'undefined') {
 if (typeof (globalThis as any).global === 'undefined') {
   (globalThis as any).global = globalThis;
 }
-
-export {};

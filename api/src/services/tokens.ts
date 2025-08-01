@@ -1,9 +1,9 @@
 import { getMoralisChainId } from '../chains';
-import {
+import type {
+  OneInchBalancesResponse,
+  OneInchTokenDetails,
   TokenBalance,
   TokenFetchResult,
-  OneInchTokenDetails,
-  OneInchBalancesResponse,
 } from '../types';
 
 export async function fetchTokensWithMoralis(
@@ -50,7 +50,7 @@ export async function fetchTokensWithMoralis(
       .filter((token) => !token.possible_spam && token.verified_contract)
       .map((token) => ({
         ...token,
-        balance_formatted: (Number(token.balance) / Math.pow(10, token.decimals)).toFixed(6),
+        balance_formatted: (Number(token.balance) / 10 ** token.decimals).toFixed(6),
       }))
       .sort((a, b) => b.security_score || 0 - (a.security_score || 0)); // Sort by security score
 
@@ -159,7 +159,7 @@ export async function fetchTokensWith1inch(
             logo: details.logoURI,
             decimals: details.decimals,
             balance: balance,
-            balance_formatted: (Number(balance) / Math.pow(10, details.decimals)).toFixed(6),
+            balance_formatted: (Number(balance) / 10 ** details.decimals).toFixed(6),
             possible_spam: false, // 1inch doesn't provide spam detection
             verified_contract: details.rating >= 5, // Use rating as a proxy for verification
             security_score: details.rating,
@@ -180,8 +180,8 @@ export async function fetchTokensWith1inch(
       .filter((token): token is TokenBalance => token !== null)
       .sort((a, b) => {
         // Sort by balance in descending order
-        const balanceA = Number(a.balance) / Math.pow(10, a.decimals);
-        const balanceB = Number(b.balance) / Math.pow(10, b.decimals);
+        const balanceA = Number(a.balance) / 10 ** a.decimals;
+        const balanceB = Number(b.balance) / 10 ** b.decimals;
         return balanceB - balanceA;
       });
 
