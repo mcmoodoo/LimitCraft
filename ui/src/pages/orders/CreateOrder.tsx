@@ -1813,7 +1813,7 @@ export default function CreateOrder() {
                 <div className="flex space-x-2">
                   <Button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || (form.usePermit2 && needsTokenApprovalToPermit2)}
                     className="flex-1 h-9 text-sm"
                     size="default"
                   >
@@ -1821,6 +1821,8 @@ export default function CreateOrder() {
                       ? approvalStatus
                         ? approvalStatus
                         : 'Creating Order...'
+                      : form.usePermit2 && needsTokenApprovalToPermit2
+                      ? 'Approve Token First'
                       : 'Create Order'}
                   </Button>
                 </div>
