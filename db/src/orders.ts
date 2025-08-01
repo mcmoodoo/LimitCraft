@@ -35,16 +35,6 @@ export async function getOrdersByMaker(
     .offset(offset);
 }
 
-export async function getOrdersByStatus(
-  status: 'pending' | 'filled' | 'cancelled' | 'expired'
-): Promise<Order[]> {
-  return await db
-    .select()
-    .from(orders)
-    .where(eq(orders.status, status))
-    .orderBy(desc(orders.createdAt));
-}
-
 export async function updateOrderStatus(
   id: string,
   status: 'pending' | 'filled' | 'cancelled' | 'expired'

@@ -37,7 +37,3 @@ export const CHAIN_ID_TO_MORALIS: Record<number, string> = {
 export function getMoralisChainId(chainId: number): string | null {
   return CHAIN_ID_TO_MORALIS[chainId] || null;
 }
-
-export function getSupportedChains(): number[] {
-  return Object.keys(CHAIN_ID_TO_MORALIS).map(Number);
-}

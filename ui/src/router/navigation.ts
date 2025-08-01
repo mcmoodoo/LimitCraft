@@ -8,15 +8,10 @@ export const createNavigationHelpers = () => ({
     return searchParams ? `${url}?${searchParams.toString()}` : url;
   },
   toOrderDetails: (orderHash: string) => ROUTES.ORDERS.DETAIL.replace(':orderHash', orderHash),
-  toOrderCancel: (orderHash: string) => ROUTES.ORDERS.CANCEL.replace(':orderHash', orderHash),
   toWalletConnect: (returnTo?: string) => {
     const url = ROUTES.WALLET.CONNECT;
     return returnTo ? `${url}?returnTo=${encodeURIComponent(returnTo)}` : url;
   },
-  toWalletProfile: () => ROUTES.WALLET.PROFILE,
-  toMarkets: () => ROUTES.MARKETS,
-  toPortfolio: () => ROUTES.PORTFOLIO,
-  toSettings: () => ROUTES.SETTINGS,
 });
 
 export const navigationHelpers = createNavigationHelpers();

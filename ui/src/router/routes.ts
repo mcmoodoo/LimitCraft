@@ -4,15 +4,10 @@ export const ROUTES = {
     LIST: '/orders',
     CREATE: '/orders/create',
     DETAIL: '/orders/:orderHash',
-    CANCEL: '/orders/:orderHash/cancel',
   },
   WALLET: {
     CONNECT: '/wallet/connect',
-    PROFILE: '/wallet/profile',
   },
-  MARKETS: '/markets',
-  PORTFOLIO: '/portfolio',
-  SETTINGS: '/settings',
 } as const;
 
 export type RouteParams = {
@@ -39,9 +34,5 @@ export const ROUTE_METADATA = {
   [ROUTES.WALLET.CONNECT]: {
     title: 'Connect Wallet - Orderly',
     description: 'Connect your wallet to start trading',
-  },
-  [ROUTES.WALLET.PROFILE]: {
-    title: 'Wallet Profile - Orderly',
-    description: 'View your wallet information and settings',
   },
 } as const;

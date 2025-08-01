@@ -205,7 +205,6 @@ export default function CreateOrder() {
 
     try {
       const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/prices?token1=${token1}&token2=${token2}&chainId=${chainId}`;
-      console.log('Fetching prices from:', url);
 
       const response = await fetch(url);
 
@@ -216,7 +215,6 @@ export default function CreateOrder() {
       }
 
       const priceData = await response.json();
-      console.log('Price API Response:', priceData);
 
       // Convert string prices to numbers and store in state
       const prices: Record<string, number> = {};
@@ -238,7 +236,6 @@ export default function CreateOrder() {
       try {
         setTokensLoading(true);
         const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}?chainId=${chainId}`;
-        console.log('Fetching tokens from:', url);
 
         const response = await fetch(url);
 
@@ -249,7 +246,6 @@ export default function CreateOrder() {
         }
 
         const data = await response.json();
-        console.log('API Response:', data);
         setTokens(data.data?.tokens || []);
 
         // Set default tokens if available
