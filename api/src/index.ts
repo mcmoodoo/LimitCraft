@@ -187,46 +187,49 @@ const app = new Elysia()
           };
         }
       })
-      .post('/orders', async ({ body, set }: { body: SignedOrderRequest; set: { status: number } }) => {
-        try {
-          // Calculate expiration
-          const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
-          const expiresIn = new Date(Number(expirationTimestamp) * 1000);
+      .post(
+        '/orders',
+        async ({ body, set }: { body: SignedOrderRequest; set: { status: number } }) => {
+          try {
+            // Calculate expiration
+            const expirationTimestamp = new MakerTraits(BigInt(body.makerTraits)).expiration();
+            const expiresIn = new Date(Number(expirationTimestamp) * 1000);
 
-          // Save to database
-          const savedOrder = await createOrder({
-            orderHash: body.orderHash,
-            salt: String(body.typedData.message.salt),
-            makerAsset: String(body.typedData.message.makerAsset),
-            takerAsset: String(body.typedData.message.takerAsset),
-            makingAmount: String(body.typedData.message.makingAmount),
-            takingAmount: String(body.typedData.message.takingAmount),
-            makerAddress: String(body.typedData.message.maker),
-            expiresIn: expiresIn,
-            signature: body.signature,
-            makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),
-            extension: body.extension || '0x',
-          });
-
-          set.status = 201;
-          return {
-            success: true,
-            message: 'Signed order saved successfully',
-            data: {
+            // Save to database
+            const savedOrder = await createOrder({
               orderHash: body.orderHash,
-              orderId: savedOrder.id,
-              chainId: body.chainId,
-            },
-          };
-        } catch (error) {
-          console.error('Error processing signed order:', error);
-          set.status = 500;
-          return {
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error occurred',
-          };
+              salt: String(body.typedData.message.salt),
+              makerAsset: String(body.typedData.message.makerAsset),
+              takerAsset: String(body.typedData.message.takerAsset),
+              makingAmount: String(body.typedData.message.makingAmount),
+              takingAmount: String(body.typedData.message.takingAmount),
+              makerAddress: String(body.typedData.message.maker),
+              expiresIn: expiresIn,
+              signature: body.signature,
+              makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),
+              extension: body.extension || '0x',
+            });
+
+            set.status = 201;
+            return {
+              success: true,
+              message: 'Signed order saved successfully',
+              data: {
+                orderHash: body.orderHash,
+                orderId: savedOrder.id,
+                chainId: body.chainId,
+              },
+            };
+          } catch (error) {
+            console.error('Error processing signed order:', error);
+            set.status = 500;
+            return {
+              success: false,
+              error: error instanceof Error ? error.message : 'Unknown error occurred',
+            };
+          }
         }
-      })
+      )
       .patch('/orders/:orderHash/cancel', async ({ params, set }) => {
         try {
           const { orderHash } = params;
