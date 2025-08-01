@@ -33,6 +33,7 @@ import {
 import { Slider } from '../../components/ui/slider';
 import { Switch } from '../../components/ui/switch';
 import { navigationHelpers } from '../../router/navigation';
+import { usePermit2, type Permit2Data } from '../../hooks/usePermit2';
 
 // Aave V3 Pool address on Arbitrum
 const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
@@ -82,6 +83,7 @@ interface CreateOrderForm {
   supplyLendingProtocol: string;
   useTwapOrder: boolean;
   twapRunningTimeHours: number;
+  usePermit2: boolean;
 }
 
 interface Token {
@@ -176,14 +178,12 @@ export default function CreateOrder() {
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
+  const [_permit2Data, setPermit2Data] = useState<Permit2Data | null>(null);
 
   // Wait for approval transaction confirmation
   const approvalReceipt = useWaitForTransactionReceipt({
     hash: approvalTxHash as `0x${string}` | undefined,
   });
-
-  // Get the limit order contract address for the current chain
-  const limitOrderContractAddress = getLimitOrderContract(chainId);
 
   const [form, setForm] = useState<CreateOrderForm>({
     makerAsset: '',
@@ -197,7 +197,19 @@ export default function CreateOrder() {
     supplyLendingProtocol: 'aave',
     useTwapOrder: false,
     twapRunningTimeHours: 5,
+    usePermit2: false,
   });
+
+  // Permit2 integration
+  const {
+    isPermit2Approved,
+    generatePermit2Signature,
+    permit2Loading,
+    permit2Error,
+  } = usePermit2(form.makerAsset);
+
+  // Get the limit order contract address for the current chain
+  const limitOrderContractAddress = getLimitOrderContract(chainId);
 
   // Fetch prices from API
   const fetchPrices = async (token1: string, token2: string) => {
@@ -790,11 +802,39 @@ export default function CreateOrder() {
     setApprovalStatus(null);
 
     try {
-      // Process all approvals
-      const approvalsSuccess = await processApprovals();
-      if (!approvalsSuccess) {
-        setLoading(false);
-        return;
+      // Handle Permit2 or traditional approvals
+      let permit2Signature: Permit2Data | null = null;
+      
+      if (form.usePermit2) {
+        // Use Permit2 - generate signature instead of approvals
+        setApprovalStatus('Generating Permit2 signature...');
+        
+        if (!requiredAmounts) {
+          setError('Please enter valid amounts');
+          setLoading(false);
+          return;
+        }
+
+        try {
+          permit2Signature = await generatePermit2Signature(
+            form.makerAsset,
+            requiredAmounts.makingAmountWei
+          );
+          setPermit2Data(permit2Signature);
+          setApprovalStatus('Permit2 signature generated! Creating order...');
+        } catch (error) {
+          console.error('Failed to generate Permit2 signature:', error);
+          setError(error instanceof Error ? error.message : 'Failed to generate Permit2 signature');
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Traditional approval process
+        const approvalsSuccess = await processApprovals();
+        if (!approvalsSuccess) {
+          setLoading(false);
+          return;
+        }
       }
 
       // Create expiration timestamp
@@ -807,6 +847,11 @@ export default function CreateOrder() {
         .withExpiration(expiration)
         .withNonce(nonce)
         .allowMultipleFills();
+
+      // Enable Permit2 if selected
+      if (form.usePermit2) {
+        makerTraits = makerTraits.enablePermit2();
+      }
 
       const extensionData = {
         ...Extension.EMPTY,
@@ -894,6 +939,12 @@ export default function CreateOrder() {
             chainId: chainId,
             typedData: typedDataForJson,
             extension: limitOrder.extension.encode(),
+            ...(permit2Signature && {
+              permit2Data: {
+                permitSingle: permit2Signature.permitSingle,
+                permit2Signature: permit2Signature.signature,
+              },
+            }),
           }),
         }
       );
@@ -1500,6 +1551,74 @@ export default function CreateOrder() {
                         <span>24h</span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Permit2 Section */}
+                  <div className="border border-blue-500/30 rounded-lg p-3 bg-blue-900/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="usePermit2"
+                          className="text-sm font-medium text-blue-400 flex items-center gap-2"
+                        >
+                          <svg 
+                            className="w-4 h-4" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                            />
+                          </svg>
+                          Use Permit2 (Recommended)
+                        </Label>
+                        <p className="text-xs text-gray-400">
+                          Skip token approval transactions - sign once, trade efficiently
+                        </p>
+                      </div>
+                      <Switch
+                        id="usePermit2"
+                        checked={form.usePermit2}
+                        onCheckedChange={(checked) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            usePermit2: checked,
+                          }))
+                        }
+                      />
+                    </div>
+                    
+                    {form.usePermit2 && (
+                      <div className="mt-2 p-2 bg-gray-800/50 rounded border border-gray-600">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-300">Permit2 Status:</span>
+                          <div className="flex items-center gap-1">
+                            {permit2Loading ? (
+                              <span className="text-yellow-400">Checking...</span>
+                            ) : permit2Error ? (
+                              <span className="text-red-400">Error</span>
+                            ) : isPermit2Approved ? (
+                              <>
+                                <span className="text-green-400">✓ Ready</span>
+                              </>
+                            ) : (
+                              <span className="text-orange-400">Signature needed</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {form.usePermit2 && !permit2Loading && !permit2Error && (
+                            isPermit2Approved ? 
+                              "You can create orders without approval transactions" :
+                              "You'll need to sign a Permit2 message when creating the order"
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between py-1">

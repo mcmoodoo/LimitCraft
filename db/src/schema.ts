@@ -20,6 +20,7 @@ export const orders = pgTable('orders', {
   signature: text('signature').notNull(),
   makerTraits: text('maker_traits').notNull(),
   extension: text('extension').notNull(),
+  permit2Data: text('permit2_data'), // JSON string containing Permit2 signature data
   status: orderStatusEnum('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

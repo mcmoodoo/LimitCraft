@@ -121,8 +121,20 @@ export class OrderFiller {
       const orderStructForSDK = limitOrder.build();
 
       let calldata: string;
-      // When no extension
-      if (order.extension === '0x') {
+      
+      // Check if this is a Permit2 order
+      const makerTraits = new MakerTraits(BigInt(order.makerTraits));
+      const isPermit2Order = makerTraits.isPermit2();
+      
+      if (isPermit2Order && order.permit2Data) {
+        console.log('🔐 Processing Permit2 order...');
+        calldata = LimitOrderContract.getFillOrderArgsCalldata(
+          orderStructForSDK,
+          order.signature,
+          TakerTraits.default(),
+          BigInt(order.takingAmount) // Fill full amount
+        );
+      } else if (order.extension === '0x') {
         // Use getFillOrderCalldata for orders without extensions
         calldata = LimitOrderContract.getFillOrderCalldata(
           orderStructForSDK,

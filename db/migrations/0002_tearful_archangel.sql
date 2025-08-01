@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "permit2_data" text;

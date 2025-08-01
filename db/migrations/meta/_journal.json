@@ -15,6 +15,13 @@
       "when": 1753581834432,
       "tag": "0001_messy_millenium_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1754064551480,
+      "tag": "0002_tearful_archangel",
+      "breakpoints": true
     }
   ]
 }

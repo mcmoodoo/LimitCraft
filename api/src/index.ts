@@ -25,6 +25,19 @@ interface SignedOrderRequest {
     message: Record<string, unknown>;
   };
   extension?: string;
+  permit2Data?: {
+    permitSingle: {
+      details: {
+        token: string;
+        amount: string;
+        expiration: number;
+        nonce: number;
+      };
+      spender: string;
+      sigDeadline: number;
+    };
+    permit2Signature: string;
+  };
 }
 
 // Database connection for order refresh functionality
@@ -208,6 +221,7 @@ const app = new Elysia()
               signature: body.signature,
               makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),
               extension: body.extension || '0x',
+              permit2Data: body.permit2Data ? JSON.stringify(body.permit2Data) : null,
             });
 
             set.status = 201;

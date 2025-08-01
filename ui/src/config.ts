@@ -38,4 +38,10 @@ export const config = {
     networkId: 42161, // Arbitrum
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
   },
+
+  // Contract Addresses
+  contracts: {
+    // Uniswap Permit2 contract (same address on all chains)
+    permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
+  },
 } as const;
