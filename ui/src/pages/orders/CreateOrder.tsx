@@ -170,8 +170,6 @@ export default function CreateOrder() {
   const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
   const [customExpiration, setCustomExpiration] = useState<string>('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -417,72 +415,11 @@ export default function CreateOrder() {
     setCustomRate(''); // Clear custom rate when using spectrum
   };
 
-  // Handle spectrum bar click
-  const handleSpectrumClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const position = ((e.clientX - rect.left) / rect.width) * 100;
+  // Handle market spectrum slider value change
+  const handleSpectrumSliderChange = (value: number[]) => {
+    const position = value[0]; // 0-100
     const percentage = positionToPercentage(position);
     updateAmountsFromPosition(percentage);
-  };
-
-  // Handle spectrum drag start
-  const handleSpectrumMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    handleSpectrumClick(e);
-    
-    const spectrumBar = e.currentTarget;
-    
-    // Add global mouse move and up listeners
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = spectrumBar.getBoundingClientRect();
-      const position = ((e.clientX - rect.left) / rect.width) * 100;
-      const percentage = positionToPercentage(position);
-      updateAmountsFromPosition(percentage);
-    };
-    
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // Handle spectrum drag (for continuous updates during drag)
-  const handleSpectrumDrag = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    
-    const rect = e.currentTarget.getBoundingClientRect();
-    const position = ((e.clientX - rect.left) / rect.width) * 100;
-    const percentage = positionToPercentage(position);
-    updateAmountsFromPosition(percentage);
-  };
-
-  // Handle touch events for mobile
-  const handleSpectrumTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const position = ((touch.clientX - rect.left) / rect.width) * 100;
-    const percentage = positionToPercentage(position);
-    updateAmountsFromPosition(percentage);
-    setIsDragging(true);
-  };
-
-  const handleSpectrumTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    e.preventDefault(); // Prevent scrolling
-    
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const position = ((touch.clientX - rect.left) / rect.width) * 100;
-    const percentage = positionToPercentage(position);
-    updateAmountsFromPosition(percentage);
-  };
-
-  const handleSpectrumTouchEnd = () => {
-    setIsDragging(false);
   };
 
   // Handle rate input change
@@ -1240,7 +1177,7 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
-                  {/* Market Position Spectrum */}
+                  {/* Market Position Spectrum - Shadcn Slider Version */}
                   {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
                     <div className="border border-gray-600 rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between mb-3">
@@ -1258,94 +1195,52 @@ export default function CreateOrder() {
                         </div>
                       </div>
                       
-                      {/* Spectrum Bar Container */}
-                      <div className="relative">
-                        {/* Interactive Background gradient bar */}
-                        <div 
-                          className={`h-3 w-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full transition-all duration-200 cursor-pointer select-none ${
-                            isDragging ? 'opacity-100 scale-105' : 
-                            isHovering ? 'opacity-90 shadow-lg' : 'opacity-80'
-                          }`}
-                          onClick={handleSpectrumClick}
-                          onMouseDown={handleSpectrumMouseDown}
-                          onMouseMove={handleSpectrumDrag}
-                          onMouseEnter={() => setIsHovering(true)}
-                          onMouseLeave={() => setIsHovering(false)}
-                          onTouchStart={handleSpectrumTouchStart}
-                          onTouchMove={handleSpectrumTouchMove}
-                          onTouchEnd={handleSpectrumTouchEnd}
-                        ></div>
+                      {/* Slider with gradient background */}
+                      <div className="relative space-y-4">
+                        {/* Gradient background track */}
+                        <div className="absolute top-2 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full opacity-60 pointer-events-none"></div>
                         
-                        {/* Market spot indicator (center) */}
-                        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                          <div className="w-4 h-4 bg-white border-2 border-gray-800 rounded-full animate-pulse shadow-lg"></div>
-                          <div className="absolute top-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                            <span className="text-xs text-gray-400 font-medium">Market Spot</span>
-                          </div>
+                        {/* Market spot indicator */}
+                        <div className="absolute top-1.5 left-1/2 transform -translate-x-1/2">
+                          <div className="w-3 h-3 bg-white border-2 border-gray-800 rounded-full shadow-md"></div>
                         </div>
                         
-                        {/* User position marker */}
-                        <div 
-                          className="absolute top-1/2 transform -translate-y-1/2 transition-all duration-300 ease-out"
-                          style={{ left: `${getSpectrumPosition()}%` }}
-                        >
-                          <div className="transform -translate-x-1/2">
-                            {/* Marker circle with enhanced feedback */}
-                            <div className={`rounded-full border-3 shadow-lg transition-all duration-300 ${
-                              isDragging ? 'w-7 h-7 border-4' : 'w-5 h-5 border-3'
-                            } ${
-                              getMarketRatePercentageNum() > 0 ? 'bg-green-400 border-green-600' : 
-                              getMarketRatePercentageNum() < 0 ? 'bg-red-400 border-red-600' : 'bg-yellow-400 border-yellow-600'
-                            } ${
-                              isDragging ? 'scale-110 shadow-xl' : isHovering ? 'scale-105' : 'scale-100'
-                            }`}></div>
-                            
-                            {/* Arrow pointer */}
-                            <div className={`w-0 h-0 mx-auto mt-1 transition-colors duration-300 ${
-                              getMarketRatePercentageNum() > 0 ? 'border-l-2 border-r-2 border-t-3 border-transparent border-t-green-400' : 
-                              getMarketRatePercentageNum() < 0 ? 'border-l-2 border-r-2 border-t-3 border-transparent border-t-red-400' : 'border-l-2 border-r-2 border-t-3 border-transparent border-t-yellow-400'
-                            }`}></div>
-                            
-                            {/* Position label */}
-                            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                              <span className={`text-xs font-semibold ${
-                                getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
-                                getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
-                              }`}>
-                                Your Rate
-                              </span>
-                            </div>
-                          </div>
-                        </div>
+                        {/* Shadcn Slider */}
+                        <Slider
+                          value={[getSpectrumPosition()]}
+                          onValueChange={handleSpectrumSliderChange}
+                          max={100}
+                          min={0}
+                          step={0.1}
+                          className="relative z-10 market-spectrum-slider"
+                        />
                         
-                        {/* Scale labels */}
+                        {/* Labels */}
+                        <div className="flex justify-between text-xs text-gray-500 mt-2">
+                          <span>-50%</span>
+                          <span className="text-gray-400 font-medium">Market Spot</span>
+                          <span>+50%</span>
+                        </div>
                       </div>
                       
-                      {/* Interactive description text */}
+                      {/* Description text */}
                       <div className="text-center">
-                        {isDragging ? (
-                          <p className="text-xs text-blue-400 animate-pulse font-medium">
-                            🎮 Drag to adjust your rate vs. market
-                          </p>
-                        ) : isHovering ? (
-                          <p className="text-xs text-gray-300 font-medium">
-                            💡 Click or drag to set your desired rate
-                          </p>
-                        ) : (
-                          <p className="text-xs text-gray-400">
-                            {getMarketRatePercentageNum() > 15 ? (
-                              <>🚀 Optimistic pricing - might take a while to fill</>
-                            ) : getMarketRatePercentageNum() > 5 ? (
-                              <>📈 Above market - good for you if it fills</>
-                            ) : getMarketRatePercentageNum() > -5 ? (
-                              <>🎯 Close to market rate - likely to fill quickly</>
-                            ) : getMarketRatePercentageNum() > -15 ? (
-                              <>📉 Below market - generous offer</>
-                            ) : (
-                              <>💸 Well below market - very generous!</>
-                            )}
-                          </p>
-                        )}
+                        <p className="text-xs text-gray-400">
+                          {getMarketRatePercentageNum() > 15 ? (
+                            <>🚀 Optimistic pricing - might take a while to fill</>
+                          ) : getMarketRatePercentageNum() > 5 ? (
+                            <>📈 Above market - good for you if it fills</>
+                          ) : getMarketRatePercentageNum() > -5 ? (
+                            <>🎯 Close to market rate - likely to fill quickly</>
+                          ) : getMarketRatePercentageNum() > -15 ? (
+                            <>📉 Below market - generous offer</>
+                          ) : (
+                            <>💸 Well below market - very generous!</>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          💡 Drag the slider to adjust your rate vs. market
+                        </p>
                       </div>
                     </div>
                   )}
