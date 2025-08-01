@@ -27,7 +27,6 @@ interface SignedOrderRequest {
   extension?: string;
 }
 
-
 // Database connection for order refresh functionality
 const connectionString = `postgresql://postgres:postgres@localhost:5432/our-limit-order-db`;
 const dbClient = postgres(connectionString, { max: 5 });
@@ -283,7 +282,7 @@ const app = new Elysia()
 
           // Try 1inch first, fallback to Moralis if it fails
           let result = await fetchTokensWith1inch(address, chainId);
-          
+
           // If 1inch fails, try Moralis as fallback
           if (!result.success) {
             console.log('1inch API failed, falling back to Moralis:', result.error);

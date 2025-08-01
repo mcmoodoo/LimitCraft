@@ -1,7 +1,15 @@
 import { getMoralisChainId } from '../chains';
-import { TokenBalance, TokenFetchResult, OneInchTokenDetails, OneInchBalancesResponse } from '../types';
+import {
+  TokenBalance,
+  TokenFetchResult,
+  OneInchTokenDetails,
+  OneInchBalancesResponse,
+} from '../types';
 
-export async function fetchTokensWithMoralis(address: string, chainId: number): Promise<TokenFetchResult> {
+export async function fetchTokensWithMoralis(
+  address: string,
+  chainId: number
+): Promise<TokenFetchResult> {
   try {
     // Get Moralis chain identifier
     const moralisChain = getMoralisChainId(chainId);
@@ -65,7 +73,10 @@ export async function fetchTokensWithMoralis(address: string, chainId: number): 
   }
 }
 
-export async function fetchTokensWith1inch(address: string, chainId: number): Promise<TokenFetchResult> {
+export async function fetchTokensWith1inch(
+  address: string,
+  chainId: number
+): Promise<TokenFetchResult> {
   try {
     // Check for 1inch API key
     const oneInchApiKey = process.env.ONE_INCH_API_KEY;
@@ -78,17 +89,21 @@ export async function fetchTokensWith1inch(address: string, chainId: number): Pr
 
     // Fetch token balances from 1inch
     const balancesUrl = `https://api.1inch.dev/balance/v1.2/${chainId}/balances/${address}`;
-    
+
     const balancesResponse = await fetch(balancesUrl, {
       headers: {
-        'Authorization': `Bearer ${oneInchApiKey}`,
-        'accept': 'application/json',
+        Authorization: `Bearer ${oneInchApiKey}`,
+        accept: 'application/json',
         'content-type': 'application/json',
       },
     });
 
     if (!balancesResponse.ok) {
-      console.error('1inch Balances API error:', balancesResponse.status, await balancesResponse.text());
+      console.error(
+        '1inch Balances API error:',
+        balancesResponse.status,
+        await balancesResponse.text()
+      );
       throw new Error(`1inch Balances API error: ${balancesResponse.status}`);
     }
 
@@ -114,47 +129,52 @@ export async function fetchTokensWith1inch(address: string, chainId: number): Pr
     }
 
     // Fetch token details in parallel for all tokens with balances
-    const tokenDetailsPromises = tokensWithBalance.map(async ({ address: tokenAddress, balance }) => {
-      try {
-        const detailsUrl = `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`;
-        const detailsResponse = await fetch(detailsUrl, {
-          headers: {
-            'Authorization': `Bearer ${oneInchApiKey}`,
-            'accept': 'application/json',
-            'content-type': 'application/json',
-          },
-        });
+    const tokenDetailsPromises = tokensWithBalance.map(
+      async ({ address: tokenAddress, balance }) => {
+        try {
+          const detailsUrl = `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`;
+          const detailsResponse = await fetch(detailsUrl, {
+            headers: {
+              Authorization: `Bearer ${oneInchApiKey}`,
+              accept: 'application/json',
+              'content-type': 'application/json',
+            },
+          });
 
-        if (!detailsResponse.ok) {
-          console.error(`Failed to fetch details for token ${tokenAddress}:`, detailsResponse.status);
+          if (!detailsResponse.ok) {
+            console.error(
+              `Failed to fetch details for token ${tokenAddress}:`,
+              detailsResponse.status
+            );
+            return null;
+          }
+
+          const details = (await detailsResponse.json()) as OneInchTokenDetails;
+
+          // Convert 1inch data to our TokenBalance format
+          const tokenBalance: TokenBalance = {
+            token_address: tokenAddress,
+            symbol: details.symbol,
+            name: details.name,
+            logo: details.logoURI,
+            decimals: details.decimals,
+            balance: balance,
+            balance_formatted: (Number(balance) / Math.pow(10, details.decimals)).toFixed(6),
+            possible_spam: false, // 1inch doesn't provide spam detection
+            verified_contract: details.rating >= 5, // Use rating as a proxy for verification
+            security_score: details.rating,
+          };
+
+          return tokenBalance;
+        } catch (error) {
+          console.error(`Error fetching details for token ${tokenAddress}:`, error);
           return null;
         }
-
-        const details = (await detailsResponse.json()) as OneInchTokenDetails;
-        
-        // Convert 1inch data to our TokenBalance format
-        const tokenBalance: TokenBalance = {
-          token_address: tokenAddress,
-          symbol: details.symbol,
-          name: details.name,
-          logo: details.logoURI,
-          decimals: details.decimals,
-          balance: balance,
-          balance_formatted: (Number(balance) / Math.pow(10, details.decimals)).toFixed(6),
-          possible_spam: false, // 1inch doesn't provide spam detection
-          verified_contract: details.rating >= 5, // Use rating as a proxy for verification
-          security_score: details.rating,
-        };
-
-        return tokenBalance;
-      } catch (error) {
-        console.error(`Error fetching details for token ${tokenAddress}:`, error);
-        return null;
       }
-    });
+    );
 
     const tokenDetails = await Promise.all(tokenDetailsPromises);
-    
+
     // Filter out failed requests and sort by balance
     const validTokens = tokenDetails
       .filter((token): token is TokenBalance => token !== null)

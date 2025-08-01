@@ -24,7 +24,13 @@ import { Slider } from '../../components/ui/slider';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Switch } from '../../components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import { Label } from '../../components/ui/label';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 
@@ -214,13 +220,13 @@ export default function CreateOrder() {
 
       const priceData = await response.json();
       console.log('Price API Response:', priceData);
-      
+
       // Convert string prices to numbers and store in state
       const prices: Record<string, number> = {};
       Object.entries(priceData).forEach(([address, price]) => {
         prices[address.toLowerCase()] = parseFloat(price as string);
       });
-      
+
       setTokenPrices(prices);
     } catch (err) {
       console.error('Error fetching prices:', err);
@@ -294,13 +300,13 @@ export default function CreateOrder() {
   useEffect(() => {
     const position = getSpectrumPosition();
     const color = getSliderColor(position);
-    
+
     // Color the track
     const selectors = [
       '.spectrum-gradient-slider [data-orientation="horizontal"]',
-      '.spectrum-gradient-slider span[data-orientation="horizontal"]'
+      '.spectrum-gradient-slider span[data-orientation="horizontal"]',
     ];
-    
+
     for (const selector of selectors) {
       const element = document.querySelector(selector) as HTMLElement;
       if (element) {
@@ -310,14 +316,16 @@ export default function CreateOrder() {
         break;
       }
     }
-    
+
     // Color the thumb
-    const thumb = document.querySelector('.spectrum-gradient-slider [role="slider"]') as HTMLElement;
+    const thumb = document.querySelector(
+      '.spectrum-gradient-slider [role="slider"]'
+    ) as HTMLElement;
     if (thumb) {
       thumb.style.background = color;
       thumb.style.setProperty('background', color, 'important');
     }
-    
+
     // Color the percentage text
     const percentageText = document.querySelector('.dynamic-percentage-text') as HTMLElement;
     if (percentageText) {
@@ -328,7 +336,7 @@ export default function CreateOrder() {
 
   // Get selected token decimals for step calculation
   const getSelectedTokenDecimals = (tokenAddress: string): number => {
-    const token = tokens.find(t => t.token_address === tokenAddress);
+    const token = tokens.find((t) => t.token_address === tokenAddress);
     return token?.decimals || 18; // default to 18 if not found
   };
 
@@ -340,15 +348,15 @@ export default function CreateOrder() {
   // Calculate USD value for a token amount
   const calculateUsdValue = (amount: string, tokenAddress: string): string => {
     if (!amount || !tokenAddress) return '0.00';
-    
+
     const price = tokenPrices[tokenAddress.toLowerCase()];
     if (!price) return '0.00';
-    
+
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount)) return '0.00';
-    
+
     const usdValue = numAmount * price;
-    
+
     if (usdValue < 0.01) return '<0.01';
     if (usdValue < 1000) return usdValue.toFixed(2);
     if (usdValue < 1000000) return `${(usdValue / 1000).toFixed(2)}K`;
@@ -359,65 +367,65 @@ export default function CreateOrder() {
   const calculateExchangeRate = (): string => {
     // If user has set a custom rate, use that
     if (customRate !== '') return customRate;
-    
+
     if (!form.makingAmount || !form.takingAmount || parseFloat(form.makingAmount) === 0) return '0';
-    
+
     const makingNum = parseFloat(form.makingAmount);
     const takingNum = parseFloat(form.takingAmount);
-    
+
     if (rateFlipped) {
       // Show taker/maker rate
       return (makingNum / takingNum).toFixed(6);
     } else {
-      // Show maker/taker rate  
+      // Show maker/taker rate
       return (takingNum / makingNum).toFixed(6);
     }
   };
 
   // Calculate market rate percentage difference
   const calculateMarketRatePercentage = (): string => {
-    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return '0.00';
-    
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount)
+      return '0.00';
+
     const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!makerPrice || !takerPrice) return '0.00';
-    
+
     const makingNum = parseFloat(form.makingAmount);
     const takingNum = parseFloat(form.takingAmount);
-    
+
     if (makingNum === 0 || takingNum === 0) return '0.00';
-    
+
     // Market rate: how much taker token should be received for 1 maker token
     const marketRate = makerPrice / takerPrice;
     // User's rate: how much taker token user gets for 1 maker token
     const userRate = takingNum / makingNum;
-    
+
     const percentageDiff = ((userRate - marketRate) / marketRate) * 100;
-    
+
     return percentageDiff >= 0 ? `+${percentageDiff.toFixed(2)}` : percentageDiff.toFixed(2);
   };
 
   // Get numerical percentage difference for logic
   const getMarketRatePercentageNum = (): number => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return 0;
-    
+
     const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!makerPrice || !takerPrice) return 0;
-    
+
     const makingNum = parseFloat(form.makingAmount);
     const takingNum = parseFloat(form.takingAmount);
-    
+
     if (makingNum === 0 || takingNum === 0) return 0;
-    
+
     const marketRate = makerPrice / takerPrice;
     const userRate = takingNum / makingNum;
-    
+
     return ((userRate - marketRate) / marketRate) * 100;
   };
-
 
   // Get position for spectrum slider (0-100% positioning) - Fixed formula
   const getSpectrumPosition = (): number => {
@@ -430,18 +438,18 @@ export default function CreateOrder() {
   // Get color based on slider position with non-linear transitions
   const getSliderColor = (position: number): string => {
     const clampedPosition = Math.max(0, Math.min(100, position));
-    
+
     // Convert position (0-100) to market percentage (-50% to +50%)
-    const marketPercentage = ((clampedPosition / 100) * 100) - 50;
-    
+    const marketPercentage = (clampedPosition / 100) * 100 - 50;
+
     if (marketPercentage < 0) {
       // Left side: Red to Light Green
       const normalizedPos = Math.abs(marketPercentage) / 50; // 0 to 1 (1 = -50%, 0 = 0%)
-      
+
       if (marketPercentage >= -5) {
         // -5% to 0%: Light Red to Orange to Light Green transition
         const factor = Math.abs(marketPercentage) / 5; // 1 at -5%, 0 at 0%
-        
+
         if (marketPercentage >= -2.5) {
           // -2.5% to 0%: Orange to Light Green
           const orangeToGreenFactor = Math.abs(marketPercentage) / 2.5;
@@ -474,18 +482,20 @@ export default function CreateOrder() {
     } else {
       // Right side: Light Green to Dark Green (0% to +50%)
       const normalizedPos = marketPercentage / 50; // 0 to 1
-      
+
       let factor;
-      if (normalizedPos <= 0.04) { // 0% to +2% (slow transition)
-        factor = normalizedPos / 0.04 * 0.3; // Light green range
-      } else { // +2% to +50% (accelerate to dark green)
+      if (normalizedPos <= 0.04) {
+        // 0% to +2% (slow transition)
+        factor = (normalizedPos / 0.04) * 0.3; // Light green range
+      } else {
+        // +2% to +50% (accelerate to dark green)
         const remaining = (normalizedPos - 0.04) / 0.96;
         factor = 0.3 + remaining * 0.7; // Accelerate to dark green
       }
-      
+
       // Light Green (144,238,144) to Dark Green (0,100,0)
       const red = Math.round(144 * (1 - factor));
-      const green = Math.round(238 - (138 * factor)); // 238 to 100
+      const green = Math.round(238 - 138 * factor); // 238 to 100
       const blue = Math.round(144 * (1 - factor));
       return `rgb(${red}, ${green}, ${blue})`;
     }
@@ -495,31 +505,31 @@ export default function CreateOrder() {
   const positionToPercentage = (position: number): number => {
     // Position is 0-100%, convert to -50% to +50% market percentage
     const clampedPosition = Math.max(0, Math.min(100, position));
-    return ((clampedPosition / 100) * 100) - 50;
+    return (clampedPosition / 100) * 100 - 50;
   };
 
   // Update token amounts based on market percentage
   const updateAmountsFromPosition = (marketPercentage: number) => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
-    
+
     const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!makerPrice || !takerPrice) return;
-    
+
     const makingNum = parseFloat(form.makingAmount);
     if (isNaN(makingNum) || makingNum <= 0) return;
-    
+
     // Calculate market rate and adjust by percentage
     const marketRate = makerPrice / takerPrice;
     const adjustedRate = marketRate * (1 + marketPercentage / 100);
     const newTakingAmount = makingNum * adjustedRate;
-    
+
     // Format to appropriate decimal places
     const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
     const formattedAmount = newTakingAmount.toFixed(Math.min(takerDecimals, 8));
-    
-    setForm(prev => ({ ...prev, takingAmount: formattedAmount }));
+
+    setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
     setCustomRate(''); // Clear custom rate when using spectrum
   };
 
@@ -528,16 +538,16 @@ export default function CreateOrder() {
     const position = value[0]; // 0-100
     const percentage = positionToPercentage(position);
     updateAmountsFromPosition(percentage);
-    
+
     // Update slider color immediately
     const color = getSliderColor(position);
-    
+
     // Color the track
     const selectors = [
       '.spectrum-gradient-slider [data-orientation="horizontal"]',
-      '.spectrum-gradient-slider span[data-orientation="horizontal"]'
+      '.spectrum-gradient-slider span[data-orientation="horizontal"]',
     ];
-    
+
     for (const selector of selectors) {
       const element = document.querySelector(selector) as HTMLElement;
       if (element) {
@@ -546,14 +556,16 @@ export default function CreateOrder() {
         break;
       }
     }
-    
+
     // Color the thumb
-    const thumb = document.querySelector('.spectrum-gradient-slider [role="slider"]') as HTMLElement;
+    const thumb = document.querySelector(
+      '.spectrum-gradient-slider [role="slider"]'
+    ) as HTMLElement;
     if (thumb) {
       thumb.style.background = color;
       thumb.style.setProperty('background', color, 'important');
     }
-    
+
     // Color the percentage text
     const percentageText = document.querySelector('.dynamic-percentage-text') as HTMLElement;
     if (percentageText) {
@@ -565,41 +577,40 @@ export default function CreateOrder() {
   // Calculate taking amount based on spot price with +3% markup
   const calculateTakingAmountFromSpot = () => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
-    
+
     const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!makerPrice || !takerPrice) return;
-    
+
     const makingNum = parseFloat(form.makingAmount);
     if (isNaN(makingNum) || makingNum <= 0) return;
-    
+
     // Calculate spot rate with +3% markup for better pricing
     const spotRate = makerPrice / takerPrice;
     const adjustedRate = spotRate * 1.03; // +3% above market
     const takingAmount = makingNum * adjustedRate;
-    
+
     // Format to appropriate decimal places
     const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
     const formattedAmount = takingAmount.toFixed(Math.min(takerDecimals, 8));
-    
-    setForm(prev => ({ ...prev, takingAmount: formattedAmount }));
-  };
 
+    setForm((prev) => ({ ...prev, takingAmount: formattedAmount }));
+  };
 
   // Handle rate input change
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setCustomRate(value);
-    
+
     // Recalculate taking amount based on the new rate
     if (value && form.makingAmount) {
       const rate = parseFloat(value);
       const makingNum = parseFloat(form.makingAmount);
-      
+
       if (!isNaN(rate) && !isNaN(makingNum) && makingNum > 0) {
         let newTakingAmount: number;
-        
+
         if (rateFlipped) {
           // Rate is taker/maker, so: takingAmount = makingAmount / rate
           newTakingAmount = makingNum / rate;
@@ -607,11 +618,11 @@ export default function CreateOrder() {
           // Rate is maker/taker, so: takingAmount = makingAmount * rate
           newTakingAmount = makingNum * rate;
         }
-        
+
         const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
-        setForm(prev => ({ 
-          ...prev, 
-          takingAmount: newTakingAmount.toFixed(takerDecimals) 
+        setForm((prev) => ({
+          ...prev,
+          takingAmount: newTakingAmount.toFixed(takerDecimals),
         }));
       }
     }
@@ -620,56 +631,56 @@ export default function CreateOrder() {
   // Set to market rate
   const setToMarketRate = () => {
     if (!form.makerAsset || !form.takerAsset || !form.makingAmount) return;
-    
+
     const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!makerPrice || !takerPrice) return;
-    
+
     const makingNum = parseFloat(form.makingAmount);
     if (makingNum === 0) return;
-    
+
     const marketRate = makerPrice / takerPrice;
     const marketTakingAmount = (makingNum * marketRate).toFixed(6);
-    
-    setForm(prev => ({ ...prev, takingAmount: marketTakingAmount }));
+
+    setForm((prev) => ({ ...prev, takingAmount: marketTakingAmount }));
     setCustomRate(''); // Clear custom rate when setting to market
   };
 
   // Switch token positions and flip amounts with +3% markup
   const handleTokenSwitch = () => {
     if (!form.makerAsset || !form.takerAsset || !form.takingAmount) return;
-    
+
     const currentTakingAmount = parseFloat(form.takingAmount);
     if (isNaN(currentTakingAmount) || currentTakingAmount <= 0) return;
-    
+
     // Calculate new taking amount with +3% markup using spot prices
     const oldMakerPrice = tokenPrices[form.makerAsset.toLowerCase()];
     const oldTakerPrice = tokenPrices[form.takerAsset.toLowerCase()];
-    
+
     if (!oldMakerPrice || !oldTakerPrice) return;
-    
+
     // After switch: old taker becomes new maker, old maker becomes new taker
     const newMakerPrice = oldTakerPrice; // what was taker price
     const newTakerPrice = oldMakerPrice; // what was maker price
-    
+
     const spotRate = newMakerPrice / newTakerPrice;
     const adjustedRate = spotRate * 1.03; // +3% markup
     const newTakingAmount = currentTakingAmount * adjustedRate;
-    
+
     // Get decimals for formatting
     const newTakerDecimals = getSelectedTokenDecimals(form.makerAsset); // will become new taker
     const formattedNewTakingAmount = newTakingAmount.toFixed(Math.min(newTakerDecimals, 8));
-    
+
     // Switch the tokens and amounts
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       makerAsset: prev.takerAsset,
       takerAsset: prev.makerAsset,
       makingAmount: prev.takingAmount,
-      takingAmount: formattedNewTakingAmount
+      takingAmount: formattedNewTakingAmount,
     }));
-    
+
     setCustomRate(''); // Clear custom rate
   };
 
@@ -699,7 +710,8 @@ export default function CreateOrder() {
 
   // Calculate required amounts
   const requiredAmounts = useMemo(() => {
-    if (!form.makingAmount || !form.takingAmount || !form.makerAsset || !form.takerAsset) return null;
+    if (!form.makingAmount || !form.takingAmount || !form.makerAsset || !form.takerAsset)
+      return null;
 
     const makerDecimals = getSelectedTokenDecimals(form.makerAsset);
     const takerDecimals = getSelectedTokenDecimals(form.takerAsset);
@@ -1003,21 +1015,38 @@ export default function CreateOrder() {
   // Handler to prevent invalid key presses
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const allowedKeys = [
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-      '.', 'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 
-      'ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '.',
+      'Backspace',
+      'Delete',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Tab',
+      'Enter',
+      'Escape',
     ];
-    
+
     // Allow Ctrl/Cmd combinations (copy, paste, select all, etc.)
     if (e.ctrlKey || e.metaKey) {
       return;
     }
-    
+
     if (!allowedKeys.includes(e.key)) {
       e.preventDefault();
       return;
     }
-    
+
     // Prevent multiple decimal points
     if (e.key === '.' && e.currentTarget.value.includes('.')) {
       e.preventDefault();
@@ -1027,16 +1056,16 @@ export default function CreateOrder() {
   // Custom handler for amount inputs that validates decimal places and format
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>, tokenAddress: string) => {
     const { name, value } = e.target;
-    
+
     // Clear custom rate when user manually changes amounts
     setCustomRate('');
-    
+
     // Allow empty value
     if (value === '') {
       setForm((prev) => ({ ...prev, [name]: value }));
       return;
     }
-    
+
     // Prevent leading zeros (except for decimal numbers like 0.5)
     if (value.length > 1 && value[0] === '0' && value[1] !== '.') {
       return; // Don't update state for invalid leading zeros like 01, 000, etc.
@@ -1050,7 +1079,7 @@ export default function CreateOrder() {
 
     const decimals = getSelectedTokenDecimals(tokenAddress);
     const decimalParts = value.split('.');
-    
+
     // If there's a decimal part, check if it exceeds allowed decimals
     if (decimalParts.length === 2 && decimalParts[1].length > decimals) {
       // Truncate to allowed decimal places
@@ -1073,19 +1102,19 @@ export default function CreateOrder() {
   };
 
   // Custom Token Dropdown Component
-  const TokenDropdown = ({ 
-    selectedTokenAddress, 
-    onTokenSelect, 
-    disabled 
-  }: { 
-    selectedTokenAddress: string; 
-    onTokenSelect: (address: string) => void; 
-    disabled: boolean; 
+  const TokenDropdown = ({
+    selectedTokenAddress,
+    onTokenSelect,
+    disabled,
+  }: {
+    selectedTokenAddress: string;
+    onTokenSelect: (address: string) => void;
+    disabled: boolean;
   }) => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const selectedToken = tokens.find(t => t.token_address === selectedTokenAddress);
+    const selectedToken = tokens.find((t) => t.token_address === selectedTokenAddress);
 
     const formatBalance = (balance: string) => {
       const num = parseFloat(balance);
@@ -1131,12 +1160,19 @@ export default function CreateOrder() {
                   }}
                 />
               )}
-              <span className="font-medium text-white text-sm truncate">{selectedToken.symbol}</span>
+              <span className="font-medium text-white text-sm truncate">
+                {selectedToken.symbol}
+              </span>
             </div>
           ) : (
             <span className="text-gray-400 text-xs">Select</span>
           )}
-          <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-3 h-3 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
@@ -1170,7 +1206,9 @@ export default function CreateOrder() {
                 </div>
 
                 <div className="text-right">
-                  <div className="font-medium text-white text-sm">{formatBalance(token.balance_formatted)}</div>
+                  <div className="font-medium text-white text-sm">
+                    {formatBalance(token.balance_formatted)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1186,7 +1224,7 @@ export default function CreateOrder() {
   // Helper functions for slider synchronization (working with minutes)
   const getSliderValueFromExpiration = (expiresIn: number): number => {
     const minutes = Math.round(expiresIn / 60);
-    const index = expirationMinutes.findIndex(min => min === minutes);
+    const index = expirationMinutes.findIndex((min) => min === minutes);
     return index >= 0 ? index : 4; // Default to 60 minutes index
   };
 
@@ -1197,7 +1235,7 @@ export default function CreateOrder() {
 
   const handleSliderChange = (value: number[]) => {
     const newExpiration = getExpirationFromSliderValue(value[0]);
-    setForm(prev => ({ ...prev, expiresIn: newExpiration }));
+    setForm((prev) => ({ ...prev, expiresIn: newExpiration }));
   };
 
   // Convert seconds to minutes for display
@@ -1236,8 +1274,18 @@ export default function CreateOrder() {
                   <div className="space-y-1 relative">
                     <div className="border border-gray-600 rounded-lg p-3">
                       <h3 className="text-base font-semibold mb-2 text-green-400 flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                          />
                         </svg>
                         You pay
                       </h3>
@@ -1246,7 +1294,9 @@ export default function CreateOrder() {
                         <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                           <TokenDropdown
                             selectedTokenAddress={form.makerAsset}
-                            onTokenSelect={(address) => setForm(prev => ({ ...prev, makerAsset: address }))}
+                            onTokenSelect={(address) =>
+                              setForm((prev) => ({ ...prev, makerAsset: address }))
+                            }
                             disabled={tokensLoading}
                           />
                           <input
@@ -1268,7 +1318,9 @@ export default function CreateOrder() {
                           <div className="flex justify-between items-center text-sm">
                             <div className="text-left">
                               {(() => {
-                                const selectedToken = tokens.find(t => t.token_address === form.makerAsset);
+                                const selectedToken = tokens.find(
+                                  (t) => t.token_address === form.makerAsset
+                                );
                                 if (selectedToken) {
                                   const formatBalance = (balance: string) => {
                                     const num = parseFloat(balance);
@@ -1281,8 +1333,13 @@ export default function CreateOrder() {
                                   };
                                   return (
                                     <>
-                                      <span className="text-white font-medium">{selectedToken.name}</span>
-                                      <span className="text-gray-400"> available: {formatBalance(selectedToken.balance_formatted)}</span>
+                                      <span className="text-white font-medium">
+                                        {selectedToken.name}
+                                      </span>
+                                      <span className="text-gray-400">
+                                        {' '}
+                                        available: {formatBalance(selectedToken.balance_formatted)}
+                                      </span>
                                     </>
                                   );
                                 }
@@ -1308,16 +1365,36 @@ export default function CreateOrder() {
                         className="w-10 h-10 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700 disabled:cursor-not-allowed border-2 border-gray-500 rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
                         title="Switch tokens and flip amounts"
                       >
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+                          />
                         </svg>
                       </button>
                     </div>
 
                     <div className="border border-gray-600 rounded-lg p-3">
                       <h3 className="text-base font-semibold mb-2 text-blue-400 flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 10l7-7m0 0l7 7m-7-7v18"
+                          />
                         </svg>
                         You get
                       </h3>
@@ -1326,7 +1403,9 @@ export default function CreateOrder() {
                         <div className="flex bg-gray-700 border border-gray-600 rounded-lg focus-within:ring-2 focus-within:ring-blue-500">
                           <TokenDropdown
                             selectedTokenAddress={form.takerAsset}
-                            onTokenSelect={(address) => setForm(prev => ({ ...prev, takerAsset: address }))}
+                            onTokenSelect={(address) =>
+                              setForm((prev) => ({ ...prev, takerAsset: address }))
+                            }
                             disabled={tokensLoading}
                           />
                           <input
@@ -1348,7 +1427,9 @@ export default function CreateOrder() {
                           <div className="flex justify-between items-center text-sm">
                             <div className="text-left">
                               {(() => {
-                                const selectedToken = tokens.find(t => t.token_address === form.takerAsset);
+                                const selectedToken = tokens.find(
+                                  (t) => t.token_address === form.takerAsset
+                                );
                                 if (selectedToken) {
                                   const formatBalance = (balance: string) => {
                                     const num = parseFloat(balance);
@@ -1361,8 +1442,13 @@ export default function CreateOrder() {
                                   };
                                   return (
                                     <>
-                                      <span className="text-white font-medium">{selectedToken.name}</span>
-                                      <span className="text-gray-400"> balance: {formatBalance(selectedToken.balance_formatted)}</span>
+                                      <span className="text-white font-medium">
+                                        {selectedToken.name}
+                                      </span>
+                                      <span className="text-gray-400">
+                                        {' '}
+                                        balance: {formatBalance(selectedToken.balance_formatted)}
+                                      </span>
                                     </>
                                   );
                                 }
@@ -1381,74 +1467,84 @@ export default function CreateOrder() {
                   </div>
 
                   {/* Market Position Spectrum */}
-                  {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
-                    <div className="p-2 space-y-2">
-                      <div className="relative mb-1">
-                        {/* Exchange rate - left aligned */}
-                        <div className="text-left">
-                          <span className="text-sm font-medium text-gray-300">
-                            1 {(() => {
-                              const makerToken = tokens.find(t => t.token_address === form.makerAsset);
-                              return makerToken?.symbol || 'Token';
-                            })()} for {(() => {
-                              const makingNum = parseFloat(form.makingAmount) || 1;
-                              const takingNum = parseFloat(form.takingAmount) || 0;
-                              const rate = makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
-                              const takerToken = tokens.find(t => t.token_address === form.takerAsset);
-                              return `${rate} ${takerToken?.symbol || 'Token'}`;
-                            })()}
-                          </span>
-                        </div>
-                        
-                        {/* Market Spot - always centered */}
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
-                          <button
-                            type="button"
-                            onClick={setToMarketRate}
-                            className="text-gray-400 hover:text-gray-300 font-medium transition-colors"
-                          >
-                            Market Spot
-                          </button>
-                        </div>
-                        
-                        {/* Percentage - right aligned */}
-                        <div className="absolute top-0 right-0">
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-semibold dynamic-percentage-text">
-                              {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
+                  {form.makerAsset &&
+                    form.takerAsset &&
+                    form.makingAmount &&
+                    form.takingAmount &&
+                    Object.keys(tokenPrices).length > 0 && (
+                      <div className="p-2 space-y-2">
+                        <div className="relative mb-1">
+                          {/* Exchange rate - left aligned */}
+                          <div className="text-left">
+                            <span className="text-sm font-medium text-gray-300">
+                              1 {(() => {
+                                const makerToken = tokens.find(
+                                  (t) => t.token_address === form.makerAsset
+                                );
+                                return makerToken?.symbol || 'Token';
+                              })()} for {(() => {
+                                const makingNum = parseFloat(form.makingAmount) || 1;
+                                const takingNum = parseFloat(form.takingAmount) || 0;
+                                const rate =
+                                  makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
+                                const takerToken = tokens.find(
+                                  (t) => t.token_address === form.takerAsset
+                                );
+                                return `${rate} ${takerToken?.symbol || 'Token'}`;
+                              })()}
                             </span>
-                            <span className="text-xs text-gray-500">vs </span>
+                          </div>
+
+                          {/* Market Spot - always centered */}
+                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
                             <button
                               type="button"
                               onClick={setToMarketRate}
-                              className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
+                              className="text-gray-400 hover:text-gray-300 font-medium transition-colors"
                             >
-                              spot
+                              Market Spot
                             </button>
                           </div>
+
+                          {/* Percentage - right aligned */}
+                          <div className="absolute top-0 right-0">
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-semibold dynamic-percentage-text">
+                                {getMarketRatePercentageNum() > 0 ? '+' : ''}
+                                {getMarketRatePercentageNum().toFixed(1)}%
+                              </span>
+                              <span className="text-xs text-gray-500">vs </span>
+                              <button
+                                type="button"
+                                onClick={setToMarketRate}
+                                className="text-xs text-blue-400 hover:text-blue-300 underline transition-colors"
+                              >
+                                spot
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      {/* Clean gradient slider */}
-                      <div className="relative space-y-1">
-                        {/* Market spot indicator - pulsing triangle */}
-                        <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
-                          <div className="w-0 h-0 border-l-6 border-r-6 border-t-8 border-transparent border-t-white shadow-md animate-pulse"></div>
-                        </div>
-                        
-                        {/* Gradient Slider - track IS the gradient */}
-                        <Slider
-                          value={[getSpectrumPosition()]}
-                          onValueChange={handleSpectrumSliderChange}
-                          max={100}
-                          min={0}
-                          step={0.1}
-                          className="spectrum-gradient-slider"
-                        />
-                        
-                        {/* Labels */}
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>-50%</span>
+
+                        {/* Clean gradient slider */}
+                        <div className="relative space-y-1">
+                          {/* Market spot indicator - pulsing triangle */}
+                          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
+                            <div className="w-0 h-0 border-l-6 border-r-6 border-t-8 border-transparent border-t-white shadow-md animate-pulse"></div>
+                          </div>
+
+                          {/* Gradient Slider - track IS the gradient */}
+                          <Slider
+                            value={[getSpectrumPosition()]}
+                            onValueChange={handleSpectrumSliderChange}
+                            max={100}
+                            min={0}
+                            step={0.1}
+                            className="spectrum-gradient-slider"
+                          />
+
+                          {/* Labels */}
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>-50%</span>
                             {/* Description text */}
                             <div className="text-center">
                               <p className="text-xs text-gray-400">
@@ -1465,48 +1561,49 @@ export default function CreateOrder() {
                                 )}
                               </p>
                             </div>
-                          <span>+50%</span>
+                            <span>+50%</span>
+                          </div>
                         </div>
                       </div>
-                      
-                    </div>
-                  )}
+                    )}
 
-                {/* Expiration Slider */}
-                <div className="mt-8">
-                  <Label className="block text-xs font-medium mb-1">
-                    Expiration: {(() => {
-                      const minutes = getMinutesFromSeconds(form.expiresIn);
-                      if (minutes < 60) {
-                        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-                      } else {
-                        const hours = minutes / 60;
-                        return `${hours} hour${hours !== 1 ? 's' : ''}`;
-                      }
-                    })()}
-                  </Label>
-                  
-                  <div className="px-1">
-                    <Slider
-                      value={[getSliderValueFromExpiration(form.expiresIn)]}
-                      onValueChange={handleSliderChange}
-                      max={expirationMinutes.length - 1}
-                      min={0}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>1m</span>
-                      <span>5m</span>
-                      <span>30m</span>
-                      <span>2h</span>
-                      <span>24h</span>
+                  {/* Expiration Slider */}
+                  <div className="mt-8">
+                    <Label className="block text-xs font-medium mb-1">
+                      Expiration: {(() => {
+                        const minutes = getMinutesFromSeconds(form.expiresIn);
+                        if (minutes < 60) {
+                          return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+                        } else {
+                          const hours = minutes / 60;
+                          return `${hours} hour${hours !== 1 ? 's' : ''}`;
+                        }
+                      })()}
+                    </Label>
+
+                    <div className="px-1">
+                      <Slider
+                        value={[getSliderValueFromExpiration(form.expiresIn)]}
+                        onValueChange={handleSliderChange}
+                        max={expirationMinutes.length - 1}
+                        min={0}
+                        className="w-full"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>1m</span>
+                        <span>5m</span>
+                        <span>30m</span>
+                        <span>2h</span>
+                        <span>24h</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-
 
                   <div className="flex items-center justify-between py-1">
-                    <Label htmlFor="useLendingProtocol" className="text-xs font-medium text-gray-300">
+                    <Label
+                      htmlFor="useLendingProtocol"
+                      className="text-xs font-medium text-gray-300"
+                    >
                       Withdraw from Lending Position
                     </Label>
                     <Switch
@@ -1528,7 +1625,9 @@ export default function CreateOrder() {
                       </Label>
                       <Select
                         value={form.lendingProtocol}
-                        onValueChange={(value) => setForm(prev => ({ ...prev, lendingProtocol: value }))}
+                        onValueChange={(value) =>
+                          setForm((prev) => ({ ...prev, lendingProtocol: value }))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select protocol" />
@@ -1554,7 +1653,9 @@ export default function CreateOrder() {
                   )}
 
                   <div className="flex items-center justify-between py-1">
-                    <Label htmlFor="useTwapOrder" className="text-xs font-medium text-gray-300">TWAP Order</Label>
+                    <Label htmlFor="useTwapOrder" className="text-xs font-medium text-gray-300">
+                      TWAP Order
+                    </Label>
                     <Switch
                       id="useTwapOrder"
                       checked={form.useTwapOrder}
@@ -1585,7 +1686,10 @@ export default function CreateOrder() {
                   )}
 
                   <div className="flex items-center justify-between py-1">
-                    <Label htmlFor="supplyToLendingProtocol" className="text-xs font-medium text-gray-300">
+                    <Label
+                      htmlFor="supplyToLendingProtocol"
+                      className="text-xs font-medium text-gray-300"
+                    >
                       Supply to Lending Protocol
                     </Label>
                     <Switch
@@ -1610,7 +1714,9 @@ export default function CreateOrder() {
                       </Label>
                       <Select
                         value={form.supplyLendingProtocol}
-                        onValueChange={(value) => setForm(prev => ({ ...prev, supplyLendingProtocol: value }))}
+                        onValueChange={(value) =>
+                          setForm((prev) => ({ ...prev, supplyLendingProtocol: value }))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select protocol" />
@@ -1671,7 +1777,6 @@ export default function CreateOrder() {
               </form>
             </div>
           </div>
-
         </div>
       </div>
     </div>

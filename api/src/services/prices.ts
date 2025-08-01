@@ -13,8 +13,8 @@ async function fetchPriceWithGET(
       {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'accept': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+          accept: 'application/json',
           'content-type': 'application/json',
         },
       }
@@ -50,8 +50,8 @@ async function fetchPricesWithPOST(
     const response = await fetch(`https://api.1inch.dev/price/v1.1/${chainId}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'accept': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        accept: 'application/json',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
@@ -87,7 +87,7 @@ export async function fetchPricesFrom1inch(
 ): Promise<{ success: boolean; data?: PriceResponse; error?: string }> {
   try {
     const oneInchApiKey = process.env.ONE_INCH_API_KEY;
-    
+
     if (!oneInchApiKey) {
       return {
         success: false,
@@ -97,12 +97,12 @@ export async function fetchPricesFrom1inch(
 
     // Try GET requests first (one for each token)
     const getResults = await Promise.all(
-      tokenAddresses.map(token => fetchPriceWithGET(token, chainId, oneInchApiKey))
+      tokenAddresses.map((token) => fetchPriceWithGET(token, chainId, oneInchApiKey))
     );
 
     // Check if all GET requests succeeded
-    const allGETsSucceeded = getResults.every(result => result.success);
-    
+    const allGETsSucceeded = getResults.every((result) => result.success);
+
     if (allGETsSucceeded) {
       // Combine results into single response object
       const priceData: PriceResponse = {};
@@ -111,7 +111,7 @@ export async function fetchPricesFrom1inch(
           priceData[address] = getResults[index].price!;
         }
       });
-      
+
       return {
         success: true,
         data: priceData,
@@ -121,7 +121,7 @@ export async function fetchPricesFrom1inch(
     // If GET requests failed, fallback to POST
     console.log('GET requests failed, falling back to POST endpoint');
     const postResult = await fetchPricesWithPOST(tokenAddresses, chainId, oneInchApiKey);
-    
+
     if (postResult.success) {
       return postResult;
     }
