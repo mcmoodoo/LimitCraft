@@ -355,6 +355,34 @@ export default function CreateOrder() {
     return percentageDiff >= 0 ? `+${percentageDiff.toFixed(2)}` : percentageDiff.toFixed(2);
   };
 
+  // Get numerical percentage difference for logic
+  const getMarketRatePercentageNum = (): number => {
+    if (!form.makerAsset || !form.takerAsset || !form.makingAmount || !form.takingAmount) return 0;
+    
+    const makerPrice = tokenPrices[form.makerAsset.toLowerCase()];
+    const takerPrice = tokenPrices[form.takerAsset.toLowerCase()];
+    
+    if (!makerPrice || !takerPrice) return 0;
+    
+    const makingNum = parseFloat(form.makingAmount);
+    const takingNum = parseFloat(form.takingAmount);
+    
+    if (makingNum === 0 || takingNum === 0) return 0;
+    
+    const marketRate = makerPrice / takerPrice;
+    const userRate = takingNum / makingNum;
+    
+    return ((userRate - marketRate) / marketRate) * 100;
+  };
+
+  // Get position for spectrum slider (0-100% positioning)
+  const getSpectrumPosition = (): number => {
+    const percentage = getMarketRatePercentageNum();
+    // Clamp between -50% and +50%, then convert to 0-100% scale for positioning
+    const clampedPercentage = Math.max(-50, Math.min(50, percentage));
+    return ((clampedPercentage + 50) / 100) * 100;
+  };
+
   // Handle rate input change
   const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -1110,6 +1138,94 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
+                  {/* Market Position Spectrum */}
+                  {form.makerAsset && form.takerAsset && form.makingAmount && form.takingAmount && Object.keys(tokenPrices).length > 0 && (
+                    <div className="border border-gray-600 rounded-lg p-4 space-y-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-300">
+                          Market Position
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-semibold ${
+                            getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
+                            getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
+                          }`}>
+                            {getMarketRatePercentageNum() > 0 ? '+' : ''}{getMarketRatePercentageNum().toFixed(1)}%
+                          </span>
+                          <span className="text-xs text-gray-500">vs spot</span>
+                        </div>
+                      </div>
+                      
+                      {/* Spectrum Bar Container */}
+                      <div className="relative">
+                        {/* Background gradient bar */}
+                        <div className="h-3 w-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 rounded-full opacity-80"></div>
+                        
+                        {/* Market spot indicator (center) */}
+                        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                          <div className="w-4 h-4 bg-white border-2 border-gray-800 rounded-full animate-pulse shadow-lg"></div>
+                          <div className="absolute top-5 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                            <span className="text-xs text-gray-400 font-medium">Market Spot</span>
+                          </div>
+                        </div>
+                        
+                        {/* User position marker */}
+                        <div 
+                          className="absolute top-1/2 transform -translate-y-1/2 transition-all duration-300 ease-out"
+                          style={{ left: `${getSpectrumPosition()}%` }}
+                        >
+                          <div className="transform -translate-x-1/2">
+                            {/* Marker circle */}
+                            <div className={`w-5 h-5 rounded-full border-3 shadow-lg transition-colors duration-300 ${
+                              getMarketRatePercentageNum() > 0 ? 'bg-green-400 border-green-600' : 
+                              getMarketRatePercentageNum() < 0 ? 'bg-red-400 border-red-600' : 'bg-yellow-400 border-yellow-600'
+                            }`}></div>
+                            
+                            {/* Arrow pointer */}
+                            <div className={`w-0 h-0 mx-auto mt-1 transition-colors duration-300 ${
+                              getMarketRatePercentageNum() > 0 ? 'border-l-2 border-r-2 border-t-3 border-transparent border-t-green-400' : 
+                              getMarketRatePercentageNum() < 0 ? 'border-l-2 border-r-2 border-t-3 border-transparent border-t-red-400' : 'border-l-2 border-r-2 border-t-3 border-transparent border-t-yellow-400'
+                            }`}></div>
+                            
+                            {/* Position label */}
+                            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                              <span className={`text-xs font-semibold ${
+                                getMarketRatePercentageNum() > 0 ? 'text-green-400' : 
+                                getMarketRatePercentageNum() < 0 ? 'text-red-400' : 'text-yellow-400'
+                              }`}>
+                                Your Rate
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Scale labels */}
+                        <div className="flex justify-between text-xs text-gray-500 mt-8 px-1">
+                          <span>-50%</span>
+                          <span className="text-gray-400">0%</span>
+                          <span>+50%</span>
+                        </div>
+                      </div>
+                      
+                      {/* Description text */}
+                      <div className="text-center">
+                        <p className="text-xs text-gray-400">
+                          {getMarketRatePercentageNum() > 15 ? (
+                            <>🚀 Optimistic pricing - might take a while to fill</>
+                          ) : getMarketRatePercentageNum() > 5 ? (
+                            <>📈 Above market - good for you if it fills</>
+                          ) : getMarketRatePercentageNum() > -5 ? (
+                            <>🎯 Close to market rate - likely to fill quickly</>
+                          ) : getMarketRatePercentageNum() > -15 ? (
+                            <>📉 Below market - generous offer</>
+                          ) : (
+                            <>💸 Well below market - very generous!</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Rate Display */}
                   <div className="border border-gray-600 rounded-lg p-4 space-y-4">
                     <div>
@@ -1390,7 +1506,6 @@ export default function CreateOrder() {
           </div>
 
           <div className="space-y-6">
-
             <div className="bg-gray-800 rounded-lg p-4">
               <div className="text-xs text-gray-500">
                 📝 Note: You may need to approve token spending before creating the order.
