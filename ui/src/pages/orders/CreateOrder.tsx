@@ -169,7 +169,6 @@ export default function CreateOrder() {
   const [pricesLoading, setPricesLoading] = useState(false);
   const [rateFlipped, setRateFlipped] = useState(false);
   const [customRate, setCustomRate] = useState<string>('');
-  const [customExpiration, setCustomExpiration] = useState<string>('');
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -1182,7 +1181,7 @@ export default function CreateOrder() {
   };
 
   // Expiration options in minutes (will be converted to seconds for form.expiresIn)
-  const expirationMinutes = [1, 5, 10, 30, 60, 120, 1440]; // 1 min to 24 hours in minutes
+  const expirationMinutes = [1, 2, 3, 4, 5, 10, 15, 20, 30, 60, 120, 300, 600, 1440]; // 1 min to 24 hours
 
   // Helper functions for slider synchronization (working with minutes)
   const getSliderValueFromExpiration = (expiresIn: number): number => {
@@ -1199,33 +1198,11 @@ export default function CreateOrder() {
   const handleSliderChange = (value: number[]) => {
     const newExpiration = getExpirationFromSliderValue(value[0]);
     setForm(prev => ({ ...prev, expiresIn: newExpiration }));
-    setCustomExpiration(''); // Clear custom input when slider changes
   };
 
-  // Convert seconds to minutes for input display
+  // Convert seconds to minutes for display
   const getMinutesFromSeconds = (seconds: number): number => {
     return Math.round(seconds / 60);
-  };
-
-  // Handle input changes (only accept positive integers up to 24*60 = 1440)
-  const handleExpirationInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // Allow empty value for editing
-    if (value === '') {
-      setCustomExpiration('');
-      return;
-    }
-
-    // Only allow positive integers
-    const numValue = parseInt(value);
-    if (isNaN(numValue) || numValue < 1 || numValue > 1440) {
-      return; // Don't update if invalid
-    }
-
-    setCustomExpiration(value);
-    // Convert minutes to seconds for form state
-    setForm(prev => ({ ...prev, expiresIn: numValue * 60 }));
   };
 
   if (!isConnected) {
@@ -1495,41 +1472,31 @@ export default function CreateOrder() {
                 {/* Expiration Slider */}
                 <div>
                   <Label className="block text-xs font-medium mb-1">
-                    Expiration: {getMinutesFromSeconds(form.expiresIn)} minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}
+                    Expiration: {(() => {
+                      const minutes = getMinutesFromSeconds(form.expiresIn);
+                      if (minutes < 60) {
+                        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+                      } else {
+                        const hours = minutes / 60;
+                        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+                      }
+                    })()}
                   </Label>
                   
-                  {/* Slider and Input Row */}
-                  <div className="flex items-center gap-2 mb-2">
-                    {/* Slider takes most of the width */}
-                    <div className="flex-1 px-1">
-                      <Slider
-                        value={[getSliderValueFromExpiration(form.expiresIn)]}
-                        onValueChange={handleSliderChange}
-                        max={expirationMinutes.length - 1}
-                        min={0}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>{expirationMinutes[0]}m</span>
-                        <span>{expirationMinutes[Math.floor((expirationMinutes.length - 1) / 2)]}m</span>
-                        <span>{expirationMinutes[expirationMinutes.length - 1]}m</span>
-                      </div>
-                    </div>
-                    
-                    {/* Input with label */}
-                    <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        value={customExpiration || getMinutesFromSeconds(form.expiresIn)}
-                        onChange={handleExpirationInputChange}
-                        onFocus={() => setCustomExpiration(getMinutesFromSeconds(form.expiresIn).toString())}
-                        onBlur={() => setCustomExpiration('')}
-                        min="1"
-                        max="1440"
-                        className="w-16 text-xs h-8"
-                        placeholder="60"
-                      />
-                      <span className="text-xs text-gray-400">minute{getMinutesFromSeconds(form.expiresIn) !== 1 ? 's' : ''}</span>
+                  <div className="px-1">
+                    <Slider
+                      value={[getSliderValueFromExpiration(form.expiresIn)]}
+                      onValueChange={handleSliderChange}
+                      max={expirationMinutes.length - 1}
+                      min={0}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1m</span>
+                      <span>5m</span>
+                      <span>30m</span>
+                      <span>2h</span>
+                      <span>24h</span>
                     </div>
                   </div>
                 </div>
@@ -1696,17 +1663,6 @@ export default function CreateOrder() {
                         ? approvalStatus
                         : 'Creating Order...'
                       : 'Create Order'}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="default"
-                    className="h-9 text-sm"
-                    asChild
-                  >
-                    <Link to={navigationHelpers.toOrders()}>
-                      Cancel
-                    </Link>
                   </Button>
                 </div>
               </form>
