@@ -151,10 +151,16 @@ export async function fetchTokensWith1inch(
 
           const details = (await detailsResponse.json()) as OneInchTokenDetails;
 
+          // Fix symbol for specific USDC token
+          let symbol = details.symbol;
+          if (tokenAddress.toLowerCase() === '0xaf88d065e77c8cc2239327c5edb3a432268e5831' && symbol === 'USDC_1') {
+            symbol = 'USDC';
+          }
+
           // Convert 1inch data to our TokenBalance format
           const tokenBalance: TokenBalance = {
             token_address: tokenAddress,
-            symbol: details.symbol,
+            symbol: symbol,
             name: details.name,
             logo: details.logoURI,
             decimals: details.decimals,

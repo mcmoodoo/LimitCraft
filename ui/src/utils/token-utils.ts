@@ -21,9 +21,17 @@ export const getStepForDecimals = (decimals: number): string => {
   return `0.${'0'.repeat(decimals - 1)}1`;
 };
 
+// Safe parsing function that handles NaN
+export const safeParseFloat = (value: string | number, defaultValue: number = 0): number => {
+  if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
+  if (typeof value !== 'string' || value.trim() === '') return defaultValue;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
 // Format balance for display
 export const formatBalance = (balance: string): string => {
-  const num = parseFloat(balance);
+  const num = safeParseFloat(balance, 0);
   if (num === 0) return '0';
   if (num < 0.000001) return '<0.000001';
   if (num < 1) return num.toFixed(6);
@@ -43,8 +51,8 @@ export const calculateUsdValue = (
   const price = tokenPrices[tokenAddress.toLowerCase()];
   if (!price) return '0.00';
 
-  const numAmount = parseFloat(amount);
-  if (isNaN(numAmount)) return '0.00';
+  const numAmount = safeParseFloat(amount, 0);
+  if (numAmount === 0) return '0.00';
 
   const usdValue = numAmount * price;
 

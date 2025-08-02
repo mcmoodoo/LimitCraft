@@ -1,3 +1,11 @@
+// Safe parsing function that handles NaN
+const safeParseFloat = (value: string | number, defaultValue: number = 0): number => {
+  if (typeof value === 'number') return isNaN(value) ? defaultValue : value;
+  if (typeof value !== 'string' || value.trim() === '') return defaultValue;
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
 // Get numerical percentage difference for logic
 export const getMarketRatePercentageNum = (
   makerAsset: string,
@@ -13,8 +21,8 @@ export const getMarketRatePercentageNum = (
 
   if (!makerPrice || !takerPrice) return 0;
 
-  const makingNum = parseFloat(makingAmount);
-  const takingNum = parseFloat(takingAmount);
+  const makingNum = safeParseFloat(makingAmount, 0);
+  const takingNum = safeParseFloat(takingAmount, 0);
 
   if (makingNum === 0 || takingNum === 0) return 0;
 

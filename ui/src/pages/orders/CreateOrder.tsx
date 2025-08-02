@@ -36,6 +36,7 @@ import {
   getStepForDecimals,
   formatBalance,
   calculateUsdValue,
+  safeParseFloat,
 } from '../../utils/token-utils';
 import {
   getMarketRatePercentageNum,
@@ -140,8 +141,9 @@ export default function CreateOrder() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [tokensLoading, setTokensLoading] = useState(true);
+  const [tokens, setTokens] = useState<Token[]>(config.topTokens);
+  const [tokensLoading, setTokensLoading] = useState(false); // Start as false since we have initial data
+  const [apiTokensLoading, setApiTokensLoading] = useState(false); // Track API loading separately
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
   const [customRate, setCustomRate] = useState<string>('');
 
@@ -155,9 +157,9 @@ export default function CreateOrder() {
   });
 
   const [form, setForm] = useState<CreateOrderForm>({
-    makerAsset: '',
-    takerAsset: '',
-    makingAmount: '',
+    makerAsset: '0xaf88d065e77c8cc2239327c5edb3a432268e5831', // USDC address directly from config
+    takerAsset: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1', // WETH address directly from config
+    makingAmount: '1',
     takingAmount: '',
     expiresIn: 3600, // 1 hour
     useLendingProtocol: false,
@@ -203,7 +205,7 @@ export default function CreateOrder() {
       // Convert string prices to numbers and store in state
       const prices: Record<string, number> = {};
       Object.entries(priceData).forEach(([address, price]) => {
-        prices[address.toLowerCase()] = parseFloat(price as string);
+        prices[address.toLowerCase()] = safeParseFloat(price as string, 0);
       });
 
       setTokenPrices(prices);
@@ -218,7 +220,7 @@ export default function CreateOrder() {
       if (!address) return;
 
       try {
-        setTokensLoading(true);
+        setApiTokensLoading(true);
         const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}?chainId=${chainId}`;
 
         const response = await fetch(url);
@@ -230,19 +232,50 @@ export default function CreateOrder() {
         }
 
         const data = await response.json();
-        setTokens(data.data?.tokens || []);
+        const apiTokens = data.data?.tokens || [];
+        
+        // Create a map of API tokens by address for quick lookup
+        const apiTokenMap = new Map(
+          apiTokens.map((token: Token) => [token.token_address.toLowerCase(), token])
+        );
+        
+        // Merge static tokens with API tokens
+        const mergedTokens = config.topTokens.map(staticToken => {
+          const apiToken = apiTokenMap.get(staticToken.token_address.toLowerCase());
+          if (apiToken) {
+            // API token exists - merge balance and other updated info
+            return {
+              ...staticToken,
+              ...apiToken,
+              balance: apiToken.balance || '0',
+              balance_USD: apiToken.balance_USD || 0,
+            };
+          } else {
+            // API doesn't have this token - keep static data with zero balance
+            return staticToken;
+          }
+        });
+        
+        // Add any tokens from API that aren't in the static list
+        const staticAddresses = new Set(config.topTokens.map(t => t.token_address.toLowerCase()));
+        const additionalTokens = apiTokens.filter(
+          (token: Token) => !staticAddresses.has(token.token_address.toLowerCase())
+        );
+        
+        // Combine all tokens - static ones first, then additional ones with balances
+        const allTokens = [...mergedTokens, ...additionalTokens];
+        setTokens(allTokens);
 
-        // Set default tokens if available
-        const tokens = data.data?.tokens || [];
-        if (tokens.length > 0) {
-          const usdcToken = tokens.find((token: Token) => token.symbol === 'USDC');
-          const wethToken = tokens.find((token: Token) => token.symbol === 'WETH');
+        // Set default tokens if not already set
+        if (!form.makerAsset && !form.takerAsset && allTokens.length > 0) {
+          const usdcToken = allTokens.find((token: Token) => token.symbol === 'USDC');
+          const wethToken = allTokens.find((token: Token) => token.symbol === 'WETH');
 
           setForm((prev) => ({
             ...prev,
-            makerAsset: usdcToken?.token_address || tokens[0].token_address,
+            makerAsset: usdcToken?.token_address || allTokens[0].token_address,
             takerAsset:
-              wethToken?.token_address || tokens[1]?.token_address || tokens[0].token_address,
+              wethToken?.token_address || allTokens[1]?.token_address || allTokens[0].token_address,
             makingAmount: '1', // Default to 1 token
           }));
         }
@@ -250,7 +283,7 @@ export default function CreateOrder() {
         console.error('Error fetching tokens:', err);
         setError('Failed to load tokens');
       } finally {
-        setTokensLoading(false);
+        setApiTokensLoading(false);
       }
     };
 
@@ -346,8 +379,8 @@ export default function CreateOrder() {
 
     if (!makerPrice || !takerPrice) return;
 
-    const makingNum = parseFloat(form.makingAmount);
-    if (isNaN(makingNum) || makingNum <= 0) return;
+    const makingNum = safeParseFloat(form.makingAmount, 0);
+    if (makingNum <= 0) return;
 
     // Calculate market rate and adjust by percentage
     const marketRate = makerPrice / takerPrice;
@@ -412,8 +445,8 @@ export default function CreateOrder() {
 
     if (!makerPrice || !takerPrice) return;
 
-    const makingNum = parseFloat(form.makingAmount);
-    if (isNaN(makingNum) || makingNum <= 0) return;
+    const makingNum = safeParseFloat(form.makingAmount, 0);
+    if (makingNum <= 0) return;
 
     // Calculate spot rate with +3% markup for better pricing
     const spotRate = makerPrice / takerPrice;
@@ -436,7 +469,7 @@ export default function CreateOrder() {
 
     if (!makerPrice || !takerPrice) return;
 
-    const makingNum = parseFloat(form.makingAmount);
+    const makingNum = safeParseFloat(form.makingAmount, 0);
     if (makingNum === 0) return;
 
     const marketRate = makerPrice / takerPrice;
@@ -450,8 +483,8 @@ export default function CreateOrder() {
   const handleTokenSwitch = () => {
     if (!form.makerAsset || !form.takerAsset || !form.takingAmount) return;
 
-    const currentTakingAmount = parseFloat(form.takingAmount);
-    if (isNaN(currentTakingAmount) || currentTakingAmount <= 0) return;
+    const currentTakingAmount = safeParseFloat(form.takingAmount, 0);
+    if (currentTakingAmount <= 0) return;
 
     // Calculate new taking amount with +3% markup using spot prices
     const oldMakerPrice = tokenPrices[form.makerAsset.toLowerCase()];
@@ -1127,7 +1160,7 @@ export default function CreateOrder() {
                             onTokenSelect={(address) =>
                               setForm((prev) => ({ ...prev, makerAsset: address }))
                             }
-                            disabled={tokensLoading}
+                            disabled={false}
                           />
                           <input
                             id="makingAmount"
@@ -1227,7 +1260,7 @@ export default function CreateOrder() {
                             onTokenSelect={(address) =>
                               setForm((prev) => ({ ...prev, takerAsset: address }))
                             }
-                            disabled={tokensLoading}
+                            disabled={false}
                           />
                           <input
                             id="takingAmount"
@@ -1295,8 +1328,8 @@ export default function CreateOrder() {
                                 );
                                 return makerToken?.symbol || 'Token';
                               })()} for {(() => {
-                                const makingNum = parseFloat(form.makingAmount) || 1;
-                                const takingNum = parseFloat(form.takingAmount) || 0;
+                                const makingNum = safeParseFloat(form.makingAmount, 1);
+                                const takingNum = safeParseFloat(form.takingAmount, 0);
                                 const rate =
                                   makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
                                 const takerToken = tokens.find(
