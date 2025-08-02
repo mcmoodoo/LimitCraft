@@ -1360,7 +1360,7 @@ export default function CreateOrder() {
                           </div>
 
                           {/* Market Spot - always centered */}
-                          <div className="absolute top-0 left-1/2 transform -translate-x-1/2">
+                          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                             <button
                               type="button"
                               onClick={setToMarketRate}
@@ -1392,7 +1392,7 @@ export default function CreateOrder() {
                         {/* Clean gradient slider */}
                         <div className="relative space-y-1">
                           {/* Market spot indicator - pulsing triangle */}
-                          <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 z-20">
+                          <div className="absolute -top-2.5 left-1/2 transform -translate-x-1/2 z-20">
                             <div className="w-0 h-0 border-l-6 border-r-6 border-t-8 border-transparent border-t-white shadow-md animate-pulse"></div>
                           </div>
 
