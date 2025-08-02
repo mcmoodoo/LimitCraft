@@ -1,5 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Header } from './components/Header';
+import { Breadcrumbs } from '../components/Breadcrumbs';
 
 export function RootLayout() {
   return (
@@ -7,6 +8,7 @@ export function RootLayout() {
       <Header />
       <main className="pt-20 px-4">
         <div className="max-w-6xl mx-auto">
+          <Breadcrumbs />
           <Outlet />
         </div>
       </main>

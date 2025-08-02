@@ -3,7 +3,6 @@ import { Home, FileText, Plus } from 'lucide-react';
 import { isActiveRoute } from '../../router/navigation';
 import { ROUTES } from '../../router/routes';
 import { Button } from '../../components/ui/button';
-import { Badge } from '../../components/ui/badge';
 import { cn } from '../../lib/utils';
 
 interface NavigationItem {

@@ -1105,9 +1105,6 @@ export default function CreateOrder() {
   return (
     <div>
       <div className="flex items-center mb-3">
-        <Link to={navigationHelpers.toOrders()} className="text-blue-400 hover:text-blue-300 mr-3">
-          ← Back to Orders
-        </Link>
         <h1 className="text-2xl font-bold">Create Order</h1>
       </div>
 
