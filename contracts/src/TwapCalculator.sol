@@ -29,9 +29,8 @@ contract TwapCalculator is IAmountGetter {
         uint256 remainingMakingAmount,
         bytes calldata extraData
     ) external view returns (uint256) {
-        bytes memory makingAmountData = extension.makingAmountData();
-        (address twapCalculator, uint256 startTime, uint256 endTime) = abi.decode(makingAmountData, (address, uint256, uint256));
-        require(twapCalculator == address(this), "Invalid twap calculator");
+        bytes calldata makingAmountData = extension.makingAmountData();
+        (uint256 startTime, uint256 endTime) = abi.decode(makingAmountData[20:], (uint256, uint256));
 
         require(startTime > 0 && endTime > startTime, "Invalid time range");
 

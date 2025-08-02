@@ -38,6 +38,26 @@ export class OrderFiller {
     );
   }
 
+  private checkTwapTimingCondition(
+    orderHash: string,
+    timestamp: Date
+  ): FillResult | null {
+    const timePassed = Date.now() - timestamp.getTime();
+    const minWaitTime = 30 * 60 * 1000; // 30 minutes in milliseconds
+    
+    if (timePassed < minWaitTime) {
+      const remainingTime = Math.ceil((minWaitTime - timePassed) / 1000 / 60); // minutes
+      console.log(`⏰ TWAP order ${orderHash} needs to wait ${remainingTime} more minutes.`);
+      // TOOD: just skip intead of returning error
+      return {
+        success: false,
+        error: `TWAP order must wait ${remainingTime} more minutes`,
+      };
+    }
+    
+    return null; // No timing violation
+  }
+
   async fillOrder(order: Order): Promise<FillResult> {
     try {
       console.log(`🔄 Attempting to fill order ${order.orderHash}`);
@@ -153,23 +173,31 @@ export class OrderFiller {
         // If this is a TWAP order, fill the order in parts
         if (order.numberOfOrders) {
           console.log('🔍 TWAP order detected');
+          
+          // Check if 30 minutes have passed since order creation
+          const creationTimingResult = this.checkTwapTimingCondition(
+            order.orderHash,
+            order.createdAt
+          );
+          if (creationTimingResult) {
+            return creationTimingResult;
+          }
+          
           // Check if 30 minutes have passed since last fill for TWAP orders
           if (order.lastFillTxAt) {
-            const timeSinceLastFill = Date.now() - order.lastFillTxAt.getTime();
-            const frequency = 30 * 60 * 1000; // 30 minutes in milliseconds
-            
-            if (timeSinceLastFill < frequency) {
-              const remainingTime = Math.ceil((frequency - timeSinceLastFill) / 1000 / 60); // minutes
-              console.log(`⏰ TWAP order ${order.orderHash} last filled ${Math.floor(timeSinceLastFill / 1000 / 60)} minutes ago. Need to wait ${remainingTime} more minutes.`);
-              return {
-                success: false,
-                error: `TWAP order must wait ${remainingTime} more minutes before next fill`,
-              };
+            const lastFillTimingResult = this.checkTwapTimingCondition(
+              order.orderHash,
+              order.lastFillTxAt
+            );
+            if (lastFillTimingResult) {
+              return lastFillTimingResult;
             }
           }
           
           takerTraits = takerTraits.setAmountMode(AmountMode.maker);
           amount = BigInt(order.makingAmount) / BigInt(order.numberOfOrders)
+          // amount = BigInt(10)
+          
           console.log('🔍 Amount:', amount);
         }
         console.log('🔍 TakerTraits:', takerTraits);
@@ -196,7 +224,6 @@ export class OrderFiller {
 
       console.log(`📤 Fill transaction sent: ${tx.hash}`);
 
-      // Wait for transaction confirmation
       const receipt = await tx.wait();
 
       if (receipt && receipt.status === 1) {
@@ -209,7 +236,9 @@ export class OrderFiller {
         const txTimestamp = block ? new Date(block.timestamp * 1000) : new Date();
 
         // Mark order as filled in database with transaction timestamp
-        await orderMonitor.updateOrderStatus(order.id, 'filled', txTimestamp);
+        // TODO: get remaining amount for TWAP order and set status correctly. 
+        const status = order.numberOfOrders ? 'partialFilled' : 'filled';
+        await orderMonitor.updateOrderStatus(order.id, status, txTimestamp);
 
         return {
           success: true,

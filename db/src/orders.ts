@@ -37,7 +37,7 @@ export async function getOrdersByMaker(
 
 export async function updateOrderStatus(
   id: string,
-  status: 'pending' | 'filled' | 'cancelled' | 'expired'
+  status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'partialFilled'
 ): Promise<Order | null> {
   const [updatedOrder] = await db
     .update(orders)

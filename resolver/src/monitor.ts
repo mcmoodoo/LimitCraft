@@ -43,7 +43,7 @@ export class OrderMonitor {
 
   async updateOrderStatus(
     orderId: string,
-    status: 'filled' | 'cancelled' | 'expired',
+    status: 'filled' | 'cancelled' | 'expired' | 'partialFilled',
     fillTxTimestamp?: Date
   ): Promise<void> {
     try {
@@ -52,8 +52,8 @@ export class OrderMonitor {
         updatedAt: new Date(),
       };
 
-      // If status is 'filled' and we have a transaction timestamp, update last_fill_tx_at
-      if (status === 'filled' && fillTxTimestamp) {
+      // If status is 'filled' or 'partialFilled' and we have a transaction timestamp, update last_fill_tx_at
+      if ((status === 'filled' || status === 'partialFilled') && fillTxTimestamp) {
         updateData.lastFillTxAt = fillTxTimestamp;
       }
 
