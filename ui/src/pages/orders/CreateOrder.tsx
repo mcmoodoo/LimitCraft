@@ -53,13 +53,8 @@ import {
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
 import { Slider } from '../../components/ui/slider';
 import { Switch } from '../../components/ui/switch';
 import { navigationHelpers } from '../../router/navigation';
@@ -82,9 +77,7 @@ interface CreateOrderForm {
   takingAmount: string;
   expiresIn: number;
   useLendingProtocol: boolean;
-  lendingProtocol: string;
   supplyToLendingProtocol: boolean;
-  supplyLendingProtocol: string;
   useTwapOrder: boolean;
   twapRunningTimeHours: number;
   usePermit2: boolean;
@@ -141,9 +134,7 @@ export default function CreateOrder() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
-  const [tokens, setTokens] = useState<Token[]>(config.topTokens);
-  const [tokensLoading, setTokensLoading] = useState(false); // Start as false since we have initial data
-  const [apiTokensLoading, setApiTokensLoading] = useState(false); // Track API loading separately
+  const [tokens, setTokens] = useState<Token[]>([...config.topTokens]);
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
   const [customRate, setCustomRate] = useState<string>('');
   const [rateDisplayFlipped, setRateDisplayFlipped] = useState(false); // Track rate display direction
@@ -164,9 +155,7 @@ export default function CreateOrder() {
     takingAmount: '',
     expiresIn: 3600, // 1 hour
     useLendingProtocol: false,
-    lendingProtocol: 'aave',
     supplyToLendingProtocol: false,
-    supplyLendingProtocol: 'aave',
     useTwapOrder: false,
     twapRunningTimeHours: 5,
     usePermit2: false,
@@ -221,7 +210,6 @@ export default function CreateOrder() {
       if (!address) return;
 
       try {
-        setApiTokensLoading(true);
         const url = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/tokens/${address}?chainId=${chainId}`;
 
         const response = await fetch(url);
@@ -248,8 +236,8 @@ export default function CreateOrder() {
             return {
               ...staticToken,
               ...apiToken,
-              balance: apiToken.balance || '0',
-              balance_USD: apiToken.balance_USD || 0,
+              balance: (apiToken as any)?.balance || '0',
+              balance_USD: (apiToken as any)?.balance_USD || 0,
             };
           } else {
             // API doesn't have this token - keep static data with zero balance
@@ -284,7 +272,6 @@ export default function CreateOrder() {
         console.error('Error fetching tokens:', err);
         setError('Failed to load tokens');
       } finally {
-        setApiTokensLoading(false);
       }
     };
 
@@ -585,7 +572,7 @@ export default function CreateOrder() {
       },
     ];
 
-    // Add taker asset approval only if "Supply to Lending Protocol" is toggled on
+    // Add taker asset approval only if Capital Efficiency Mode is enabled
     if (form.supplyToLendingProtocol) {
       items.push({
         tokenAddress: form.takerAsset,
@@ -597,7 +584,7 @@ export default function CreateOrder() {
       });
     }
 
-    // Add aToken approval only if "Use Lending Position" is toggled on
+    // Add aToken approval only if Capital Efficiency Mode is enabled
     if (form.useLendingProtocol && aaveReserveDataQuery.data?.aTokenAddress) {
       const aTokenAddress = aaveReserveDataQuery.data.aTokenAddress;
       items.push({
@@ -778,7 +765,7 @@ export default function CreateOrder() {
       let extensions;
       
       // Only create extensions when specific features are enabled
-      if (form.useTwapOrder || form.supplyToLendingProtocol || form.useLendingProtocol || form.usePermit2) {
+      if (form.useTwapOrder || form.useLendingProtocol || form.supplyToLendingProtocol || form.usePermit2) {
         const extensionData = {
           ...Extension.EMPTY,
         };
@@ -786,7 +773,7 @@ export default function CreateOrder() {
         let orderType: (typeof OrderType)[keyof typeof OrderType] = OrderType.REGULAR;
         let interactionProtocol: (typeof InteractionProtocol)[keyof typeof InteractionProtocol] = InteractionProtocol.NONE;
 
-        // Only enable pre-interaction if "Use Lending Position" is toggled on
+        // Enable pre-interaction if lending protocol is enabled
         if (form.useLendingProtocol) {
           makerTraits = makerTraits.enablePreInteraction().withExtension();
           interactionProtocol = InteractionProtocol.AAVE;
@@ -800,7 +787,7 @@ export default function CreateOrder() {
           extensionData.preInteraction = preInteraction.encode();
         }
 
-        // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
+        // Enable post-interaction if supply to lending is enabled
         if (form.supplyToLendingProtocol) {
           makerTraits = makerTraits.enablePostInteraction().withExtension();
           interactionProtocol = InteractionProtocol.AAVE;
@@ -1561,98 +1548,175 @@ export default function CreateOrder() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between py-1">
-                    <Label
-                      htmlFor="useLendingProtocol"
-                      className="text-xs font-medium text-gray-300"
-                    >
-                      Withdraw from Lending Position
+                  {/* Capital Efficiency Mode Cards */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold text-white">
+                      Capital Efficiency Mode
                     </Label>
-                    <Switch
-                      id="useLendingProtocol"
-                      checked={form.useLendingProtocol}
-                      onCheckedChange={(checked) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          useLendingProtocol: checked,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  {form.useLendingProtocol && (
-                    <div className="mt-1">
-                      <Label htmlFor="lendingProtocol" className="block text-xs font-medium mb-1">
-                        Protocol
-                      </Label>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <Select
-                            value={form.lendingProtocol}
-                            onValueChange={(value) =>
-                              setForm((prev) => ({ ...prev, lendingProtocol: value }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select protocol" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="aave">
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src="https://app.aave.com/icons/tokens/aave.svg"
-                                    alt="Aave"
-                                    className="w-4 h-4"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                    }}
-                                  />
-                                  Aave
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* Pre-interaction Card */}
+                      <Card 
+                        className={`cursor-pointer transition-all duration-200 ${
+                          form.useLendingProtocol 
+                            ? 'border-green-500 bg-green-500/10 shadow-lg' 
+                            : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
+                        }`}
+                        onClick={() => setForm(prev => ({ ...prev, useLendingProtocol: !prev.useLendingProtocol }))}
+                      >
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm text-white flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${form.useLendingProtocol ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                            Pre-interaction
+                          </CardTitle>
+                          <CardDescription className="text-xs text-gray-400">
+                            Withdraw from lending position
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {form.useLendingProtocol && (
+                              <div className="space-y-3">
+                                <RadioGroup value="aave" className="space-y-3">
+                                  {/* Aave - Selected */}
+                                  <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="aave" />
+                                    <img
+                                      src="https://app.aave.com/icons/tokens/aave.svg"
+                                      alt="Aave"
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                    <span className="text-xs text-gray-300">Aave</span>
+                                  </div>
+                                  
+                                  {/* Compound - Not selected */}
+                                  <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="compound" />
+                                    <img
+                                      src="/compound-logo.png"
+                                      alt="Compound"
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                    <span className="text-xs text-gray-300">Compound</span>
+                                  </div>
+                                </RadioGroup>
+                                
+                                <div className="mt-3 p-2 bg-gray-800/50 rounded text-xs">
+                                  <div className="text-gray-400 mb-1">Available Balance</div>
+                                  <div className="flex items-center justify-between">
+                                    <div className="text-white font-medium">
+                                      {aTokenBalanceQuery.isLoading ? (
+                                        <span className="text-gray-400">Loading...</span>
+                                      ) : aTokenBalanceQuery.error ? (
+                                        <span className="text-red-400">Error</span>
+                                      ) : (
+                                        <>
+                                          {formatATokenBalance(aTokenBalanceQuery.data as bigint, form.makerAsset)}
+                                          {' '}
+                                          {(() => {
+                                            const selectedToken = tokens.find(
+                                              (t) => t.token_address === form.makerAsset
+                                            );
+                                            return selectedToken?.symbol || '';
+                                          })()}
+                                        </>
+                                      )}
+                                    </div>
+                                    {!aTokenBalanceQuery.isLoading && !aTokenBalanceQuery.error && aTokenBalanceQuery.data && (
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUseATokenBalance();
+                                        }}
+                                        className="text-xs px-2 py-1 h-5"
+                                      >
+                                        Use
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {form.lendingProtocol === 'aave' && (
-                          <div className="text-right">
-                            <div className="text-xs text-gray-400">Balance</div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-medium text-white">
-                                {aTokenBalanceQuery.isLoading ? (
-                                  <span className="text-gray-400">Loading...</span>
-                                ) : aTokenBalanceQuery.error ? (
-                                  <span className="text-red-400">Error</span>
-                                ) : (
-                                  <>
-                                    {formatATokenBalance(aTokenBalanceQuery.data as bigint, form.makerAsset)}
-                                    {' '}
-                                    {(() => {
-                                      const selectedToken = tokens.find(
-                                        (t) => t.token_address === form.makerAsset
-                                      );
-                                      return selectedToken?.symbol || '';
-                                    })()}
-                                  </>
-                                )}
                               </div>
-                              {!aTokenBalanceQuery.isLoading && !aTokenBalanceQuery.error && aTokenBalanceQuery.data && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={handleUseATokenBalance}
-                                  className="text-xs px-2 py-1 h-6"
-                                >
-                                  Use
-                                </Button>
-                              )}
-                            </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Post-interaction Card */}
+                      <Card 
+                        className={`cursor-pointer transition-all duration-200 ${
+                          form.supplyToLendingProtocol 
+                            ? 'border-green-500 bg-green-500/10 shadow-lg' 
+                            : 'border-gray-700 bg-gray-900/50 hover:border-gray-600'
+                        }`}
+                        onClick={() => setForm(prev => ({ ...prev, supplyToLendingProtocol: !prev.supplyToLendingProtocol }))}
+                      >
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm text-white flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${form.supplyToLendingProtocol ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                            Post-interaction
+                          </CardTitle>
+                          <CardDescription className="text-xs text-gray-400">
+                            Supply to lending protocol
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="space-y-2">
+                            {form.supplyToLendingProtocol && (
+                              <div className="space-y-3">
+                                <RadioGroup value="aave" className="space-y-3">
+                                  {/* Aave - Selected */}
+                                  <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="aave" />
+                                    <img
+                                      src="https://app.aave.com/icons/tokens/aave.svg"
+                                      alt="Aave"
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                    <span className="text-xs text-gray-300">Aave</span>
+                                  </div>
+                                  
+                                  {/* Compound - Not selected */}
+                                  <div className="flex items-center gap-2">
+                                    <RadioGroupItem value="compound" />
+                                    <img
+                                      src="/compound-logo.png"
+                                      alt="Compound"
+                                      className="w-4 h-4"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                      }}
+                                    />
+                                    <span className="text-xs text-gray-300">Compound</span>
+                                  </div>
+                                </RadioGroup>
+                              </div>
+                            )}
+                            {form.supplyToLendingProtocol && (
+                              <div className="mt-3 p-2 bg-gray-800/50 rounded text-xs text-gray-300">
+                                Received tokens will be automatically supplied to earn yield
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
-                  )}
+                  </div>
 
                   <div className="flex items-center justify-between py-1">
                     <Label htmlFor="useTwapOrder" className="text-xs font-medium text-gray-300">
@@ -1691,61 +1755,6 @@ export default function CreateOrder() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between py-1">
-                    <Label
-                      htmlFor="supplyToLendingProtocol"
-                      className="text-xs font-medium text-gray-300"
-                    >
-                      Supply to Lending Protocol
-                    </Label>
-                    <Switch
-                      id="supplyToLendingProtocol"
-                      checked={form.supplyToLendingProtocol}
-                      onCheckedChange={(checked) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          supplyToLendingProtocol: checked,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  {form.supplyToLendingProtocol && (
-                    <div className="mt-1">
-                      <Label
-                        htmlFor="supplyLendingProtocol"
-                        className="block text-xs font-medium mb-1"
-                      >
-                        Protocol
-                      </Label>
-                      <Select
-                        value={form.supplyLendingProtocol}
-                        onValueChange={(value) =>
-                          setForm((prev) => ({ ...prev, supplyLendingProtocol: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select protocol" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aave">
-                            <div className="flex items-center gap-2">
-                              <img
-                                src="https://app.aave.com/icons/tokens/aave.svg"
-                                alt="Aave"
-                                className="w-4 h-4"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                              Aave
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                 </div>
 
                 {approvalStatus && (
