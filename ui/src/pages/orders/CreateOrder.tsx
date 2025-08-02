@@ -1718,42 +1718,101 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between py-1">
-                    <Label htmlFor="useTwapOrder" className="text-xs font-medium text-gray-300">
-                      TWAP Order
-                    </Label>
-                    <Switch
-                      id="useTwapOrder"
-                      checked={form.useTwapOrder}
-                      onCheckedChange={(checked) =>
-                        setForm((prev) => ({ ...prev, useTwapOrder: checked }))
-                      }
-                    />
-                  </div>
-
-                  {form.useTwapOrder && (
-                    <div className="mt-1">
-                      <Label className="block text-xs font-medium mb-1">Running Time (hours)</Label>
-                      <Input
-                        type="number"
-                        name="twapRunningTimeHours"
-                        value={form.twapRunningTimeHours}
-                        onChange={handleChange}
-                        min="1"
-                        max="168"
-                        step="1"
-                        placeholder="1"
-                        className="h-8 text-xs"
-                      />
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        TWAP will execute over this time period (1-168 hours)
-                      </p>
-                      <div className="mt-2 text-sm text-white font-medium">
-                        <div>Frequency: 30 mins</div>
-                        <div>Number of Orders: {Math.ceil(form.twapRunningTimeHours * 2)}</div>
+                  {/* TWAP Section with sleek background */}
+                  <div className="border border-purple-500/30 rounded-lg p-4 bg-gradient-to-br from-purple-900/20 to-blue-900/20 backdrop-blur-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                          <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <Label htmlFor="useTwapOrder" className="text-sm font-semibold text-white">
+                            TWAP Order
+                          </Label>
+                          <p className="text-xs text-gray-400">Time-Weighted Average Price execution</p>
+                        </div>
                       </div>
+                      <Switch
+                        id="useTwapOrder"
+                        checked={form.useTwapOrder}
+                        onCheckedChange={(checked) =>
+                          setForm((prev) => ({ ...prev, useTwapOrder: checked }))
+                        }
+                      />
                     </div>
-                  )}
+
+                    {form.useTwapOrder && (
+                      <div className="space-y-4 pt-2 border-t border-purple-500/20">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-xs font-medium text-gray-300 flex items-center gap-1">
+                              <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Duration: {form.twapRunningTimeHours} hour{form.twapRunningTimeHours !== 1 ? 's' : ''}
+                            </Label>
+                            <div className="flex items-center gap-1 text-xs text-gray-400">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                              </svg>
+                              ~{Math.ceil(form.twapRunningTimeHours * 2)} orders
+                            </div>
+                          </div>
+                          
+                          <Slider
+                            value={[form.twapRunningTimeHours]}
+                            onValueChange={(value) =>
+                              setForm((prev) => ({ ...prev, twapRunningTimeHours: value[0] }))
+                            }
+                            max={168}
+                            min={1}
+                            step={1}
+                            className="w-full"
+                          />
+                          
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>1h</span>
+                            <span>24h</span>
+                            <span>72h</span>
+                            <span>168h (1 week)</span>
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div className="bg-purple-900/30 rounded p-2">
+                            <div className="flex items-center gap-1 text-purple-300 mb-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Frequency
+                            </div>
+                            <p className="text-white font-medium">Every 30 mins</p>
+                          </div>
+                          <div className="bg-blue-900/30 rounded p-2">
+                            <div className="flex items-center gap-1 text-blue-300 mb-1">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                              </svg>
+                              Orders
+                            </div>
+                            <p className="text-white font-medium">{Math.ceil(form.twapRunningTimeHours * 2)}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-gradient-to-r from-purple-900/30 to-blue-900/30 rounded p-2 text-xs text-gray-300">
+                          <div className="flex items-center gap-1 mb-1">
+                            <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-purple-300 font-medium">TWAP Benefits</span>
+                          </div>
+                          <p>Reduces market impact by splitting your order into smaller chunks executed over time</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                 </div>
 
