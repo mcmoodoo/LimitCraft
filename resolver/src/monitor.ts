@@ -1,4 +1,4 @@
-import { and, eq, gt, lt } from 'drizzle-orm';
+import { and, eq, gt, lt, or } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import type { Order } from '../../db/src/schema';
@@ -15,7 +15,7 @@ export class OrderMonitor {
   async getPendingOrders(): Promise<Order[]> {
     try {
       // Get orders that are:
-      // 1. Status = 'pending'
+      // 1. Status = 'pending' or 'partialFilled'
       // 2. Not expired (expires_in > now)
       const currentTime = new Date();
       const pendingOrders = await db
@@ -23,14 +23,17 @@ export class OrderMonitor {
         .from(orders)
         .where(
           and(
-            eq(orders.status, 'pending'),
+            or(
+              eq(orders.status, 'pending'),
+              eq(orders.status, 'partialFilled')
+            ),
             // Use gt() instead of lt() and correct order: expires_in > current_time
             gt(orders.expiresIn, currentTime)
           )
         )
         .orderBy(orders.createdAt);
 
-      console.log(`📊 Found ${pendingOrders.length} pending orders`);
+      console.log(`📊 Found ${pendingOrders.length} pending and partially filled orders`);
       return pendingOrders;
     } catch (error) {
       console.error('❌ Error fetching pending orders:', error);
@@ -40,18 +43,26 @@ export class OrderMonitor {
 
   async updateOrderStatus(
     orderId: string,
-    status: 'filled' | 'cancelled' | 'expired'
+    status: 'filled' | 'cancelled' | 'expired',
+    fillTxTimestamp?: Date
   ): Promise<void> {
     try {
+      const updateData: any = {
+        status,
+        updatedAt: new Date(),
+      };
+
+      // If status is 'filled' and we have a transaction timestamp, update last_fill_tx_at
+      if (status === 'filled' && fillTxTimestamp) {
+        updateData.lastFillTxAt = fillTxTimestamp;
+      }
+
       await db
         .update(orders)
-        .set({
-          status,
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(orders.id, orderId));
 
-      console.log(`✅ Updated order ${orderId} status to ${status}`);
+      console.log(`✅ Updated order ${orderId} status to ${status}${fillTxTimestamp ? ` with fill timestamp ${fillTxTimestamp.toISOString()}` : ''}`);
     } catch (error) {
       console.error(`❌ Error updating order ${orderId}:`, error);
     }
@@ -68,7 +79,10 @@ export class OrderMonitor {
         })
         .where(
           and(
-            eq(orders.status, 'pending'),
+            or(
+              eq(orders.status, 'pending'),
+              eq(orders.status, 'partialFilled')
+            ),
             lt(orders.expiresIn, currentTime) // Expiration time < current time
           )
         );

@@ -38,6 +38,7 @@ interface SignedOrderRequest {
     };
     permit2Signature: string;
   };
+  numberOfOrders?: number;
 }
 
 // Database connection for order refresh functionality
@@ -222,6 +223,7 @@ const app = new Elysia()
               makerTraits: new MakerTraits(BigInt(body.makerTraits)).asBigInt().toString(),
               extension: body.extension || '0x',
               permit2Data: body.permit2Data ? JSON.stringify(body.permit2Data) : null,
+              numberOfOrders: body.numberOfOrders || null,
             });
 
             set.status = 201;

@@ -25,7 +25,7 @@ import {
   AAVE_V3_POOL_ADDRESS,
   AAVE_V3_POOL_ABI,
   ERC20_ABI,
-  LENDING_INTERACTION_MANAGER_ADDRESS,
+  INTERACTION_MANAGER_ADDRESS,
   TWAP_CALCULATOR_ADDRESS,
   EXPIRATION_MINUTES,
 } from '../../constants/order-constants';
@@ -63,6 +63,15 @@ import { Switch } from '../../components/ui/switch';
 import { navigationHelpers } from '../../router/navigation';
 import { usePermit2, type Permit2Data } from '../../hooks/usePermit2';
 
+const InteractionProtocol = {
+  NONE: 0,
+  AAVE: 1
+} as const;
+
+const OrderType = {
+  REGULAR: 0,
+  TWAP: 1
+} as const;
 
 interface CreateOrderForm {
   makerAsset: string;
@@ -119,7 +128,7 @@ interface ApprovalItem {
 }
 
 export default function CreateOrder() {
-  const lendingInteractionManagerAddress = LENDING_INTERACTION_MANAGER_ADDRESS;
+  const interactionManagerAddress = INTERACTION_MANAGER_ADDRESS;
   const twapCalculatorAddress = TWAP_CALCULATOR_ADDRESS;
 
   const navigate = useNavigate();
@@ -484,16 +493,27 @@ export default function CreateOrder() {
     },
   });
 
+  // Get aToken balance for the user
+  const aTokenBalanceQuery = useReadContract({
+    address: aaveReserveDataQuery.data?.aTokenAddress as `0x${string}`,
+    abi: ERC20_ABI,
+    functionName: 'balanceOf',
+    args: [address as `0x${string}`],
+    query: {
+      enabled: !!aaveReserveDataQuery.data?.aTokenAddress && !!address && form.useLendingProtocol,
+    },
+  });
+
   // Token approval hooks
   const makerApproval = useTokenApproval(form.makerAsset, limitOrderContractAddress, address);
   const aTokenApproval = useTokenApproval(
     aaveReserveDataQuery.data?.aTokenAddress,
-    lendingInteractionManagerAddress,
+    interactionManagerAddress,
     address
   );
   const takerApproval = useTokenApproval(
     form.takerAsset,
-    lendingInteractionManagerAddress,
+    interactionManagerAddress,
     address
   );
 
@@ -531,7 +551,7 @@ export default function CreateOrder() {
       items.push({
         tokenAddress: form.takerAsset,
         tokenName: 'taker asset',
-        spender: lendingInteractionManagerAddress,
+        spender: interactionManagerAddress,
         requiredAmount: requiredAmounts.takingAmountWei,
         needsApproval: takerApproval.needsApproval(requiredAmounts.takingAmountWei),
         currentAllowance: takerApproval.allowance,
@@ -544,7 +564,7 @@ export default function CreateOrder() {
       items.push({
         tokenAddress: aTokenAddress,
         tokenName: 'aToken',
-        spender: lendingInteractionManagerAddress,
+        spender: interactionManagerAddress,
         requiredAmount: requiredAmounts.makingAmountWei,
         needsApproval: aTokenApproval.needsApproval(requiredAmounts.makingAmountWei),
         currentAllowance: aTokenApproval.allowance,
@@ -716,49 +736,83 @@ export default function CreateOrder() {
         makerTraits = makerTraits.enablePermit2();
       }
 
-      const extensionData = {
-        ...Extension.EMPTY,
-      };
+      let extensions;
+      
+      // Only create extensions when specific features are enabled
+      if (form.useTwapOrder || form.supplyToLendingProtocol || form.useLendingProtocol) {
+        const extensionData = {
+          ...Extension.EMPTY,
+        };
 
-      // Only enable pre-interaction if "Use Lending Position" is toggled on
-      if (form.useLendingProtocol) {
-        makerTraits = makerTraits.enablePreInteraction().withExtension();
-        const preInteraction = new Interaction(
-          new Address(lendingInteractionManagerAddress),
-          '0x00'
-        );
-        extensionData.preInteraction = preInteraction.encode();
+        let orderType: (typeof OrderType)[keyof typeof OrderType] = OrderType.REGULAR;
+        let interactionProtocol: (typeof InteractionProtocol)[keyof typeof InteractionProtocol] = InteractionProtocol.NONE;
+
+        // Only enable pre-interaction if "Use Lending Position" is toggled on
+        if (form.useLendingProtocol) {
+          makerTraits = makerTraits.enablePreInteraction().withExtension();
+          interactionProtocol = InteractionProtocol.AAVE;
+          const preInteraction = new Interaction(
+            new Address(interactionManagerAddress),
+            ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint8', 'uint8'],
+            [orderType, interactionProtocol]
+          )
+          );
+          extensionData.preInteraction = preInteraction.encode();
+        }
+
+        // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
+        if (form.supplyToLendingProtocol) {
+          makerTraits = makerTraits.enablePostInteraction().withExtension();
+          interactionProtocol = InteractionProtocol.AAVE;
+          const postInteraction = new Interaction(
+            new Address(interactionManagerAddress),
+            ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint8', 'uint8'],
+            [orderType, interactionProtocol]
+          )
+          );
+          extensionData.postInteraction = postInteraction.encode();     
+        }
+
+        if (form.useTwapOrder) {
+          makerTraits = makerTraits.allowPartialFills().enablePreInteraction().withExtension();
+          const startTime = Math.floor(Date.now() / 1000);
+          const endTime = startTime + form.twapRunningTimeHours * 3600;
+          const numberOfOrders = form.twapRunningTimeHours;
+          console.log('startTime', startTime);
+          console.log('endTime', endTime);
+          console.log('numberOfOrders', numberOfOrders);
+          orderType = OrderType.TWAP;
+          const customData = ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint8', 'uint8'],
+            [orderType, interactionProtocol]
+          );
+          const preInteraction = new Interaction(
+            new Address(interactionManagerAddress),
+            customData
+          );
+          extensionData.preInteraction = preInteraction.encode();
+          extensionData.makingAmountData = ethers.solidityPacked(
+            ['address', 'uint256', 'uint256'],
+            [twapCalculatorAddress, startTime, endTime]
+          );
+          extensionData.takingAmountData = ethers.solidityPacked(
+            ['address'],
+            [twapCalculatorAddress]
+          );
+          
+        }
+        
+        console.log('orderType', orderType);
+        console.log('interactionProtocol', interactionProtocol);
+
+        extensions = new Extension(extensionData);
+        console.log('extension', extensions);
+      } else {
+        // Use empty extension (0x) when no special features are enabled
+        extensions = new Extension(Extension.EMPTY);
       }
-
-      // Only enable post-interaction if "Supply to Lending Protocol" is toggled on
-      if (form.supplyToLendingProtocol) {
-        makerTraits = makerTraits.enablePostInteraction().withExtension();
-        const postInteraction = new Interaction(
-          new Address(lendingInteractionManagerAddress),
-          '0x00'
-        );
-        extensionData.postInteraction = postInteraction.encode();
-      }
-
-      if (form.useTwapOrder) {
-        makerTraits = makerTraits.allowPartialFills();
-        const startTime = Math.floor(Date.now() / 1000);
-        const endTime = startTime + form.twapRunningTimeHours * 3600;
-        const numberOfOrders = form.twapRunningTimeHours;
-        console.log('startTime', startTime);
-        console.log('endTime', endTime);
-        console.log('numberOfOrders', numberOfOrders);
-        extensionData.makingAmountData = ethers.solidityPacked(
-          ['address', 'uint256', 'uint256', 'uint256'],
-          [twapCalculatorAddress, startTime, endTime, numberOfOrders]
-        );
-        extensionData.takingAmountData = ethers.solidityPacked(
-          ['address'],
-          [twapCalculatorAddress]
-        );
-      }
-
-      const extensions = new Extension(extensionData);
 
       // Create a real LimitOrder using the 1inch SDK
       const limitOrder = new LimitOrder(
@@ -802,6 +856,9 @@ export default function CreateOrder() {
             chainId: chainId,
             typedData: typedDataForJson,
             extension: limitOrder.extension.encode(),
+            ...(form.useTwapOrder && {
+              numberOfOrders: Math.ceil(form.twapRunningTimeHours * 2),
+            }),
             ...(permit2Signature && {
               permit2Data: {
                 permitSingle: permit2Signature.permitSingle,
@@ -856,6 +913,8 @@ export default function CreateOrder() {
       setForm((prev) => ({ ...prev, [name]: validatedValue }));
     }
   };
+
+
 
   // Custom Token Dropdown Component
   const TokenDropdown = ({
@@ -970,6 +1029,31 @@ export default function CreateOrder() {
   const handleSliderChange = (value: number[]) => {
     const newExpiration = getExpirationFromSliderValue(value[0]);
     setForm((prev) => ({ ...prev, expiresIn: newExpiration }));
+  };
+
+  // Format aToken balance for display
+  const formatATokenBalance = (balance: bigint | undefined, tokenAddress: string): string => {
+    if (!balance) return '0';
+    
+    const decimals = getSelectedTokenDecimals(tokenAddress, tokens);
+    const balanceFormatted = Number(balance) / Math.pow(10, decimals);
+    return formatBalance(balanceFormatted.toString());
+  };
+
+  // Handle using aToken balance as making amount
+  const handleUseATokenBalance = () => {
+    if (!aTokenBalanceQuery.data || !form.makerAsset) return;
+    
+    const decimals = getSelectedTokenDecimals(form.makerAsset, tokens);
+    const balanceFormatted = Number(aTokenBalanceQuery.data) / Math.pow(10, decimals);
+    
+    setForm((prev) => ({ 
+      ...prev, 
+      makingAmount: balanceFormatted.toString() 
+    }));
+    
+    // Clear custom rate when using balance
+    setCustomRate('');
   };
 
   if (!isConnected) {
@@ -1419,32 +1503,72 @@ export default function CreateOrder() {
                       <Label htmlFor="lendingProtocol" className="block text-xs font-medium mb-1">
                         Protocol
                       </Label>
-                      <Select
-                        value={form.lendingProtocol}
-                        onValueChange={(value) =>
-                          setForm((prev) => ({ ...prev, lendingProtocol: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select protocol" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aave">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Select
+                            value={form.lendingProtocol}
+                            onValueChange={(value) =>
+                              setForm((prev) => ({ ...prev, lendingProtocol: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select protocol" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="aave">
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src="https://app.aave.com/icons/tokens/aave.svg"
+                                    alt="Aave"
+                                    className="w-4 h-4"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                  Aave
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {form.lendingProtocol === 'aave' && (
+                          <div className="text-right">
+                            <div className="text-xs text-gray-400">Balance</div>
                             <div className="flex items-center gap-2">
-                              <img
-                                src="https://app.aave.com/icons/tokens/aave.svg"
-                                alt="Aave"
-                                className="w-4 h-4"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
-                              Aave
+                              <div className="text-sm font-medium text-white">
+                                {aTokenBalanceQuery.isLoading ? (
+                                  <span className="text-gray-400">Loading...</span>
+                                ) : aTokenBalanceQuery.error ? (
+                                  <span className="text-red-400">Error</span>
+                                ) : (
+                                  <>
+                                    {formatATokenBalance(aTokenBalanceQuery.data as bigint, form.makerAsset)}
+                                    {' '}
+                                    {(() => {
+                                      const selectedToken = tokens.find(
+                                        (t) => t.token_address === form.makerAsset
+                                      );
+                                      return selectedToken?.symbol || '';
+                                    })()}
+                                  </>
+                                )}
+                              </div>
+                              {!aTokenBalanceQuery.isLoading && !aTokenBalanceQuery.error && aTokenBalanceQuery.data && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleUseATokenBalance}
+                                  className="text-xs px-2 py-1 h-6"
+                                >
+                                  Use
+                                </Button>
+                              )}
                             </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1478,6 +1602,10 @@ export default function CreateOrder() {
                       <p className="text-xs text-gray-500 mt-0.5">
                         TWAP will execute over this time period (1-168 hours)
                       </p>
+                      <div className="mt-2 text-sm text-white font-medium">
+                        <div>Frequency: 30 mins</div>
+                        <div>Number of Orders: {Math.ceil(form.twapRunningTimeHours * 2)}</div>
+                      </div>
                     </div>
                   )}
 

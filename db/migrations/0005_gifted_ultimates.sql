@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "last_fill_tx_at" timestamp;

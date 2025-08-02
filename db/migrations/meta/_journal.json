@@ -22,6 +22,27 @@
       "when": 1754064551480,
       "tag": "0002_tearful_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1754112925165,
+      "tag": "0003_productive_cammi",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1754114551092,
+      "tag": "0004_strange_starhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1754121010815,
+      "tag": "0005_gifted_ultimates",
+      "breakpoints": true
     }
   ]
 }

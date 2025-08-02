@@ -1,7 +1,8 @@
 // Contract addresses
 export const AAVE_V3_POOL_ADDRESS = '0x794a61358D6845594F94dc1DB02A252b5b4814aD';
-export const LENDING_INTERACTION_MANAGER_ADDRESS = '0x3195796c0999cee134ad7e957ad9767f89869b2c';
-export const TWAP_CALCULATOR_ADDRESS = '0x1DE87041738c30bc133a54DC1f8322Cf9A80a6B8';
+export const TWAP_CALCULATOR_ADDRESS = '0xA132E4fa92aC9DE8740e0fAC27c06025402B4fe3';
+export const INTERACTION_MANAGER_ADDRESS = '0x123fDbB3D602c4a1089c32fCe8855d7D500D360f';
+
 
 // Aave V3 Pool ABI for getReserveData function
 export const AAVE_V3_POOL_ABI = [
@@ -36,7 +37,7 @@ export const AAVE_V3_POOL_ABI = [
   },
 ] as const;
 
-// ERC20 ABI for approve and allowance functions
+// ERC20 ABI for approve, allowance, and balanceOf functions
 export const ERC20_ABI = [
   {
     type: 'function',
@@ -57,6 +58,13 @@ export const ERC20_ABI = [
       { name: 'amount', type: 'uint256' },
     ],
     outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
   },
 ] as const;
 

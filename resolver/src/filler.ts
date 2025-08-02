@@ -1,5 +1,6 @@
 import {
   Address,
+  AmountMode,
   Extension,
   getLimitOrderContract,
   LimitOrder,
@@ -128,6 +129,7 @@ export class OrderFiller {
       
       if (isPermit2Order && order.permit2Data) {
         console.log('🔐 Processing Permit2 order...');
+        
         calldata = LimitOrderContract.getFillOrderArgsCalldata(
           orderStructForSDK,
           order.signature,
@@ -145,7 +147,31 @@ export class OrderFiller {
       } else {
         const extension = Extension.decode(order.extension);
         console.log('🔍 Extension:', extension);
-        const takerTraits = TakerTraits.default().setExtension(extension);
+        let takerTraits = TakerTraits.default().setExtension(extension);
+        let amount = BigInt(order.takingAmount);
+
+        // If this is a TWAP order, fill the order in parts
+        if (order.numberOfOrders) {
+          console.log('🔍 TWAP order detected');
+          // Check if 30 minutes have passed since last fill for TWAP orders
+          if (order.lastFillTxAt) {
+            const timeSinceLastFill = Date.now() - order.lastFillTxAt.getTime();
+            const frequency = 30 * 60 * 1000; // 30 minutes in milliseconds
+            
+            if (timeSinceLastFill < frequency) {
+              const remainingTime = Math.ceil((frequency - timeSinceLastFill) / 1000 / 60); // minutes
+              console.log(`⏰ TWAP order ${order.orderHash} last filled ${Math.floor(timeSinceLastFill / 1000 / 60)} minutes ago. Need to wait ${remainingTime} more minutes.`);
+              return {
+                success: false,
+                error: `TWAP order must wait ${remainingTime} more minutes before next fill`,
+              };
+            }
+          }
+          
+          takerTraits = takerTraits.setAmountMode(AmountMode.maker);
+          amount = BigInt(order.makingAmount) / BigInt(order.numberOfOrders)
+          console.log('🔍 Amount:', amount);
+        }
         console.log('🔍 TakerTraits:', takerTraits);
 
         // Use getFillOrderArgsCalldata for orders with extensions
@@ -153,7 +179,7 @@ export class OrderFiller {
           orderStructForSDK,
           order.signature,
           takerTraits,
-          BigInt(order.takingAmount) // Fill full amount
+          amount  
         );
       }
 
@@ -178,8 +204,12 @@ export class OrderFiller {
         console.log(`- Block number: ${receipt.blockNumber}`);
         console.log(`- Gas used: ${receipt.gasUsed.toString()}`);
 
-        // Mark order as filled in database
-        await orderMonitor.updateOrderStatus(order.id, 'filled');
+        // Get the block to extract the timestamp
+        const block = await walletManager.provider.getBlock(receipt.blockNumber);
+        const txTimestamp = block ? new Date(block.timestamp * 1000) : new Date();
+
+        // Mark order as filled in database with transaction timestamp
+        await orderMonitor.updateOrderStatus(order.id, 'filled', txTimestamp);
 
         return {
           success: true,

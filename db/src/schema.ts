@@ -1,10 +1,11 @@
-import { numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const orderStatusEnum = pgEnum('order_status', [
   'pending',
   'filled',
   'cancelled',
   'expired',
+  'partialFilled',
 ]);
 
 export const orders = pgTable('orders', {
@@ -21,6 +22,8 @@ export const orders = pgTable('orders', {
   makerTraits: text('maker_traits').notNull(),
   extension: text('extension').notNull(),
   permit2Data: text('permit2_data'), // JSON string containing Permit2 signature data
+  numberOfOrders: integer('number_of_orders'),
+  lastFillTxAt: timestamp('last_fill_tx_at'),
   status: orderStatusEnum('status').default('pending').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

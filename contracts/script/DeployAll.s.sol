@@ -3,7 +3,8 @@ pragma solidity ^0.8.23;
 
 import "forge-std/Script.sol";
 import "../src/InteractionMock.sol";
-import "../src/LendingInteractionManager.sol";
+import "../src/InteractionManager.sol";
+import "../src/TwapCalculator.sol";
 
 contract DeployAll is Script {
     function run() external {
@@ -18,15 +19,19 @@ contract DeployAll is Script {
         InteractionMock interactionMock = new InteractionMock();
         console.log("InteractionMock deployed to:", address(interactionMock));
         
-        // Deploy LendingInteractionManager
-        LendingInteractionManager lendingManager = new LendingInteractionManager(aavePoolAddress);
-        console.log("LendingInteractionManager deployed to:", address(lendingManager));
+        // Deploy TwapCalculator
+        TwapCalculator twapCalculator = new TwapCalculator();
+        console.log("TwapCalculator deployed to:", address(twapCalculator));
+        
+        // Deploy InteractionManager
+        InteractionManager interactionManager = new InteractionManager(aavePoolAddress, address(twapCalculator));
+        console.log("InteractionManager deployed to:", address(interactionManager));
         console.log("Using Aave Pool address:", aavePoolAddress);
         
         vm.stopBroadcast();
         
         console.log("\n=== Deployment Summary ===");
         console.log("InteractionMock:", address(interactionMock));
-        console.log("LendingInteractionManager:", address(lendingManager));
+        console.log("InteractionManager:", address(interactionManager));
     }
 }

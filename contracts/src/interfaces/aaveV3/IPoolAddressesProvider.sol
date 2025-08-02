@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity =0.8.28;
 
+/**
+ * @title IPoolAddressesProvider
+ * @author Aave
+ * @notice Defines the basic interface for a Pool Addresses Provider.
+ **/
 interface IPoolAddressesProvider {
     /**
-     * @dev Emitted when the market identifier is updated.
+     * @dev Emitted when the market id is updated.
      * @param oldMarketId The old id of the market
      * @param newMarketId The new id of the market
      */
@@ -59,36 +64,6 @@ interface IPoolAddressesProvider {
     event PoolDataProviderUpdated(address indexed oldAddress, address indexed newAddress);
 
     /**
-     * @dev Emitted when a new proxy is created.
-     * @param id The identifier of the proxy
-     * @param proxyAddress The address of the created proxy contract
-     * @param implementationAddress The address of the implementation contract
-     */
-    event ProxyCreated(bytes32 indexed id, address indexed proxyAddress, address indexed implementationAddress);
-
-    /**
-     * @dev Emitted when a new non-proxied contract address is registered.
-     * @param id The identifier of the contract
-     * @param oldAddress The address of the old contract
-     * @param newAddress The address of the new contract
-     */
-    event AddressSet(bytes32 indexed id, address indexed oldAddress, address indexed newAddress);
-
-    /**
-     * @dev Emitted when the implementation of the proxy registered with id is updated
-     * @param id The identifier of the contract
-     * @param proxyAddress The address of the proxy contract
-     * @param oldImplementationAddress The address of the old implementation contract
-     * @param newImplementationAddress The address of the new implementation contract
-     */
-    event AddressSetAsProxy(
-        bytes32 indexed id,
-        address indexed proxyAddress,
-        address oldImplementationAddress,
-        address indexed newImplementationAddress
-    );
-
-    /**
      * @notice Returns the id of the Aave market to which this contract points to.
      * @return The market id
      **/
@@ -104,8 +79,7 @@ interface IPoolAddressesProvider {
 
     /**
      * @notice Returns an address by its identifier.
-     * @dev The returned address might be an EOA or a contract, potentially proxied
-     * @dev It returns ZERO if there is no registered address with the given id
+     * @dev The returned address might be an EOA or a contract, depending on the identifier used
      * @param id The id
      * @return The address of the registered for the specified id
      */
@@ -151,7 +125,7 @@ interface IPoolAddressesProvider {
 
     /**
      * @notice Updates the implementation of the PoolConfigurator, or creates a proxy
-     * setting the new `PoolConfigurator` implementation when the function is called for the first time.
+     * setting the new `poolConfigurator` implementation when the function is called for the first time.
      * @param newPoolConfiguratorImpl The new PoolConfigurator implementation
      **/
     function setPoolConfiguratorImpl(address newPoolConfiguratorImpl) external;

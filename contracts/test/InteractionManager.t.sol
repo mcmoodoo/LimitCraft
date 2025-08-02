@@ -2,7 +2,8 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
-import "../src/LendingInteractionManager.sol";
+import "../src/InteractionManager.sol";
+import "../src/TwapCalculator.sol";
 import "../src/interfaces/aaveV3/DataTypes.sol";
 import "@1inch/limit-order-protocol/interfaces/IOrderMixin.sol";
 import "@1inch/solidity-utils/contracts/libraries/AddressLib.sol";
@@ -89,11 +90,12 @@ contract MockAavePool {
     }
 }
 
-contract LendingInteractionManagerTest is Test {
+contract InteractionManagerTest is Test {
     using AddressLib for address;
     using MakerTraitsLib for MakerTraits;
 
-    LendingInteractionManager public lendingManager;
+    InteractionManager public interactionManager;
+    TwapCalculator public twapCalculator;
     MockAavePool public mockAavePool;
     MockERC20 public mockUSDC;
     MockERC20 public mockWETH;
@@ -102,7 +104,7 @@ contract LendingInteractionManagerTest is Test {
     
     // Mock order data
     IOrderMixin.Order mockOrder;
-    bytes mockExtension = "";
+    bytes mockExtension;
     bytes32 mockOrderHash = keccak256("test_order");
     address mockTaker = address(0x1234);
     address mockMaker = address(0x5678);
@@ -119,8 +121,11 @@ contract LendingInteractionManagerTest is Test {
         mockAUSDC = new MockERC20("Aave USDC", "aUSDC");
         mockAWETH = new MockERC20("Aave WETH", "aWETH");
         
-        // Deploy lending manager with mock Aave pool
-        lendingManager = new LendingInteractionManager(address(mockAavePool));
+        // Deploy TwapCalculator
+        twapCalculator = new TwapCalculator();
+        
+        // Deploy interaction manager with mock Aave pool and TwapCalculator
+        interactionManager = new InteractionManager(address(mockAavePool), address(twapCalculator));
         
         // Set up Aave reserve data
         mockAavePool.setReserveData(address(mockUSDC), address(mockAUSDC));
@@ -138,12 +143,36 @@ contract LendingInteractionManagerTest is Test {
             makerTraits: MakerTraits.wrap(0)
         });
         
+        // Create extension with customData for InteractionManager
+        bytes memory customData = abi.encode(
+            InteractionManager.OrderType.REGULAR,
+            InteractionManager.InteractionProtocol.AAVE
+        );
+        
+        // Create minimal extension with only customData (at index 8)
+        // All other fields are empty, so customData is the only field
+        bytes32 offsets = bytes32(
+            (uint256(0xFFFFFFFF) << 224) |  // offset0: makerAssetSuffix (empty)
+            (uint256(0xFFFFFFFF) << 192) |  // offset1: takerAssetSuffix (empty)
+            (uint256(0xFFFFFFFF) << 160) |  // offset2: makingAmountData (empty)
+            (uint256(0xFFFFFFFF) << 128) |  // offset3: takingAmountData (empty)
+            (uint256(0xFFFFFFFF) << 96) |   // offset4: predicate (empty)
+            (uint256(0xFFFFFFFF) << 64) |   // offset5: permit (empty)
+            (uint256(0xFFFFFFFF) << 32) |   // offset6: preInteraction (empty)
+            uint256(0xFFFFFFFF)             // offset7: postInteraction (empty)
+        );
+        
+        mockExtension = abi.encodePacked(
+            offsets,
+            customData  // customData is appended after the offsets
+        );
+        
         // Set up initial balances and approvals
         mockAUSDC.mint(mockMaker, mockMakingAmount);
-        mockAUSDC.setAllowance(mockMaker, address(lendingManager), mockMakingAmount);
+        mockAUSDC.setAllowance(mockMaker, address(interactionManager), mockMakingAmount);
         
         mockWETH.mint(mockMaker, mockTakingAmount);
-        mockWETH.setAllowance(mockMaker, address(lendingManager), mockTakingAmount);
+        mockWETH.setAllowance(mockMaker, address(interactionManager), mockTakingAmount);
         
         // Mint underlying tokens to Aave pool for withdrawals
         mockUSDC.mint(address(mockAavePool), mockMakingAmount);
@@ -151,12 +180,12 @@ contract LendingInteractionManagerTest is Test {
     }
 
     function testConstructor() public {
-        assertEq(address(lendingManager.AAVE_POOL()), address(mockAavePool));
+        assertEq(address(interactionManager.AAVE_POOL()), address(mockAavePool));
     }
 
     function testCopyArg() public {
         uint256 testValue = 12345;
-        uint256 result = lendingManager.copyArg(testValue);
+        uint256 result = interactionManager.copyArg(testValue);
         assertEq(result, testValue, "copyArg should return the same value");
     }
 
@@ -167,7 +196,7 @@ contract LendingInteractionManagerTest is Test {
         
         
         // Call preInteraction
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -194,7 +223,7 @@ contract LendingInteractionManagerTest is Test {
         
         // Should revert with "Asset not supported by Aave"
         vm.expectRevert("Asset not supported by Aave");
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             unsupportedOrder,
             mockExtension,
             mockOrderHash,
@@ -209,14 +238,14 @@ contract LendingInteractionManagerTest is Test {
     function testPostInteractionSuccess() public {
         // Check initial balances
         uint256 initialMakerWETH = mockWETH.balanceOf(mockMaker);
-        uint256 initialContractWETH = mockWETH.balanceOf(address(lendingManager));
+        uint256 initialContractWETH = mockWETH.balanceOf(address(interactionManager));
         
         // Expect the PostInteractionCalled event
         vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
+        emit InteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
         
         // Call postInteraction
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -229,10 +258,10 @@ contract LendingInteractionManagerTest is Test {
         
         // Check that tokens were transferred from maker to contract
         assertEq(mockWETH.balanceOf(mockMaker), initialMakerWETH - mockTakingAmount);
-        assertEq(mockWETH.balanceOf(address(lendingManager)), initialContractWETH + mockTakingAmount);
+        assertEq(mockWETH.balanceOf(address(interactionManager)), initialContractWETH + mockTakingAmount);
         
         // Check that tokens were approved for Aave pool
-        assertEq(mockWETH.allowance(address(lendingManager), address(mockAavePool)), mockTakingAmount);
+        assertEq(mockWETH.allowance(address(interactionManager), address(mockAavePool)), mockTakingAmount);
     }
 
     function testFullOrderFlow() public {
@@ -242,7 +271,7 @@ contract LendingInteractionManagerTest is Test {
         uint256 initialMakerUSDC = mockUSDC.balanceOf(mockMaker);
         uint256 initialMakerAUSDC = mockAUSDC.balanceOf(mockMaker);
         
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -260,7 +289,7 @@ contract LendingInteractionManagerTest is Test {
         // Step 2: PostInteraction (supply WETH to Aave)
         uint256 initialMakerWETH = mockWETH.balanceOf(mockMaker);
         
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -273,16 +302,16 @@ contract LendingInteractionManagerTest is Test {
         
         // Verify postInteraction results
         assertEq(mockWETH.balanceOf(mockMaker), initialMakerWETH - mockTakingAmount);
-        assertEq(mockWETH.allowance(address(lendingManager), address(mockAavePool)), mockTakingAmount);
+        assertEq(mockWETH.allowance(address(interactionManager), address(mockAavePool)), mockTakingAmount);
     }
 
     function testPreInteractionWithDifferentAmounts() public {
         uint256 customAmount = 500e6; // 500 USDC
         
         // Set up balances for custom amount
-        mockAUSDC.setAllowance(mockMaker, address(lendingManager), customAmount);
+        mockAUSDC.setAllowance(mockMaker, address(interactionManager), customAmount);
               
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -298,12 +327,12 @@ contract LendingInteractionManagerTest is Test {
         uint256 customTakingAmount = 0.5e18; // 0.5 WETH
         
         // Set up balances for custom amount
-        mockWETH.setAllowance(mockMaker, address(lendingManager), customTakingAmount);
+        mockWETH.setAllowance(mockMaker, address(interactionManager), customTakingAmount);
         
         vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.PostInteractionCalled(customTakingAmount, mockExtraData);
+        emit InteractionManager.PostInteractionCalled(customTakingAmount, mockExtraData);
         
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -316,7 +345,7 @@ contract LendingInteractionManagerTest is Test {
     }
 
     function testEventEmission() public {        
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -329,9 +358,9 @@ contract LendingInteractionManagerTest is Test {
         
         // Test PostInteractionCalled event
         vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
+        emit InteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
         
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -345,11 +374,11 @@ contract LendingInteractionManagerTest is Test {
 
     function testPreInteractionInsufficientAllowance() public {
         // Set insufficient allowance
-        mockAUSDC.setAllowance(mockMaker, address(lendingManager), mockMakingAmount - 1);
+        mockAUSDC.setAllowance(mockMaker, address(interactionManager), mockMakingAmount - 1);
         
         // Should revert due to insufficient allowance
         vm.expectRevert();
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -363,11 +392,11 @@ contract LendingInteractionManagerTest is Test {
 
     function testPostInteractionInsufficientAllowance() public {
         // Set insufficient allowance
-        mockWETH.setAllowance(mockMaker, address(lendingManager), mockTakingAmount - 1);
+        mockWETH.setAllowance(mockMaker, address(interactionManager), mockTakingAmount - 1);
         
         // Should revert due to insufficient allowance
         vm.expectRevert();
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -381,7 +410,7 @@ contract LendingInteractionManagerTest is Test {
 
     function testZeroAmounts() public {
                 
-        lendingManager.preInteraction(
+        interactionManager.preInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
@@ -393,9 +422,9 @@ contract LendingInteractionManagerTest is Test {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit LendingInteractionManager.PostInteractionCalled(0, mockExtraData);
+        emit InteractionManager.PostInteractionCalled(0, mockExtraData);
         
-        lendingManager.postInteraction(
+        interactionManager.postInteraction(
             mockOrder,
             mockExtension,
             mockOrderHash,
