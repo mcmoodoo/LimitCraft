@@ -23,9 +23,9 @@ export const config = {
 
   // Resolver settings
   resolver: {
-    pollIntervalMs: Number(process.env.POLL_INTERVAL_MS) || 30000, // 30 seconds
-    minProfitWei: process.env.MIN_PROFIT_WEI || '100000000000000000', // 0.1 ETH
-    maxGasPrice: process.env.MAX_GAS_PRICE || '100000000', // 0.1 gwei (Arbitrum-optimized)
+    pollIntervalMs: 30000, // 30 seconds
+    minProfitWei: '100000000000000000', // 0.1 ETH
+    maxGasPrice: '100000000', // 0.1 gwei (Arbitrum-optimized)
   },
 
   // Tokens (Arbitrum addresses)
