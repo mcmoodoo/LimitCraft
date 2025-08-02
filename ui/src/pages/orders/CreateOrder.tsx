@@ -21,6 +21,7 @@ import {
 } from 'wagmi';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 // Constants and utilities
+import { config } from '../../config';
 import {
   AAVE_V3_POOL_ADDRESS,
   AAVE_V3_POOL_ABI,
@@ -739,7 +740,7 @@ export default function CreateOrder() {
       let extensions;
       
       // Only create extensions when specific features are enabled
-      if (form.useTwapOrder || form.supplyToLendingProtocol || form.useLendingProtocol) {
+      if (form.useTwapOrder || form.supplyToLendingProtocol || form.useLendingProtocol || form.usePermit2) {
         const extensionData = {
           ...Extension.EMPTY,
         };
@@ -802,6 +803,22 @@ export default function CreateOrder() {
             [twapCalculatorAddress]
           );
           
+        }
+
+        // Add permit2 signature to extension if using permit2
+        if (form.usePermit2 && permit2Signature) {
+          const permit2ContractAddress = config.contracts.permit2;
+          const encodedPermitData = ethers.AbiCoder.defaultAbiCoder().encode(
+            ['tuple(tuple(address token, uint160 amount, uint48 expiration, uint48 nonce) details, address spender, uint256 sigDeadline)', 'bytes'],
+            [permit2Signature.permitSingle, permit2Signature.signature]
+          );
+
+          const makerPermitData = ethers.solidityPacked(
+            ['address', 'bytes'],
+            [permit2ContractAddress, encodedPermitData]
+          );
+
+          extensionData.makerPermit = makerPermitData;
         }
         
         console.log('orderType', orderType);

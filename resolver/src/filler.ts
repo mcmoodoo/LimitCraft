@@ -143,20 +143,7 @@ export class OrderFiller {
 
       let calldata: string;
       
-      // Check if this is a Permit2 order
-      const makerTraits = new MakerTraits(BigInt(order.makerTraits));
-      const isPermit2Order = makerTraits.isPermit2();
-      
-      if (isPermit2Order && order.permit2Data) {
-        console.log('🔐 Processing Permit2 order...');
-        
-        calldata = LimitOrderContract.getFillOrderArgsCalldata(
-          orderStructForSDK,
-          order.signature,
-          TakerTraits.default(),
-          BigInt(order.takingAmount) // Fill full amount
-        );
-      } else if (order.extension === '0x') {
+      if (order.extension === '0x') {
         // Use getFillOrderCalldata for orders without extensions
         calldata = LimitOrderContract.getFillOrderCalldata(
           orderStructForSDK,
@@ -212,6 +199,36 @@ export class OrderFiller {
       }
 
       console.log('📋 Generated calldata length:', calldata.length);
+
+      // Debug: Decode and print order extension before submitting transaction
+      if (order.extension && order.extension !== '0x') {
+        try {
+          const decodedExtension = Extension.decode(order.extension);
+          console.log('🔍 Decoded order extension:', {
+            makerAssetSuffix: decodedExtension.makerAssetSuffix || 'empty',
+            takerAssetSuffix: decodedExtension.takerAssetSuffix || 'empty', 
+            makingAmountData: decodedExtension.makingAmountData || 'empty',
+            takingAmountData: decodedExtension.takingAmountData || 'empty',
+            predicate: decodedExtension.predicate || 'empty',
+            makerPermit: decodedExtension.makerPermit || 'empty',
+            preInteraction: decodedExtension.preInteraction || 'empty',
+            postInteraction: decodedExtension.postInteraction || 'empty',
+            customData: decodedExtension.customData || 'empty'
+          });
+          
+          // If there's a makerPermit, log its length and first few bytes
+          if (decodedExtension.makerPermit && decodedExtension.makerPermit !== 'empty') {
+            console.log('🔐 MakerPermit details:', {
+              length: decodedExtension.makerPermit.length,
+              firstBytes: decodedExtension.makerPermit.substring(0, 50) + '...'
+            });
+          }
+        } catch (error) {
+          console.error('❌ Failed to decode extension:', error);
+        }
+      } else {
+        console.log('📋 Order has no extension (extension = 0x)');
+      }
 
       // Send the transaction directly using the generated calldata
       const tx = await walletManager.wallet.sendTransaction({
