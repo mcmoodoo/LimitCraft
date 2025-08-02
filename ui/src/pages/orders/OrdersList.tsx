@@ -420,9 +420,6 @@ export default function OrdersList() {
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center mb-3">
         <h1 className="text-2xl font-bold">Orders</h1>
-        <Button asChild className="ml-auto">
-          <Link to={navigationHelpers.toCreateOrder()}>Create Order</Link>
-        </Button>
       </div>
 
       {orders.length === 0 ? (
@@ -442,10 +439,7 @@ export default function OrdersList() {
                 d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
               />
             </svg>
-            <p className="text-gray-400 text-lg mb-6">No orders found for your wallet</p>
-            <Button asChild>
-              <Link to={navigationHelpers.toCreateOrder()}>Create Your First Order</Link>
-            </Button>
+            <p className="text-gray-400 text-lg">No orders found for your wallet</p>
           </div>
         </div>
       ) : (

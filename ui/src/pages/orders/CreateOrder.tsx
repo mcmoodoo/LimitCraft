@@ -51,7 +51,6 @@ import {
   formatExpirationTime,
 } from '../../utils/time-utils';
 import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { RadioGroup, RadioGroupItem } from '../../components/ui/radio-group';
@@ -931,13 +930,6 @@ export default function CreateOrder() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
 
   // Using imported handleKeyDown utility
 
@@ -1455,98 +1447,6 @@ export default function CreateOrder() {
                     </div>
                   </div>
 
-                  {/* Permit2 Section */}
-                  <div className="border border-blue-500/30 rounded-lg p-3 bg-blue-900/10">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="space-y-1">
-                        <Label
-                          htmlFor="usePermit2"
-                          className="text-sm font-medium text-blue-400 flex items-center gap-2"
-                        >
-                          <svg 
-                            className="w-4 h-4" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth={2} 
-                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
-                            />
-                          </svg>
-                          Use Permit2 (Recommended)
-                        </Label>
-                        <p className="text-xs text-gray-400">
-                          Skip token approval transactions - sign once, trade efficiently
-                        </p>
-                      </div>
-                      <Switch
-                        id="usePermit2"
-                        checked={form.usePermit2}
-                        onCheckedChange={(checked) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            usePermit2: checked,
-                          }))
-                        }
-                      />
-                    </div>
-                    
-                    {form.usePermit2 && (
-                      <div className="mt-2 p-2 bg-gray-800/50 rounded border border-gray-600">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-300">Permit2 Status:</span>
-                          <div className="flex items-center gap-1">
-                            {permit2Loading ? (
-                              <span className="text-yellow-400">Checking...</span>
-                            ) : permit2Error ? (
-                              <span className="text-red-400">Error</span>
-                            ) : approvalPending ? (
-                              <span className="text-yellow-400">Approving...</span>
-                            ) : needsTokenApprovalToPermit2 ? (
-                              <span className="text-orange-400">Token approval needed</span>
-                            ) : isPermit2Approved ? (
-                              <span className="text-green-400">✓ Ready</span>
-                            ) : (
-                              <span className="text-orange-400">Signature needed</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="mt-1 text-xs text-gray-500">
-                          {form.usePermit2 && !permit2Loading && !permit2Error && (
-                            approvalPending ?
-                              "Waiting for token approval confirmation..." :
-                            needsTokenApprovalToPermit2 ?
-                              "First time using Permit2? You'll need to approve the token once" :
-                            isPermit2Approved ? 
-                              "You can create orders without approval transactions" :
-                              "You'll need to sign a Permit2 message when creating the order"
-                          )}
-                        </div>
-                        {needsTokenApprovalToPermit2 && form.makerAsset && !approvalPending && (
-                          <div className="mt-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await approveTokenToPermit2();
-                                } catch (error) {
-                                  console.error('Approval failed:', error);
-                                }
-                              }}
-                              className="text-xs"
-                            >
-                              Approve Token to Permit2
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
                   {/* Capital Efficiency Mode Cards */}
                   <div className="space-y-3">
@@ -1810,6 +1710,99 @@ export default function CreateOrder() {
                           </div>
                           <p>Reduces market impact by splitting your order into smaller chunks executed over time</p>
                         </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Permit2 Section */}
+                  <div className="border border-blue-500/30 rounded-lg p-3 bg-blue-900/10">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="space-y-1">
+                        <Label
+                          htmlFor="usePermit2"
+                          className="text-sm font-medium text-blue-400 flex items-center gap-2"
+                        >
+                          <svg 
+                            className="w-4 h-4" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" 
+                            />
+                          </svg>
+                          Use Permit2 (Recommended)
+                        </Label>
+                        <p className="text-xs text-gray-400">
+                          Skip token approval transactions - sign once, trade efficiently
+                        </p>
+                      </div>
+                      <Switch
+                        id="usePermit2"
+                        checked={form.usePermit2}
+                        onCheckedChange={(checked) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            usePermit2: checked,
+                          }))
+                        }
+                      />
+                    </div>
+                    
+                    {form.usePermit2 && (
+                      <div className="mt-2 p-2 bg-gray-800/50 rounded border border-gray-600">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-300">Permit2 Status:</span>
+                          <div className="flex items-center gap-1">
+                            {permit2Loading ? (
+                              <span className="text-yellow-400">Checking...</span>
+                            ) : permit2Error ? (
+                              <span className="text-red-400">Error</span>
+                            ) : approvalPending ? (
+                              <span className="text-yellow-400">Approving...</span>
+                            ) : needsTokenApprovalToPermit2 ? (
+                              <span className="text-orange-400">Token approval needed</span>
+                            ) : isPermit2Approved ? (
+                              <span className="text-green-400">✓ Ready</span>
+                            ) : (
+                              <span className="text-orange-400">Signature needed</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {form.usePermit2 && !permit2Loading && !permit2Error && (
+                            approvalPending ?
+                              "Waiting for token approval confirmation..." :
+                            needsTokenApprovalToPermit2 ?
+                              "First time using Permit2? You'll need to approve the token once" :
+                            isPermit2Approved ? 
+                              "You can create orders without approval transactions" :
+                              "You'll need to sign a Permit2 message when creating the order"
+                          )}
+                        </div>
+                        {needsTokenApprovalToPermit2 && form.makerAsset && !approvalPending && (
+                          <div className="mt-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await approveTokenToPermit2();
+                                } catch (error) {
+                                  console.error('Approval failed:', error);
+                                }
+                              }}
+                              className="text-xs"
+                            >
+                              Approve Token to Permit2
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
