@@ -33,7 +33,6 @@ export class OrderMonitor {
         )
         .orderBy(orders.createdAt);
 
-      console.log(`📊 Found ${pendingOrders.length} pending and partially filled orders`);
       return pendingOrders;
     } catch (error) {
       console.error('❌ Error fetching pending orders:', error);
@@ -62,7 +61,6 @@ export class OrderMonitor {
         .set(updateData)
         .where(eq(orders.id, orderId));
 
-      console.log(`✅ Updated order ${orderId} status to ${status}${fillTxTimestamp ? ` with fill timestamp ${fillTxTimestamp.toISOString()}` : ''}`);
     } catch (error) {
       console.error(`❌ Error updating order ${orderId}:`, error);
     }
@@ -87,9 +85,6 @@ export class OrderMonitor {
           )
         );
 
-      if (result.length > 0) {
-        console.log(`⏰ Marked ${result.length} orders as expired`);
-      }
 
       return result.length;
     } catch (error) {

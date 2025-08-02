@@ -64,8 +64,6 @@ class OrderResolver {
 
   private async processOrders() {
     try {
-      console.log('🔍 Checking for orders to fill...');
-
       // 1. Mark expired orders
       const expiredCount = await orderMonitor.markExpiredOrders();
       if (expiredCount > 0) {
@@ -76,7 +74,6 @@ class OrderResolver {
       const pendingOrders = await orderMonitor.getPendingOrders();
 
       if (pendingOrders.length === 0) {
-        console.log('📭 No pending orders found');
         return;
       }
 
@@ -91,8 +88,6 @@ class OrderResolver {
 
   private async processOrder(order: Order) {
     try {
-      console.log(`🔍 Analyzing order ${order.orderHash}`);
-
       // Check profitability
       const profitability = await priceChecker.calculateProfitability(order);
 

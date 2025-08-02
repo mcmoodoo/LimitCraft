@@ -27,9 +27,6 @@ export class OrderFiller {
   constructor() {
     // Use the SDK to get the correct contract address for the network
     const contractAddress = getLimitOrderContract(config.chain.networkId);
-    console.log(
-      `🔗 Using 1inch Limit Order Contract: ${contractAddress} on chain ${config.chain.networkId}`
-    );
 
     this.limitOrderContract = new Contract(
       contractAddress,
@@ -60,7 +57,51 @@ export class OrderFiller {
 
   async fillOrder(order: Order): Promise<FillResult> {
     try {
-      console.log(`🔄 Attempting to fill order ${order.orderHash}`);
+      // Log decoded MakerTraits
+      const makerTraits = new MakerTraits(BigInt(order.makerTraits));
+      console.log(`📋 Order ${order.orderHash} MakerTraits:`, {
+        allowedSender: makerTraits.isPrivate() 
+          ? makerTraits.allowedSender() 
+          : 'Any sender allowed',
+        isPrivate: makerTraits.isPrivate(),
+        expiration: makerTraits.expiration() ? new Date(Number(makerTraits.expiration()) * 1000).toISOString() : 'No expiration',
+        nonceOrEpoch: makerTraits.nonceOrEpoch().toString(),
+        series: makerTraits.series().toString(),
+        hasExtension: makerTraits.hasExtension(),
+        isPartialFillAllowed: makerTraits.isPartialFillAllowed(),
+        isMultipleFillsAllowed: makerTraits.isMultipleFillsAllowed(),
+        hasPreInteraction: makerTraits.hasPreInteraction(),
+        hasPostInteraction: makerTraits.hasPostInteraction(),
+        isEpochManagerEnabled: makerTraits.isEpochManagerEnabled(),
+        isPermit2: makerTraits.isPermit2(),
+        isNativeUnwrapEnabled: makerTraits.isNativeUnwrapEnabled(),
+        isBitInvalidatorMode: makerTraits.isBitInvalidatorMode()
+      });
+
+      // Log decoded Extension if present
+      if (order.extension && order.extension !== '0x') {
+        try {
+          const extension = Extension.decode(order.extension);
+          console.log(`🔧 Order ${order.orderHash} Extension:`, {
+            makerAssetSuffix: extension.makerAssetSuffix || 'None',
+            takerAssetSuffix: extension.takerAssetSuffix || 'None',
+            makingAmountData: extension.makingAmountData || 'None',
+            takingAmountData: extension.takingAmountData || 'None',
+            predicate: extension.predicate || 'None',
+            makerPermit: extension.makerPermit || 'None',
+            preInteraction: extension.preInteraction || 'None',
+            postInteraction: extension.postInteraction || 'None',
+            customData: extension.customData || 'None'
+          });
+
+          // If there's takingAmountData (likely TWAP calculator), decode it
+          if (extension.takingAmountData) {
+            console.log(`🕐 TWAP Calculator Data (takingAmountData): ${extension.takingAmountData}`);
+          }
+        } catch (error) {
+          console.error('❌ Failed to decode extension:', error);
+        }
+      }
 
       // Check wallet has sufficient ETH balance
       if (!(await walletManager.checkSufficientBalance())) {
@@ -91,20 +132,22 @@ export class OrderFiller {
       const limitOrder = this.reconstructLimitOrder(order);
       const orderStruct = this.reconstructOrderStruct(limitOrder);
 
-      console.log('📋 Reconstructed order struct:', {
+      // Log the order struct that will be sent to the contract
+      console.log(`📋 Order struct for ${order.orderHash}:`, {
         salt: orderStruct.salt.toString(),
         maker: orderStruct.maker,
+        receiver: orderStruct.receiver,
         makerAsset: orderStruct.makerAsset,
         takerAsset: orderStruct.takerAsset,
         makingAmount: orderStruct.makingAmount.toString(),
         takingAmount: orderStruct.takingAmount.toString(),
+        makerTraits: orderStruct.offsets.toString()
       });
+
 
       // Check if order is still valid (optional but recommended)
       try {
-        console.log('🔍 Checking predicate for order...');
         const isValid = await this.limitOrderContract.checkPredicate(orderStruct);
-        console.log('✅ Predicate check result:', isValid);
         if (!isValid) {
           return {
             success: false,
@@ -112,7 +155,6 @@ export class OrderFiller {
           };
         }
       } catch (predicateError: unknown) {
-        console.warn('⚠️ Could not check predicate, proceeding anyway:', predicateError);
 
         // If we get BUFFER_OVERRUN, the contract might not exist or function might be wrong
         if (
@@ -120,12 +162,9 @@ export class OrderFiller {
           'code' in predicateError &&
           predicateError.code === 'BUFFER_OVERRUN'
         ) {
-          console.error('🚨 BUFFER_OVERRUN suggests contract/function issue. Checking contract...');
-
           // Test basic contract existence
           try {
             const code = await walletManager.provider.getCode(this.limitOrderContract.target);
-            console.log('📋 Contract code length:', code.length);
             if (code === '0x') {
               return {
                 success: false,
@@ -153,13 +192,11 @@ export class OrderFiller {
         );
       } else {
         const extension = Extension.decode(order.extension);
-        console.log('🔍 Extension:', extension);
         let takerTraits = TakerTraits.default().setExtension(extension);
         let amount = BigInt(order.takingAmount);
 
         // If this is a TWAP order, fill the order in parts
         if (order.numberOfOrders) {
-          console.log('🔍 TWAP order detected');
           
           // Check if 30 minutes have passed since order creation
           const creationTimingResult = this.checkTwapTimingCondition(
@@ -184,10 +221,7 @@ export class OrderFiller {
           takerTraits = takerTraits.setAmountMode(AmountMode.maker);
           amount = BigInt(order.makingAmount) / BigInt(order.numberOfOrders)
           // amount = BigInt(10)
-          
-          console.log('🔍 Amount:', amount);
         }
-        console.log('🔍 TakerTraits:', takerTraits);
 
         // Use getFillOrderArgsCalldata for orders with extensions
         calldata = LimitOrderContract.getFillOrderArgsCalldata(
@@ -198,46 +232,57 @@ export class OrderFiller {
         );
       }
 
-      console.log('📋 Generated calldata length:', calldata.length);
 
-      // Debug: Decode and print order extension before submitting transaction
-      if (order.extension && order.extension !== '0x') {
-        try {
-          const decodedExtension = Extension.decode(order.extension);
-          console.log('🔍 Decoded order extension:', {
-            makerAssetSuffix: decodedExtension.makerAssetSuffix || 'empty',
-            takerAssetSuffix: decodedExtension.takerAssetSuffix || 'empty', 
-            makingAmountData: decodedExtension.makingAmountData || 'empty',
-            takingAmountData: decodedExtension.takingAmountData || 'empty',
-            predicate: decodedExtension.predicate || 'empty',
-            makerPermit: decodedExtension.makerPermit || 'empty',
-            preInteraction: decodedExtension.preInteraction || 'empty',
-            postInteraction: decodedExtension.postInteraction || 'empty',
-            customData: decodedExtension.customData || 'empty'
-          });
-          
-          // If there's a makerPermit, log its length and first few bytes
-          if (decodedExtension.makerPermit && decodedExtension.makerPermit !== 'empty') {
-            console.log('🔐 MakerPermit details:', {
-              length: decodedExtension.makerPermit.length,
-              firstBytes: decodedExtension.makerPermit.substring(0, 50) + '...'
-            });
-          }
-        } catch (error) {
-          console.error('❌ Failed to decode extension:', error);
-        }
-      } else {
-        console.log('📋 Order has no extension (extension = 0x)');
-      }
-
-      // Send the transaction directly using the generated calldata
-      const tx = await walletManager.wallet.sendTransaction({
+      // Log transaction details before sending
+      const txParams = {
         to: this.limitOrderContract.target,
         data: calldata,
         gasLimit: 1_000_000, // Set explicit gas limit for complex DeFi operations
         maxFeePerGas: parseUnits(config.resolver.maxGasPrice, 'wei'),
         maxPriorityFeePerGas: parseUnits('0.01', 'gwei'), // 0.01 gwei (Arbitrum-optimized)
+      };
+
+      console.log(`📤 Preparing fill transaction for order ${order.orderHash}:`, {
+        to: txParams.to,
+        from: walletManager.wallet.address,
+        gasLimit: txParams.gasLimit.toString(),
+        maxFeePerGas: txParams.maxFeePerGas.toString(),
+        maxPriorityFeePerGas: txParams.maxPriorityFeePerGas.toString(),
+        calldataLength: calldata.length,
+        calldata: calldata
       });
+
+      // First, simulate the transaction to get any revert reason
+      try {
+        console.log('🔍 Simulating transaction to check for reverts...');
+        const simulationResult = await walletManager.provider.call({
+          to: txParams.to,
+          from: walletManager.wallet.address,
+          data: txParams.data,
+          gasLimit: txParams.gasLimit
+        });
+        console.log('✅ Simulation successful, proceeding with transaction');
+      } catch (simulationError: any) {
+        console.error('❌ Transaction simulation failed:', simulationError);
+        
+        // Extract revert reason from simulation
+        if (simulationError.data) {
+          const reason = this.decodeRevertReason(simulationError.data);
+          console.error('🚫 Revert reason:', reason);
+          return {
+            success: false,
+            error: `Transaction will revert: ${reason}`
+          };
+        }
+        
+        return {
+          success: false,
+          error: `Transaction simulation failed: ${simulationError.message}`
+        };
+      }
+
+      // Send the transaction directly using the generated calldata
+      const tx = await walletManager.wallet.sendTransaction(txParams);
 
       console.log(`📤 Fill transaction sent: ${tx.hash}`);
 
@@ -267,15 +312,70 @@ export class OrderFiller {
     } catch (error: unknown) {
       console.error(`❌ Error filling order ${order.orderHash}:`, error);
 
-      // Handle specific error cases
+      // Handle specific error cases with detailed logging
       let errorMessage = 'Unknown error';
+      let errorDetails: any = {};
+
       if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Extract various error properties
         if ('reason' in error && typeof error.reason === 'string') {
+          errorDetails.reason = error.reason;
           errorMessage = error.reason;
-        } else {
-          errorMessage = error.message;
+        }
+        
+        if ('code' in error) {
+          errorDetails.code = error.code;
+        }
+        
+        if ('data' in error) {
+          errorDetails.data = error.data;
+        }
+        
+        if ('transaction' in error) {
+          errorDetails.transaction = error.transaction;
+        }
+        
+        if ('receipt' in error) {
+          errorDetails.receipt = error.receipt;
+        }
+        
+        // Try to decode revert reason if available
+        if ('data' in error && typeof error.data === 'string' && error.data.startsWith('0x')) {
+          try {
+            // Common error signatures
+            const errorSignatures: Record<string, string> = {
+              '0x08c379a0': 'Error(string)',
+              '0x4e487b71': 'Panic(uint256)',
+              '0xb12d13eb': 'OnlyOwner()',
+              '0x6c167909': 'OrderExpired()',
+              '0x8e4a23d6': 'InvalidSender()',
+              '0x815e1d64': 'InvalidAmount()',
+              '0x756688fe': 'InvalidPredicate()',
+            };
+            
+            const sig = error.data.substring(0, 10);
+            if (errorSignatures[sig]) {
+              errorDetails.decodedError = errorSignatures[sig];
+              
+              // Try to decode string error message
+              if (sig === '0x08c379a0' && error.data.length >= 138) {
+                try {
+                  const hex = error.data.substring(138);
+                  const str = Buffer.from(hex, 'hex').toString('utf8').replace(/\0/g, '');
+                  errorDetails.revertReason = str.trim();
+                  errorMessage = `Revert: ${str.trim()}`;
+                } catch {}
+              }
+            }
+          } catch (decodeError) {
+            console.error('Failed to decode error data:', decodeError);
+          }
         }
       }
+
+      console.error('📋 Error details:', errorDetails);
 
       return {
         success: false,
@@ -289,16 +389,6 @@ export class OrderFiller {
       // Use the SDK's build method to get the proper struct
       const orderStruct = limitOrder.build();
 
-      console.log('🔍 SDK order struct fields:', {
-        salt: orderStruct.salt,
-        makerAsset: orderStruct.makerAsset,
-        takerAsset: orderStruct.takerAsset,
-        maker: orderStruct.maker,
-        receiver: orderStruct.receiver,
-        makingAmount: orderStruct.makingAmount,
-        takingAmount: orderStruct.takingAmount,
-        makerTraits: orderStruct.makerTraits,
-      });
 
       // Provide proper defaults for undefined values based on contract ABI
       const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
@@ -344,14 +434,6 @@ export class OrderFiller {
         maker: new Address(order.makerAddress),
       };
 
-      console.log('🔍 Reconstructing LimitOrder with saved salt:', {
-        salt: salt.toString(),
-        makerAsset: orderInfo.makerAsset.toString(),
-        takerAsset: orderInfo.takerAsset.toString(),
-        maker: orderInfo.maker.toString(),
-        makingAmount: orderInfo.makingAmount.toString(),
-        takingAmount: orderInfo.takingAmount.toString(),
-      });
 
       // Reconstruct the LimitOrder using the SDK
       return new LimitOrder(orderInfo, makerTraits, extension);
@@ -374,13 +456,6 @@ export class OrderFiller {
       const balance = await takerAssetContract.balanceOf(walletManager.wallet.address);
       const requiredAmount = BigInt(order.takingAmount);
 
-      console.log(`💰 TakerAsset balance check:`, {
-        token: order.takerAsset,
-        resolver: walletManager.wallet.address,
-        balance: balance.toString(),
-        required: requiredAmount.toString(),
-        sufficient: balance >= requiredAmount,
-      });
 
       return {
         sufficient: balance >= requiredAmount,
@@ -413,23 +488,12 @@ export class OrderFiller {
       );
       const requiredAmount = BigInt(order.takingAmount);
 
-      console.log(`🔒 TakerAsset approval check:`, {
-        token: order.takerAsset,
-        owner: walletManager.wallet.address,
-        spender: this.limitOrderContract.target,
-        allowance: allowance.toString(),
-        required: requiredAmount.toString(),
-        sufficient: allowance >= requiredAmount,
-      });
-
       // If allowance is sufficient, return success
       if (allowance >= requiredAmount) {
-        console.log(`✅ Sufficient approval already exists`);
         return { success: true };
       }
 
       // Need to approve - send approval transaction
-      console.log(`📤 Sending approval transaction for ${order.takerAsset}...`);
 
       const approvalAmount = ethers.MaxUint256;
 
@@ -443,15 +507,10 @@ export class OrderFiller {
         }
       );
 
-      console.log(`📤 Approval transaction sent: ${approveTx.hash}`);
-
       // Wait for transaction confirmation
       const receipt = await approveTx.wait();
 
       if (receipt && receipt.status === 1) {
-        console.log(`✅ Approval transaction confirmed!`);
-        console.log(`- Block number: ${receipt.blockNumber}`);
-        console.log(`- Gas used: ${receipt.gasUsed.toString()}`);
 
         return {
           success: true,
@@ -477,6 +536,43 @@ export class OrderFiller {
         error: errorMessage,
       };
     }
+  }
+
+  private decodeRevertReason(data: string): string {
+    if (!data || data === '0x') return 'Unknown revert reason';
+    
+    // Common error signatures
+    const errorSignatures: Record<string, string> = {
+      '0x08c379a0': 'Error(string)',
+      '0x4e487b71': 'Panic(uint256)',
+      '0xb12d13eb': 'OnlyOwner()',
+      '0x6c167909': 'OrderExpired()',
+      '0x8e4a23d6': 'InvalidSender()',
+      '0x815e1d64': 'InvalidAmount()',
+      '0x756688fe': 'InvalidPredicate()',
+      '0x1b41e4c1': 'InvalidSignature()',
+      '0x0a0b0d79': 'InvalidOrder()',
+      '0x82b42900': 'Unauthorized()',
+      '0x53c11f99': 'SwapFailed()',
+    };
+    
+    const sig = data.substring(0, 10);
+    
+    // Handle string error message
+    if (sig === '0x08c379a0' && data.length >= 138) {
+      try {
+        // Skip function selector (4 bytes) and offset (32 bytes) and length (32 bytes)
+        const messageHex = data.substring(138);
+        // Remove any trailing zeros and convert to string
+        const message = Buffer.from(messageHex, 'hex').toString('utf8').replace(/\0/g, '').trim();
+        return message || 'Empty revert message';
+      } catch {
+        return `Unknown error with signature ${sig}`;
+      }
+    }
+    
+    // Return known error type or generic message
+    return errorSignatures[sig] || `Unknown error with signature ${sig}`;
   }
 }
 
