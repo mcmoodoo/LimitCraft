@@ -2,10 +2,31 @@
 
 A complete DEX orderbook platform built on 1inch Limit Order Protocol. Create and manage limit orders on Arbitrum with automated filling and a modern Web3 frontend.
 
+## Summary of Lending Integration Benefits
+
+What it does:
+
+- Pre-interaction: Automatically withdraws maker tokens from active lending positions (Aave, Compound, etc.) to use for the limit order
+- Post-interaction: Automatically supplies received taker tokens back to lending protocols to earn yield
+
+Benefits for users:
+
+- Maximum Capital Efficiency: Tokens never sit idle - they're either earning lending yield or being traded
+- No Manual Management: Seamless lending position management without manual withdraw/deposit steps
+- Continuous Yield: Zero interruption in yield generation during trades
+- One-Click Optimization: Complex DeFi operations simplified into a single limit order
+
+How it works:
+
+1. User has USDC earning yield on Aave
+2. Creates limit order: USDC → WETH with both toggles enabled
+3. When filled: Automatically withdraws USDC from Aave → trades for WETH → supplies WETH to Aave
+4. Result: Seamless transition from earning USDC yield to earning WETH yield
+
 ## Project Structure
 
 - **`api/`** - Elysia.js backend API for order management
-- **`ui/`** - React frontend with RainbowKit and Wagmi wallet integration  
+- **`ui/`** - React frontend with RainbowKit and Wagmi wallet integration
 - **`db/`** - PostgreSQL database layer with Drizzle ORM
 - **`resolver/`** - Automated order resolver and filler
 - **`contracts/`** - Foundry smart contracts with 1inch Limit Order Protocol integration
@@ -33,7 +54,7 @@ forge test
 ### Dependencies
 
 - **1inch Limit Order Protocol** - Core limit order functionality
-- **OpenZeppelin Contracts** - Standard secure contract implementations  
+- **OpenZeppelin Contracts** - Standard secure contract implementations
 - **1inch Solidity Utils** - Utility libraries
 
 Dependencies are managed as git submodules in `lib/`.
@@ -120,7 +141,7 @@ bun run start
 ### Build
 
 - `bun run build:api` - Build API
-- `bun run build:ui` - Build frontend  
+- `bun run build:ui` - Build frontend
 - `bun run build:resolver` - Build resolver
 
 ### Code Quality
