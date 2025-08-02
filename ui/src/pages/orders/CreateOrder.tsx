@@ -146,6 +146,7 @@ export default function CreateOrder() {
   const [apiTokensLoading, setApiTokensLoading] = useState(false); // Track API loading separately
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
   const [customRate, setCustomRate] = useState<string>('');
+  const [rateDisplayFlipped, setRateDisplayFlipped] = useState(false); // Track rate display direction
 
   const { writeContractAsync } = useWriteContract();
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
@@ -514,6 +515,10 @@ export default function CreateOrder() {
     }));
 
     setCustomRate(''); // Clear custom rate
+  };
+
+  const handleRateDisplayFlip = () => {
+    setRateDisplayFlipped(!rateDisplayFlipped);
   };
 
   // Get aToken address for the makerAsset
@@ -1320,24 +1325,51 @@ export default function CreateOrder() {
                       <div className="p-2 space-y-2">
                         <div className="relative mb-1">
                           {/* Exchange rate - left aligned */}
-                          <div className="text-left">
+                          <div className="text-left flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-300">
-                              1 {(() => {
+                              {(() => {
                                 const makerToken = tokens.find(
                                   (t) => t.token_address === form.makerAsset
                                 );
-                                return makerToken?.symbol || 'Token';
-                              })()} for {(() => {
-                                const makingNum = safeParseFloat(form.makingAmount, 1);
-                                const takingNum = safeParseFloat(form.takingAmount, 0);
-                                const rate =
-                                  makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
                                 const takerToken = tokens.find(
                                   (t) => t.token_address === form.takerAsset
                                 );
-                                return `${rate} ${takerToken?.symbol || 'Token'}`;
+                                const makingNum = safeParseFloat(form.makingAmount, 1);
+                                const takingNum = safeParseFloat(form.takingAmount, 0);
+                                
+                                if (!rateDisplayFlipped) {
+                                  // Normal: 1 MAKER for X TAKER
+                                  const rate = makingNum > 0 ? (takingNum / makingNum).toFixed(4) : '0.0000';
+                                  return `1 ${makerToken?.symbol || 'Token'} for ${rate} ${takerToken?.symbol || 'Token'}`;
+                                } else {
+                                  // Flipped: 1 TAKER for X MAKER
+                                  const rate = takingNum > 0 ? (makingNum / takingNum).toFixed(4) : '0.0000';
+                                  return `1 ${takerToken?.symbol || 'Token'} for ${rate} ${makerToken?.symbol || 'Token'}`;
+                                }
                               })()}
                             </span>
+                            
+                            {/* Sleek Swap Button */}
+                            <button
+                              type="button"
+                              onClick={handleRateDisplayFlip}
+                              className="group w-5 h-4 bg-gray-700 hover:bg-blue-600 rounded flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg border border-gray-600 hover:border-blue-500"
+                              title="Flip conversion rate display"
+                            >
+                              <svg
+                                className="w-3 h-3 text-gray-400 group-hover:text-white transition-colors duration-200"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                />
+                              </svg>
+                            </button>
                           </div>
 
                           {/* Market Spot - always centered */}
