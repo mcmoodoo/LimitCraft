@@ -88,7 +88,7 @@ User now earns yield on ETH position
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
 │        On-Chain Infrastructure                                                              │
 │  ┌─────────────┐    ┌─────────────────────────┐   ┌─────────────┐    ┌───────────────┐      │
-│  │  1inch LOP  │    │ LimitCraft Extenstions  │   │AAVE/Compound│    │Uniswap Permit2│      │
+│  │  1inch LOP  │    │ LimitCraft Extensions   │   │AAVE/Compound│    │Uniswap Permit2│      │
 │  └─────────────┘    └─────────────────────────┘   └─────────────┘    └───────────────┘      │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -219,21 +219,21 @@ EmergencyPause.sol     // Circuit breaker mechanism
 
 ## 🗺️ Future Roadmap
 
-### Phase 1 (Q1 2024)
+### Phase 1
 
 - [ ] Enhanced DeFi protocol integrations
 - [ ] Advanced charting with TradingView
 - [ ] Mobile application (iOS/Android)
 - [ ] Limit order NFTs for composability
 
-### Phase 2 (Q2 2024)
+### Phase 2
 
 - [ ] DAO governance implementation
-- [ ] Revenue sharing for LMT token holders
+- [ ] Protocol revenue sharing mechanism
 - [ ] Institutional API access
 - [ ] Advanced order types (TWAPs, Icebergs)
 
-### Phase 3 (Q3 2024)
+### Phase 3
 
 - [ ] Perpetual futures integration
 - [ ] Options trading support
