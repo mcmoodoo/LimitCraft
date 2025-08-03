@@ -5,7 +5,6 @@ import { navigationHelpers } from '../../router/navigation';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
-import { Separator } from '../../components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { 
   ArrowRight, 
@@ -13,21 +12,18 @@ import {
   Shield, 
   TrendingUp, 
   Wallet,
-  Globe,
   Layers,
   ChartBar,
   Sparkles,
   Target,
-  Clock,
   DollarSign,
   Coins,
-  BarChart3,
-  Repeat
+  BarChart3
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export default function HomePage() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
 
   const features = [
     {

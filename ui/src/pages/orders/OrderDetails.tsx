@@ -9,7 +9,6 @@ import { Skeleton } from '../../components/ui/skeleton';
 import { Progress } from '../../components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { navigationHelpers } from '../../router/navigation';
 import { 
   ArrowLeft,
@@ -18,11 +17,9 @@ import {
   XCircle, 
   AlertCircle,
   ArrowUpDown,
-  Calendar,
   User,
   Hash,
   Copy,
-  ExternalLink,
   TrendingUp,
   DollarSign,
   Activity,

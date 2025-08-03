@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Badge } from '../../components/ui/badge';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Progress } from '../../components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
 import { navigationHelpers } from '../../router/navigation';
 import { 
@@ -24,7 +24,6 @@ import {
   TrendingUp,
   Sparkles,
   Plus,
-  Filter,
   RefreshCw,
   Eye
 } from 'lucide-react';
