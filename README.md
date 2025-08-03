@@ -117,6 +117,43 @@ User now earns yield on ETH position
 - Fair ordering with timestamp priority
 - Partial fill support
 
+## 🔗 1inch API Integration
+
+LimitCraft leverages multiple 1inch API endpoints to provide a seamless trading experience:
+
+### Core API Endpoints Used
+
+| API Endpoint | Purpose | Implementation |
+|--------------|---------|----------------|
+| **Balance API** | Fetch user token balances | Real-time wallet balance display in UI token dropdowns |
+| **Token API** | Resolve token metadata | Token symbols, names, decimals, and logos for all supported assets |
+| **Price API** | Live market prices | Market rate calculations, order pricing, and USD value conversions |
+| **Limit Order Protocol** | Order creation & management | Core order signing, submission, and execution via smart contracts |
+
+### API Usage Details
+
+**Balance API** (`/balance/{address}`)
+- Displays available token amounts in order creation form
+- Updates balances after successful transactions
+- Filters tokens with zero balances for cleaner UI
+
+**Token API** (`/tokens/{chainId}`)
+- Populates token dropdowns with verified token metadata
+- Resolves token symbols and logos for order displays
+- Validates token addresses and decimals for calculations
+
+**Price API** (`/prices?token1={addr}&token2={addr}`)
+- Powers the market rate spectrum slider in order creation
+- Calculates USD values for user portfolio display
+- Enables smart price suggestions (market +3% for limit orders)
+
+**Limit Order Protocol SDK**
+- Creates EIP-712 compliant order signatures
+- Manages order extensions for TWAP and lending integrations
+- Handles Permit2 integration for gasless approvals
+
+All API interactions are proxied through our backend service for API key management and rate limiting, ensuring reliable access to 1inch services.
+
 ## 🚀 Quick Start
 
 ### Prerequisites
