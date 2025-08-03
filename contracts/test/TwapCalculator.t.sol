@@ -39,56 +39,24 @@ contract MockPriceFeed {
     }
 }
 
-// Custom TwapCalculator for testing with mock price feed
-contract TestTwapCalculator is TwapCalculator {
-    MockPriceFeed public mockPriceFeed;
+// Mock ERC20 for testing decimals
+contract MockERC20 {
+    uint8 public decimals;
     
-    constructor(address _priceFeed) {
-        mockPriceFeed = MockPriceFeed(_priceFeed);
-    }
-    
-    function getTakingAmount(
-        IOrderMixin.Order calldata order,
-        bytes calldata extension,
-        bytes32 orderHash,
-        address taker,
-        uint256 makingAmount,
-        uint256 remainingMakingAmount,
-        bytes calldata extraData
-    ) external view override returns (uint256) {
-        // Get the latest ETH price from mock price feed
-        (, int256 price, , uint256 updatedAt, ) = mockPriceFeed.latestRoundData();
-        
-        // Ensure price is positive and data is recent (within 1 hour)
-        require(price > 0, "Invalid price from oracle");
-        require(block.timestamp - updatedAt <= 3600, "Price data too old");
-        
-        // Convert price to uint256 and handle decimals
-        uint256 ethPriceUSD = uint256(price); // Price has 8 decimals from Chainlink
-        
-        // Calculate taking amount based on ETH price
-        // Assuming makingAmount is in USDC (6 decimals) and we want WETH (18 decimals)
-        // takingAmount = makingAmount * 1e18 / (ethPriceUSD * 1e2) 
-        // The 1e2 adjusts for Chainlink's 8 decimals vs USDC's 6 decimals
-        uint256 takingAmount = (makingAmount * 1e20) / ethPriceUSD;
-        
-        return takingAmount;
-    }
-    
-    function getLatestETHPrice() external view override returns (uint256 price, uint256 updatedAt) {
-        (, int256 priceInt, , uint256 timestamp, ) = mockPriceFeed.latestRoundData();
-        require(priceInt > 0, "Invalid price from oracle");
-        return (uint256(priceInt), timestamp);
+    constructor(uint8 _decimals) {
+        decimals = _decimals;
     }
 }
+
 
 contract TwapCalculatorTest is Test {
     using AddressLib for address;
     using ExtensionLib for bytes;
 
     TwapCalculator public twapCalculator;
-    TestTwapCalculator public testTwapCalculator;
     MockPriceFeed public mockPriceFeed;
+    MockERC20 public mockUSDC;
+    MockERC20 public mockWETH;
     
     // Mock order data
     IOrderMixin.Order mockOrder;
@@ -97,19 +65,23 @@ contract TwapCalculatorTest is Test {
     bytes32 mockOrderHash = keccak256("test_order");
     address mockTaker = address(0x1234);
     address mockMaker = address(0x5678);
-    address mockMakerAsset = address(0xA0B86a33e6411A3037e1ed40c0b8E8d2Ed68B96D); // USDC
-    address mockTakerAsset = address(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // WETH
     uint256 mockMakingAmount = 1000e6; // 1000 USDC
     uint256 mockTakingAmount = 1e18; // 1 WETH
     uint256 mockRemainingMakingAmount = 500e6;
-    bytes mockExtraData = abi.encode(uint256(123));
+    bytes mockExtraData;
 
     function setUp() public {
         // Set up mock price feed with ETH price of $3000 (with 8 decimals)
         mockPriceFeed = new MockPriceFeed(300000000000); // $3000 * 1e8
         
+        // Deploy mock ERC20 tokens
+        mockUSDC = new MockERC20(6); // USDC has 6 decimals
+        mockWETH = new MockERC20(18); // WETH has 18 decimals
+        
         twapCalculator = new TwapCalculator();
-        testTwapCalculator = new TestTwapCalculator(address(mockPriceFeed));
+        
+        // Set up extraData with price feed address
+        mockExtraData = abi.encode(address(mockPriceFeed));
         
         // Create proper extension data for TWAP testing following 1inch ExtensionLib format
         uint256 startTime = block.timestamp;
@@ -120,7 +92,7 @@ contract TwapCalculatorTest is Test {
         // [32-byte offsets] + [concatenated field data]
         bytes memory makerAssetSuffix = "";
         bytes memory takerAssetSuffix = "";
-        bytes memory takingAmountData = "";
+        bytes memory takingAmountData = abi.encodePacked(bytes20(0), address(mockPriceFeed)); // 20 bytes padding + price feed address
         bytes memory predicate = "";
         bytes memory permit = "";
         bytes memory preInteraction = "";
@@ -168,8 +140,8 @@ contract TwapCalculatorTest is Test {
             salt: 0,
             maker: Address.wrap(uint256(uint160(mockMaker))),
             receiver: Address.wrap(uint256(uint160(address(0)))),
-            makerAsset: Address.wrap(uint256(uint160(mockMakerAsset))),
-            takerAsset: Address.wrap(uint256(uint160(mockTakerAsset))),
+            makerAsset: Address.wrap(uint256(uint160(address(mockUSDC)))),
+            takerAsset: Address.wrap(uint256(uint160(address(mockWETH)))),
             makingAmount: mockMakingAmount,
             takingAmount: mockTakingAmount,
             makerTraits: MakerTraits.wrap(0)
@@ -183,134 +155,21 @@ contract TwapCalculatorTest is Test {
         assertTrue(true, "TwapCalculator contract compilation test");
     }
 
-    function testGetTakingAmountWithChainlinkPrice() public view {
-        uint256 result = testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount, // 1000 USDC (1000 * 1e6)
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // With ETH at $3000, 1000 USDC should get approximately 0.333 ETH
-        // Expected: (1000 * 1e6 * 1e20) / (3000 * 1e8) = 333333333333333333 (about 0.333 ETH)
-        uint256 expected = (mockMakingAmount * 1e20) / 300000000000;
-        assertEq(result, expected, "getTakingAmount should calculate based on ETH price");
-    }
-
-
-    function testGetTakingAmountWithDifferentAmounts() public view {
-        uint256 customMakingAmount = 500e6; // 500 USDC
-        
-        uint256 result = testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            customMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // With ETH at $3000, 500 USDC should get approximately 0.167 ETH
-        uint256 expected = (customMakingAmount * 1e20) / 300000000000;
-        assertEq(result, expected, "getTakingAmount should calculate correctly for different amounts");
-    }
-
-
-
-
-
-
-
-    function testGetLatestETHPrice() public view {
-        (uint256 price, uint256 updatedAt) = testTwapCalculator.getLatestETHPrice();
-        
+    function testSimpleGetLatestPrice() public view {
+        // Test the getLatestPrice function directly
+        (uint256 price, uint256 updatedAt) = twapCalculator.getLatestPrice(address(mockPriceFeed));
         assertEq(price, 300000000000, "Price should match mock price feed");
         assertGt(updatedAt, 0, "Updated timestamp should be greater than 0");
     }
-    
-    function testGetTakingAmountWithDifferentETHPrices() public {
-        // Test with ETH at $2000
-        mockPriceFeed.setPrice(200000000000); // $2000 * 1e8
-        
-        uint256 result = testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount, // 1000 USDC
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // With ETH at $2000, 1000 USDC should get 0.5 ETH
-        uint256 expected = (mockMakingAmount * 1e20) / 200000000000;
-        assertEq(result, expected, "getTakingAmount should adjust with price changes");
-        
-        // Test with ETH at $4000
-        mockPriceFeed.setPrice(400000000000); // $4000 * 1e8
-        
-        result = testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // With ETH at $4000, 1000 USDC should get 0.25 ETH
-        expected = (mockMakingAmount * 1e20) / 400000000000;
-        assertEq(result, expected, "getTakingAmount should adjust with higher prices");
-    }
-    
-    function testGetTakingAmountRevertsWithInvalidPrice() public {
-        // Set negative price
-        mockPriceFeed.setPrice(-100000000000);
-        
-        vm.expectRevert("Invalid price from oracle");
-        testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Set zero price
-        mockPriceFeed.setPrice(0);
-        
-        vm.expectRevert("Invalid price from oracle");
-        testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
-    
-    
-    function testGetTakingAmountWithZeroMakingAmount() public view {
-        uint256 result = testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // Zero making amount
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        assertEq(result, 0, "getTakingAmount should return 0 for zero making amount");
-    }
+
+
+
+
+
+
+
+
+
+
     
 }

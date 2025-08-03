@@ -14,14 +14,6 @@ contract TwapCalculator is IAmountGetter {
     
     error TwapMakingAmountExceedsAvailable();
     
-    // ETH/USD price feed on Arbitrum
-    AggregatorV3Interface internal priceFeed;
-    
-    constructor() {
-        // ETH/USD price feed address on Arbitrum mainnet
-        priceFeed = AggregatorV3Interface(0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612);
-    }
-
      function getMakingAmount(
         IOrderMixin.Order calldata order,
         bytes calldata extension,
@@ -64,9 +56,14 @@ contract TwapCalculator is IAmountGetter {
         address /* taker */,
         uint256 makingAmount,
         uint256 /* remainingMakingAmount */,
-        bytes calldata extraData
+        bytes calldata /* extraData */
     ) external view virtual returns (uint256) {
-        // Get the latest ETH price from Chainlink
+        // Decode price feed address from extraData
+        bytes calldata takingAmountData = extension.takingAmountData();
+        address priceFeedAddress = abi.decode(takingAmountData[20:], (address));
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
+        
+        // Get the latest price from Chainlink
         (, int256 price, , uint256 updatedAt, ) = priceFeed.latestRoundData();
         
         // Ensure price is positive and data is recent (within 1 hour)
@@ -74,21 +71,17 @@ contract TwapCalculator is IAmountGetter {
         require(block.timestamp - updatedAt <= 3600, "Price data too old");
         
         // Convert price to uint256 and handle decimals
-        uint256 ethPriceUSD = uint256(price); // Price has 8 decimals from Chainlink
+        uint256 priceUSD = uint256(price);
         
-        // Get token addresses from order
         address makerAssetAddress = order.makerAsset.get();
         address takerAssetAddress = order.takerAsset.get();
         
-        // Fetch decimals for both tokens
         uint8 makerAssetDecimals = IERC20(makerAssetAddress).decimals();
         uint8 takerAssetDecimals = IERC20(takerAssetAddress).decimals();
         
-        // Calculate taking amount based on ETH price
-        // Formula: takingAmount = (makingAmount * 10^(takerAssetDecimals + chainlinkDecimals)) / (ethPriceUSD * 10^makerAssetDecimals)
-        // This handles arbitrary token decimals correctly
+        // Formula: takingAmount = (makingAmount * 10^(takerAssetDecimals + chainlinkDecimals)) / (priceUSD * 10^makerAssetDecimals)
         uint256 numerator = makingAmount * (10 ** (takerAssetDecimals + 8)); // 8 is Chainlink decimals
-        uint256 denominator = ethPriceUSD * (10 ** makerAssetDecimals);
+        uint256 denominator = priceUSD * (10 ** makerAssetDecimals);
         uint256 takingAmount = numerator / denominator;
         
         return takingAmount;
@@ -99,7 +92,8 @@ contract TwapCalculator is IAmountGetter {
      * @return price The latest ETH price in USD (8 decimals)
      * @return updatedAt Timestamp of when the price was last updated
      */
-    function getLatestETHPrice() external view virtual returns (uint256 price, uint256 updatedAt) {
+    function getLatestPrice(address priceFeedAddress) external view virtual returns (uint256 price, uint256 updatedAt) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(priceFeedAddress);
         (, int256 priceInt, , uint256 timestamp, ) = priceFeed.latestRoundData();
         require(priceInt > 0, "Invalid price from oracle");
         return (uint256(priceInt), timestamp);

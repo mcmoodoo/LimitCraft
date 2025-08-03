@@ -20,7 +20,8 @@ contract DeployTwapCalculator is Script {
         console.log("Using Chainlink ETH/USD price feed on Arbitrum:", 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612);
         
         // Verify the deployment by checking the latest ETH price
-        try twapCalculator.getLatestETHPrice() returns (uint256 price, uint256 updatedAt) {
+        address ethUsdPriceFeed = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
+        try twapCalculator.getLatestPrice(ethUsdPriceFeed) returns (uint256 price, uint256 updatedAt) {
             console.log("Latest ETH price:", price);
             console.log("Price last updated at:", updatedAt);
             console.log("Current timestamp:", block.timestamp);
