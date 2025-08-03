@@ -16,23 +16,23 @@ export type RouteParams = {
 
 export const ROUTE_METADATA = {
   [ROUTES.HOME]: {
-    title: 'Home - Orderly',
-    description: 'Decentralized orderbook trading platform',
+    title: 'Home - LimitCraft',
+    description: 'Advanced Limit Order Crafting Platform for DeFi',
   },
   [ROUTES.ORDERS.LIST]: {
-    title: 'My Orders - Orderly',
-    description: 'View and manage your limit orders',
+    title: 'My Orders - LimitCraft',
+    description: 'View and manage your crafted limit orders',
   },
   [ROUTES.ORDERS.CREATE]: {
-    title: 'Create Order - Orderly',
-    description: 'Create a new limit order with lending integration',
+    title: 'Craft Order - LimitCraft',
+    description: 'Craft a new limit order with advanced features',
   },
   [ROUTES.ORDERS.DETAIL]: {
-    title: 'Order Details - Orderly',
-    description: 'View detailed information about your order',
+    title: 'Order Details - LimitCraft',
+    description: 'View detailed information about your crafted order',
   },
   [ROUTES.WALLET.CONNECT]: {
-    title: 'Connect Wallet - Orderly',
-    description: 'Connect your wallet to start trading',
+    title: 'Connect Wallet - LimitCraft',
+    description: 'Connect your wallet to start crafting orders',
   },
 } as const;

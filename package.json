@@ -1,7 +1,7 @@
 {
-  "name": "orderly",
+  "name": "limitcraft",
   "version": "1.0.0",
-  "description": "Orderly - DEX Limit Order Platform on Arbitrum",
+  "description": "LimitCraft - Advanced Limit Order Crafting Platform for DeFi on Arbitrum",
   "private": true,
   "workspaces": [
     "api",
@@ -31,12 +31,14 @@
     "clean": "rm -rf node_modules bun.lockb api/node_modules api/bun.lockb db/node_modules db/bun.lockb resolver/node_modules resolver/bun.lockb ui/node_modules ui/bun.lockb ui/dist contracts/out contracts/cache api/dist resolver/dist .next .turbo .cache"
   },
   "keywords": [
-    "orderly",
+    "limitcraft",
     "limit-orders",
     "arbitrum",
     "defi",
     "orderbook",
-    "dex"
+    "dex",
+    "crafting",
+    "advanced-trading"
   ],
   "author": "",
   "license": "ISC",

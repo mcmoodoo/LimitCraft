@@ -13,11 +13,11 @@ export function Header() {
           to={navigationHelpers.toHome()}
           className="flex items-center gap-2 text-2xl font-bold hover:text-blue-400 transition-all duration-200 group"
         >
-          <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg group-hover:scale-110 transition-transform duration-200">
+          <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg group-hover:scale-110 transition-transform duration-200">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Orderly
+          <span className="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+            LimitCraft
           </span>
         </Link>
 

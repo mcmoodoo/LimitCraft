@@ -7,8 +7,8 @@ export default function HomePage() {
 
   return (
     <div className="text-center py-20">
-      <h2 className="text-4xl font-bold mb-4">Welcome to Orderly</h2>
-      <p className="text-xl text-gray-400 mb-8">Decentralized orderbook trading platform</p>
+      <h2 className="text-4xl font-bold mb-4">Welcome to LimitCraft</h2>
+      <p className="text-xl text-gray-400 mb-8">Advanced Limit Order Crafting Platform for DeFi</p>
 
       <div className="max-w-md mx-auto space-y-4">
         {isConnected ? (

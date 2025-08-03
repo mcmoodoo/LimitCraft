@@ -98,7 +98,7 @@ const app = new Elysia()
   })
   .get('/', () => ({
     status: 'ok',
-    message: 'Orderly API running',
+    message: 'LimitCraft API running',
     version: 'v1',
     timestamp: new Date().toISOString(),
   }))
