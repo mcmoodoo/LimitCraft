@@ -123,36 +123,81 @@ LimitCraft leverages multiple 1inch API endpoints to provide a seamless trading 
 
 ### Core API Endpoints Used
 
-| API Endpoint | Purpose | Implementation |
-|--------------|---------|----------------|
-| **Balance API** | Fetch user token balances | Real-time wallet balance display in UI token dropdowns |
-| **Token API** | Resolve token metadata | Token symbols, names, decimals, and logos for all supported assets |
-| **Price API** | Live market prices | Market rate calculations, order pricing, and USD value conversions |
-| **Limit Order Protocol** | Order creation & management | Core order signing, submission, and execution via smart contracts |
+| API Service | Endpoint | Purpose | Implementation |
+|-------------|----------|---------|----------------|
+| **Balance API** | `GET /balance/v1.2/{chainId}/balances/{address}` | Fetch user token balances | Real-time wallet balance display in UI dropdowns |
+| **Token API** | `GET /token/v1.4/{chainId}/custom/{tokenAddress}` | Resolve token metadata | Token symbols, names, decimals, logos for all assets |
+| **Price API** | `GET /price/v1.1/{chainId}/{tokenAddress}` | Live market prices | Market rate calculations and USD conversions |
+| **Price API (Bulk)** | `POST /price/v1.1/{chainId}` | Multiple token prices | Batch price fetching for trading pairs |
+| **Limit Order Protocol SDK** | Smart Contract Integration | Order management | EIP-712 signatures, extensions, Permit2 |
 
-### API Usage Details
+### Detailed Implementation
 
-**Balance API** (`/balance/{address}`)
-- Displays available token amounts in order creation form
-- Updates balances after successful transactions
-- Filters tokens with zero balances for cleaner UI
+**Balance API** (`https://api.1inch.dev/balance/v1.2/{chainId}/balances/{address}`)
+```typescript
+// Fetches all token balances for a wallet address
+const balancesResponse = await fetch(balancesUrl, {
+  headers: {
+    Authorization: `Bearer ${oneInchApiKey}`,
+    accept: 'application/json',
+  },
+});
+```
+- Filters tokens with non-zero balances
+- Displays available amounts in order creation form
+- Sorts tokens by balance value for better UX
 
-**Token API** (`/tokens/{chainId}`)
-- Populates token dropdowns with verified token metadata
-- Resolves token symbols and logos for order displays
-- Validates token addresses and decimals for calculations
+**Token Details API** (`https://api.1inch.dev/token/v1.4/{chainId}/custom/{tokenAddress}`)
+```typescript
+// Fetches metadata for each token with balances
+const detailsResponse = await fetch(detailsUrl, {
+  headers: {
+    Authorization: `Bearer ${oneInchApiKey}`,
+    accept: 'application/json',
+  },
+});
+```
+- Resolves token symbols, names, decimals, and logos
+- Validates token addresses for order creation
+- Handles edge cases (e.g., USDC_1 → USDC symbol fix)
 
-**Price API** (`/prices?token1={addr}&token2={addr}`)
-- Powers the market rate spectrum slider in order creation
-- Calculates USD values for user portfolio display
-- Enables smart price suggestions (market +3% for limit orders)
+**Price API** (`https://api.1inch.dev/price/v1.1/{chainId}/{tokenAddress}?currency=USD`)
+```typescript
+// Single token price (GET)
+const response = await fetch(
+  `https://api.1inch.dev/price/v1.1/${chainId}/${tokenAddress}?currency=USD`
+);
 
-**Limit Order Protocol SDK**
-- Creates EIP-712 compliant order signatures
-- Manages order extensions for TWAP and lending integrations
-- Handles Permit2 integration for gasless approvals
+// Multiple token prices (POST)
+const response = await fetch(`https://api.1inch.dev/price/v1.1/${chainId}`, {
+  method: 'POST',
+  body: JSON.stringify({
+    tokens: tokenAddresses,
+    currency: 'USD',
+  }),
+});
+```
+- Powers market rate spectrum slider in order creation
+- Calculates USD values for portfolio display
+- Implements fallback from GET to POST for reliability
 
-All API interactions are proxied through our backend service for API key management and rate limiting, ensuring reliable access to 1inch services.
+**Backend Proxy Architecture**
+- All 1inch API calls are proxied through our Elysia.js backend
+- Secure API key management with `Bearer` authentication
+- Rate limiting and error handling for production reliability
+- Fallback mechanisms (1inch → Moralis for token data)
+
+### Internal API Endpoints
+
+Our backend exposes these endpoints that utilize 1inch APIs:
+
+| Endpoint | 1inch API Used | Description |
+|----------|----------------|-------------|
+| `GET /api/v1/tokens/{address}?chainId={id}` | Balance + Token APIs | Combined token balances and metadata |
+| `GET /api/v1/prices?token1={addr}&token2={addr}` | Price API | Trading pair price data |
+| `POST /api/v1/orders` | LOP SDK | Order creation and storage |
+
+This architecture ensures secure, efficient access to 1inch services while maintaining optimal performance for our users.
 
 ## 🚀 Quick Start
 
