@@ -87,9 +87,9 @@ User now earns yield on ETH position
          ▼                       ▼
 ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
 │        On-Chain Infrastructure                                                              │
-│  ┌─────────────┐    ┌─────────────┐   ┌─────────────┐    ┌───────────────┐                  │
-│  │  1inch LOP  │    │ LimitCraft  │   │AAVE/Compound│    │Uniswap Permit2│                  │
-│  └─────────────┘    └─────────────┘   └─────────────┘    └───────────────┘                  │
+│  ┌─────────────┐    ┌─────────────────────────┐   ┌─────────────┐    ┌───────────────┐      │
+│  │  1inch LOP  │    │ LimitCraft Extenstions  │   │AAVE/Compound│    │Uniswap Permit2│      │
+│  └─────────────┘    └─────────────────────────┘   └─────────────┘    └───────────────┘      │
 └─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -174,6 +174,7 @@ VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_id
    - Price levels
    - Amount to trade
    - Enable lending integration
+   - Choose and configure TWAP
 4. **Review & Sign**: Check gas costs and sign transaction
 5. **Monitor Orders**: Track status in real-time dashboard
 6. **Claim Rewards**: Withdraw accumulated yield anytime
@@ -194,7 +195,6 @@ EmergencyPause.sol     // Circuit breaker mechanism
 
 - EIP-712 typed signatures for orders
 - Permit2 integration for gasless approvals
-- Upgradeable proxy pattern for future improvements
 - Comprehensive event logging for indexing
 
 ## 📈 Hackathon Achievements
@@ -202,7 +202,6 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ### Technical Innovation
 
 - ✅ First platform to integrate lending yields with limit orders
-- ✅ 60% gas cost reduction through innovative batching
 - ✅ Sub-second order matching algorithm
 - ✅ Cross-protocol yield optimization engine
 
@@ -215,10 +214,8 @@ EmergencyPause.sol     // Circuit breaker mechanism
 
 ### Scalability
 
-- ✅ Supports 10,000+ concurrent orders
-- ✅ Processes 500+ orders per second
 - ✅ Horizontal scaling architecture
-- ✅ Production deployment ready
+- ✅ Production deployment almost ready
 
 ## 🗺️ Future Roadmap
 
@@ -245,10 +242,8 @@ EmergencyPause.sol     // Circuit breaker mechanism
 
 ## 👥 Team
 
-- **Lead Developer**: [Your Name] - Smart Contract Architect
-- **Frontend Engineer**: [Name] - UI/UX Specialist
-- **Backend Engineer**: [Name] - Infrastructure Expert
-- **Product Designer**: [Name] - Experience Designer
+- **Lead Developer**: [Junta Okuda](https://github.com/junta) - Smart Contract Architect
+- **Lead Developer**: [Rashid Mak](https://github.com/mcmoodoo) - Smart Contract Engineer
 
 ## 🙏 Acknowledgments
 
@@ -260,13 +255,6 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 📜 License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
-
-## 📞 Contact
-
-- **Website**: [limitcraft.app](https://limitcraft.app)
-- **Twitter**: [@limitcraft](https://twitter.com/limitcraft)
-- **Discord**: [Join our community](https://discord.gg/limitcraft)
-- **Email**: team@limitcraft.app
 
 ---
 
