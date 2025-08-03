@@ -75,13 +75,13 @@ User now earns yield on ETH position
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   React UI      │────▶│   Elysia API    │────▶│  PostgreSQL DB  │
+│   React UI      │───▶│   Elysia API    │───▶│  PostgreSQL DB  │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │                         ▲
          │                       │                         │
          ▼                       ▼                         │
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Wagmi  Wallet  │     │ Order Resolver  │────▶│  Order Status   │
+│  Wagmi  Wallet  │     │ Order Resolver  │───▶│  Order Status   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │
          ▼                       ▼
