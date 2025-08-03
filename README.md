@@ -20,7 +20,15 @@
 1. Extend Limit Order Protocol
 2. Build a full Application using 1inch APIs
 
-**Demo**: [Live Demo](https://github.com/mcmoodoo/LimitCraft)
+**Demo**: [Live Demo](https://limit-craft-ui-ochy.vercel.app/)
+
+#### Sample transactions(Live Demo Trace):
+- PreInteraction + PostInteraction
+https://arbiscan.io/tx/0x3671c60f1aa96e61c8f984404cbf117c773ca8a257780e652593a9278ea393cc
+
+- TWAP Order(partial fill) + PreInteraction + PostInteraction
+https://arbiscan.io/tx/0x62e9e33f8502c4447b232b01bc65fe6df1b07ae68d436045a8cb7c37bce64de4
+
 
 ## 🚀 Overview
 
