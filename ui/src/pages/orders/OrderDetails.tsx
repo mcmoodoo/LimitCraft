@@ -3,8 +3,37 @@ import { Link, useParams } from 'react-router-dom';
 import { useChainId } from 'wagmi';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Progress } from '../../components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { navigationHelpers } from '../../router/navigation';
+import { 
+  ArrowLeft,
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  ArrowUpDown,
+  Calendar,
+  User,
+  Hash,
+  Copy,
+  ExternalLink,
+  TrendingUp,
+  DollarSign,
+  Activity,
+  Shield,
+  Code,
+  FileText,
+  Bot,
+  Zap,
+  AlertTriangle
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface OrderDetails {
   orderHash: string;
@@ -93,9 +122,7 @@ export default function OrderDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(
-    null
-  );
+  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
   const [tokenCache, setTokenCache] = useState<Record<string, TokenInfo>>({});
 
   // Get token info from cache or common tokens
@@ -116,46 +143,25 @@ export default function OrderDetails() {
         return tokenInfo;
       }
 
-      // Fetch from API as fallback
-      try {
-        const response = await fetch(
-          `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_ONE_INCH_API_KEY || ''}`,
-              accept: 'application/json',
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const tokenInfo: TokenInfo = {
-            symbol: data.symbol || 'UNKNOWN',
-            name: data.name || 'Unknown Token',
-            decimals: data.decimals || 18,
-            logoURI: data.logoURI,
-          };
-          setTokenCache((prev) => ({ ...prev, [normalizedAddress]: tokenInfo }));
-          return tokenInfo;
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch token info for ${tokenAddress}:`, error);
-      }
-
       // Default fallback
-      const defaultInfo: TokenInfo = {
-        symbol: 'UNKNOWN',
+      const defaultTokenInfo: TokenInfo = {
+        symbol: `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`,
         name: 'Unknown Token',
         decimals: 18,
       };
-      setTokenCache((prev) => ({ ...prev, [normalizedAddress]: defaultInfo }));
-      return defaultInfo;
+
+      setTokenCache((prev) => ({ ...prev, [normalizedAddress]: defaultTokenInfo }));
+      return defaultTokenInfo;
     },
-    [chainId, tokenCache]
+    [tokenCache, chainId]
   );
 
   const fetchOrder = useCallback(async () => {
+    if (!orderHash) return;
+
+    setLoading(true);
+    setError(null);
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/v1/orders/${orderHash}`
@@ -165,13 +171,9 @@ export default function OrderDetails() {
       if (result.success) {
         setOrder(result.data);
 
-        // Pre-fetch token info for maker and taker assets
-        if (result.data.data.makerAsset) {
-          await getTokenInfo(result.data.data.makerAsset);
-        }
-        if (result.data.data.takerAsset) {
-          await getTokenInfo(result.data.data.takerAsset);
-        }
+        // Pre-fetch token info
+        await getTokenInfo(result.data.data.makerAsset);
+        await getTokenInfo(result.data.data.takerAsset);
       } else {
         setError(result.error);
       }
@@ -183,38 +185,46 @@ export default function OrderDetails() {
   }, [orderHash, getTokenInfo]);
 
   useEffect(() => {
-    if (orderHash) {
-      fetchOrder();
-    }
-  }, [orderHash, fetchOrder]);
+    fetchOrder();
+  }, [fetchOrder]);
 
-  const getStatusText = (order: OrderDetails) => {
-    switch (order.status) {
+  const getStatusConfig = (status: OrderDetails['status']) => {
+    switch (status) {
       case 'pending':
-        return 'Pending';
+        return {
+          icon: Clock,
+          label: 'Pending',
+          color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+          bgColor: 'from-yellow-900/20 to-yellow-800/10'
+        };
       case 'filled':
-        return 'Filled';
+        return {
+          icon: CheckCircle,
+          label: 'Filled',
+          color: 'bg-green-500/10 text-green-500 border-green-500/20',
+          bgColor: 'from-green-900/20 to-green-800/10'
+        };
       case 'cancelled':
-        return 'Cancelled';
+        return {
+          icon: XCircle,
+          label: 'Cancelled',
+          color: 'bg-red-500/10 text-red-500 border-red-500/20',
+          bgColor: 'from-red-900/20 to-red-800/10'
+        };
       case 'expired':
-        return 'Expired';
+        return {
+          icon: AlertCircle,
+          label: 'Expired',
+          color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+          bgColor: 'from-gray-900/20 to-gray-800/10'
+        };
       default:
-        return 'Unknown';
-    }
-  };
-
-  const getStatusColor = (order: OrderDetails) => {
-    switch (order.status) {
-      case 'pending':
-        return 'text-green-400 bg-green-900/20';
-      case 'filled':
-        return 'text-blue-400 bg-blue-900/20';
-      case 'cancelled':
-        return 'text-red-400 bg-red-900/20';
-      case 'expired':
-        return 'text-yellow-400 bg-yellow-900/20';
-      default:
-        return 'text-gray-400 bg-gray-900/20';
+        return {
+          icon: AlertCircle,
+          label: 'Unknown',
+          color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+          bgColor: 'from-gray-900/20 to-gray-800/10'
+        };
     }
   };
 
@@ -222,14 +232,12 @@ export default function OrderDetails() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // Format amount with proper decimals
   const formatAmount = useCallback(
     (amount: string, tokenAddress: string): string => {
       const normalizedAddress = tokenAddress.toLowerCase();
       const tokenInfo = tokenCache[normalizedAddress];
 
       if (!tokenInfo) {
-        // If we don't have token info yet, use 18 decimals as default
         const num = BigInt(amount);
         return (Number(num) / 1e18).toFixed(6);
       }
@@ -239,7 +247,6 @@ export default function OrderDetails() {
       const num = BigInt(amount);
       const result = Number(num) / divisor;
 
-      // Format based on the size of the number
       if (result === 0) return '0';
       if (result < 0.000001) return '<0.000001';
       if (result < 1) return result.toFixed(Math.min(6, decimals));
@@ -250,7 +257,6 @@ export default function OrderDetails() {
     [tokenCache]
   );
 
-  // Get token symbol and name
   const getTokenDisplay = useCallback(
     (tokenAddress: string): { symbol: string; name: string; logoURI?: string } => {
       const normalizedAddress = tokenAddress.toLowerCase();
@@ -265,8 +271,12 @@ export default function OrderDetails() {
     [tokenCache]
   );
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
   };
 
   const cancelOrder = async () => {
@@ -287,13 +297,11 @@ export default function OrderDetails() {
       );
 
       const result = await response.json();
-      console.log('Cancel result:', result); // Debug log
       setCancelResult({
         success: result.success,
         message: result.success ? result.message : result.error,
       });
 
-      // If successful, refresh the order to update status
       if (result.success) {
         setTimeout(() => {
           fetchOrder();
@@ -311,9 +319,24 @@ export default function OrderDetails() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/5 via-gray-900 to-purple-900/5" />
+        <div className="relative max-w-6xl mx-auto px-4 py-8">
+          <div className="mb-8">
+            <Skeleton className="h-8 w-32 mb-4" />
+            <Skeleton className="h-12 w-96 mb-6" />
+            <Skeleton className="h-48 mb-6" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-64" />
+              <Skeleton className="h-48" />
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-32" />
+              <Skeleton className="h-48" />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -321,26 +344,35 @@ export default function OrderDetails() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <Alert variant="destructive" className="max-w-md mx-auto mt-12">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <AlertDescription>
-            <span className="font-semibold">Error</span>
-            <br />
-            {error}
-          </AlertDescription>
-        </Alert>
-        <div className="text-center mt-6">
-          <Button asChild variant="outline">
-            <Link to={navigationHelpers.toOrders()}>← Back to Orders</Link>
-          </Button>
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/5 via-gray-900 to-purple-900/5" />
+        <div className="relative max-w-6xl mx-auto px-4 py-20">
+          <Card className="max-w-md mx-auto bg-red-900/20 border-red-500/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-400">
+                <XCircle className="w-5 h-5" />
+                Error Loading Order
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-red-300">{error}</p>
+              <div className="flex gap-3">
+                <Button 
+                  onClick={fetchOrder} 
+                  variant="outline" 
+                  className="flex-1 border-red-500 text-red-400 hover:bg-red-500/10"
+                >
+                  Try Again
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                  <Link to={navigationHelpers.toOrders()}>
+                    <ArrowLeft className="mr-2 w-4 h-4" />
+                    Back
+                  </Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -348,718 +380,500 @@ export default function OrderDetails() {
 
   if (!order) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center py-12">
-          <svg
-            className="w-16 h-16 text-gray-400 mx-auto mb-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <p className="text-gray-400 text-lg mb-6">Order not found</p>
-          <Button asChild>
-            <Link to={navigationHelpers.toOrders()}>← Back to Orders</Link>
-          </Button>
+      <div className="relative min-h-screen">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/5 via-gray-900 to-purple-900/5" />
+        <div className="relative max-w-6xl mx-auto px-4 py-20">
+          <Card className="max-w-md mx-auto bg-gray-900/50 border-gray-800">
+            <CardContent className="p-12 text-center">
+              <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-gray-500/20 to-gray-600/20 rounded-2xl flex items-center justify-center">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Order Not Found</h3>
+              <p className="text-gray-400 mb-6">
+                The order you're looking for doesn't exist or has been removed.
+              </p>
+              <Button asChild className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                <Link to={navigationHelpers.toOrders()}>
+                  <ArrowLeft className="mr-2 w-4 h-4" />
+                  Back to Orders
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
-  // Helper function to decode extension data
-  const decodeExtension = (extensionHex: string) => {
-    if (!extensionHex || extensionHex === '0x') return null;
-
-    try {
-      // Simple hex string decode for display purposes
-      return {
-        hex: extensionHex,
-        length: extensionHex.length,
-        data: extensionHex.slice(0, 100) + (extensionHex.length > 100 ? '...' : ''),
-      };
-    } catch {
-      return { hex: extensionHex, data: 'Unable to decode' };
-    }
-  };
+  const statusConfig = getStatusConfig(order.status);
+  const StatusIcon = statusConfig.icon;
+  const fillPercentage = ((Number(order.data.makingAmount) - Number(order.remainingMakerAmount)) / Number(order.data.makingAmount)) * 100;
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center mb-3">
-        <Button variant="outline" size="sm" asChild className="mr-4">
-          <Link to={navigationHelpers.toOrders()}>
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Back to Orders
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold">Order Details</h1>
-      </div>
-
-      {/* Header Card with Order Status and Basic Info */}
-      <div className="bg-gray-800 rounded-lg border border-gray-600 p-6 mb-6">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h2 className="text-xl font-semibold text-white mb-2">
-              Order #{formatAddress(order.orderHash)}
-            </h2>
-            <div className="flex items-center space-x-4">
-              <div
-                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order)}`}
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                {getStatusText(order)}
-              </div>
-              <span className="flex items-center gap-1 text-gray-400 text-sm">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                {new Date(order.createDateTime).toLocaleString()}
-              </span>
-            </div>
-          </div>
-          {order.orderInvalidReason && (
-            <Alert variant="destructive" className="max-w-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <AlertDescription>
-                <span className="font-semibold">Order Issue:</span>
-                <br />
-                {order.orderInvalidReason}
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Token Trading Details */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Making & Taking Assets */}
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-                />
-              </svg>
-              Token Exchange
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Making (Sell) */}
-              <div className="border border-gray-600 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-green-400 text-sm font-medium mb-3">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                  You Sell
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {getTokenDisplay(order.data.makerAsset).logoURI && (
-                      <img
-                        src={getTokenDisplay(order.data.makerAsset).logoURI}
-                        alt={getTokenDisplay(order.data.makerAsset).symbol}
-                        className="w-6 h-6 rounded-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                    <div>
-                      <div className="text-2xl font-bold text-white">
-                        {formatAmount(order.data.makingAmount, order.data.makerAsset)}{' '}
-                        {getTokenDisplay(order.data.makerAsset).symbol}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {getTokenDisplay(order.data.makerAsset).name}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 font-mono">
-                    {formatAddress(order.data.makerAsset)}
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(order.data.makerAsset)}
-                      className="ml-2 text-blue-400 hover:text-blue-300"
-                    >
-                      📋
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Taking (Buy) */}
-              <div className="border border-gray-600 rounded-lg p-4">
-                <div className="flex items-center gap-2 text-blue-400 text-sm font-medium mb-3">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 10l7-7m0 0l7 7m-7-7v18"
-                    />
-                  </svg>
-                  You Buy
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {getTokenDisplay(order.data.takerAsset).logoURI && (
-                      <img
-                        src={getTokenDisplay(order.data.takerAsset).logoURI}
-                        alt={getTokenDisplay(order.data.takerAsset).symbol}
-                        className="w-6 h-6 rounded-full"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    )}
-                    <div>
-                      <div className="text-2xl font-bold text-white">
-                        {formatAmount(order.data.takingAmount, order.data.takerAsset)}{' '}
-                        {getTokenDisplay(order.data.takerAsset).symbol}
-                      </div>
-                      <div className="text-sm text-gray-400">
-                        {getTokenDisplay(order.data.takerAsset).name}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 font-mono">
-                    {formatAddress(order.data.takerAsset)}
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(order.data.takerAsset)}
-                      className="ml-2 text-blue-400 hover:text-blue-300"
-                    >
-                      📋
-                    </button>
-                  </div>
-                </div>
+    <TooltipProvider>
+      <div className="relative min-h-screen">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/5 via-gray-900 to-purple-900/5" />
+        
+        <div className="relative max-w-6xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" asChild className="border-gray-700">
+                <Link to={navigationHelpers.toOrders()}>
+                  <ArrowLeft className="mr-2 w-4 h-4" />
+                  Back to Orders
+                </Link>
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Order Details</h1>
+                <p className="text-gray-400">#{formatAddress(order.orderHash)}</p>
               </div>
             </div>
-
-            {/* Exchange Rate */}
-            <div className="mt-4 p-3 bg-gray-700 rounded-lg">
-              <Label className="text-sm font-medium text-gray-300">Exchange Rate</Label>
-              <div className="text-lg font-semibold text-white mt-1">
-                1 {getTokenDisplay(order.data.makerAsset).symbol} ={' '}
-                {(
-                  Number(
-                    formatAmount(order.data.takingAmount, order.data.takerAsset).replace(
-                      /[^\d.-]/g,
-                      ''
-                    )
-                  ) /
-                  Number(
-                    formatAmount(order.data.makingAmount, order.data.makerAsset).replace(
-                      /[^\d.-]/g,
-                      ''
-                    )
-                  )
-                ).toFixed(6)}{' '}
-                {getTokenDisplay(order.data.takerAsset).symbol}
-              </div>
-            </div>
-          </div>
-
-          {/* Order Progress */}
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4"
-                />
-              </svg>
-              Order Progress
-            </h3>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Total Amount</span>
-                <span className="font-semibold text-white">
-                  {formatAmount(order.data.makingAmount, order.data.makerAsset)}{' '}
-                  {getTokenDisplay(order.data.makerAsset).symbol}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Remaining</span>
-                <span className="font-semibold text-white">
-                  {formatAmount(order.remainingMakerAmount, order.data.makerAsset)}{' '}
-                  {getTokenDisplay(order.data.makerAsset).symbol}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Filled</span>
-                <span className="font-semibold text-white">
-                  {formatAmount(
-                    (
-                      BigInt(order.data.makingAmount) - BigInt(order.remainingMakerAmount)
-                    ).toString(),
-                    order.data.makerAsset
-                  )}{' '}
-                  {getTokenDisplay(order.data.makerAsset).symbol}
-                </span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Progress</span>
-                  <span className="text-white font-medium">
-                    {(
-                      ((Number(order.data.makingAmount) - Number(order.remainingMakerAmount)) /
-                        Number(order.data.makingAmount)) *
-                      100
-                    ).toFixed(2)}
-                    %
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${((Number(order.data.makingAmount) - Number(order.remainingMakerAmount)) / Number(order.data.makingAmount)) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Information Sidebar */}
-        <div className="space-y-6">
-          {/* Basic Order Info */}
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              Order Info
-            </h3>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs text-gray-400">Order Hash</Label>
-                <div className="flex items-center mt-1">
-                  <span className="font-mono text-sm text-white">
-                    {formatAddress(order.orderHash)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(order.orderHash)}
-                    className="ml-2 text-blue-400 hover:text-blue-300"
-                  >
-                    📋
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-gray-400">Maker</Label>
-                <div className="flex items-center mt-1">
-                  <span className="font-mono text-sm text-white">
-                    {formatAddress(order.data.maker)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(order.data.maker)}
-                    className="ml-2 text-blue-400 hover:text-blue-300"
-                  >
-                    📋
-                  </button>
-                </div>
-              </div>
-
-              {order.data.taker && (
-                <div>
-                  <Label className="text-xs text-gray-400">Taker</Label>
-                  <div className="flex items-center mt-1">
-                    <span className="font-mono text-sm text-white">
-                      {formatAddress(order.data.taker)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(order.data.taker!)}
-                      className="ml-2 text-blue-400 hover:text-blue-300"
-                    >
-                      📋
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {order.data.receiver && (
-                <div>
-                  <Label className="text-xs text-gray-400">Receiver</Label>
-                  <div className="flex items-center mt-1">
-                    <span className="font-mono text-sm text-white">
-                      {formatAddress(order.data.receiver)}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => copyToClipboard(order.data.receiver!)}
-                      className="ml-2 text-blue-400 hover:text-blue-300"
-                    >
-                      📋
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {order.data.salt && (
-                <div>
-                  <Label className="text-xs text-gray-400">Salt</Label>
-                  <div className="mt-1">
-                    <span className="font-mono text-sm text-white">
-                      {formatAddress(order.data.salt)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <Label className="text-xs text-gray-400">Chain ID</Label>
-                <div className="mt-1">
-                  <span className="text-sm text-white">{order.chainId || chainId}</span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-gray-400">Is Maker Contract</Label>
-                <div className="mt-1">
-                  <span
-                    className={`text-sm ${order.isMakerContract ? 'text-green-400' : 'text-red-400'}`}
-                  >
-                    {order.isMakerContract ? 'Yes' : 'No'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Rates & Balance Info */}
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 7h6m0 10v-3m-3-3h3m0 0V7.5a1.5 1.5 0 00-1.5-1.5H13.5a1.5 1.5 0 00-1.5 1.5v0"
-                />
-              </svg>
-              Rates & Balance
-            </h3>
-
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs text-gray-400">Maker Rate</Label>
-                <div className="mt-1">
-                  <span className="text-sm font-semibold text-white">
-                    {parseFloat(order.makerRate).toFixed(6)}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-gray-400">Taker Rate</Label>
-                <div className="mt-1">
-                  <span className="text-sm font-semibold text-white">
-                    {parseFloat(order.takerRate).toFixed(6)}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-gray-400">Maker Balance</Label>
-                <div className="mt-1">
-                  <span className="text-sm text-white">
-                    {formatAmount(order.makerBalance, order.data.makerAsset)}{' '}
-                    {getTokenDisplay(order.data.makerAsset).symbol}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs text-gray-400">Maker Allowance</Label>
-                <div className="mt-1">
-                  <span className="text-sm text-white">
-                    {formatAmount(order.makerAllowance, order.data.makerAsset)}{' '}
-                    {getTokenDisplay(order.data.makerAsset).symbol}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Technical Details Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Maker Traits */}
-        {order.makerTraits && (
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              Maker Traits
-            </h3>
-            <div className="bg-gray-900 rounded-lg p-4">
-              <Label className="text-xs text-gray-400">Raw Data</Label>
-              <p className="font-mono text-sm text-gray-300 break-all mt-1">{order.makerTraits}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Extension Data */}
-        {order.extension && decodeExtension(order.extension) && (
-          <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a1 1 0 01-1-1V9a1 1 0 011-1h1a2 2 0 100-4H4a1 1 0 01-1-1V4a1 1 0 011-1h3a1 1 0 011-1v1z"
-                />
-              </svg>
-              Extension Data
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <Label className="text-xs text-gray-400">Length</Label>
-                <div className="mt-1">
-                  <span className="text-sm text-white">
-                    {decodeExtension(order.extension)?.length} characters
-                  </span>
-                </div>
-              </div>
-              <div className="bg-gray-900 rounded-lg p-4">
-                <Label className="text-xs text-gray-400">Hex Data</Label>
-                <p className="font-mono text-sm text-gray-300 break-all mt-1">
-                  {decodeExtension(order.extension)?.data}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Signature Section */}
-      <div className="bg-gray-800 rounded-lg border border-gray-600 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Digital Signature
-        </h3>
-        <div className="bg-gray-900 rounded-lg p-4">
-          <div className="flex justify-between items-center mb-2">
-            <Label className="text-xs text-gray-400">Signature Hash</Label>
-            <button
-              type="button"
-              onClick={() => copyToClipboard(order.signature)}
-              className="text-blue-400 hover:text-blue-300 text-xs"
-            >
-              Copy Full Signature
-            </button>
-          </div>
-          <p className="font-mono text-sm text-gray-300 break-all">{order.signature}</p>
-        </div>
-      </div>
-
-      {/* TypedData Section (if available) */}
-      {order.typedData && (
-        <div className="bg-gray-800 rounded-lg border border-gray-600 p-6 mb-6">
-          <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-            EIP-712 Typed Data
-          </h3>
-          <div className="bg-gray-900 rounded-lg p-4">
-            <pre className="text-sm text-gray-300 overflow-x-auto">
-              {JSON.stringify(order.typedData, null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {/* Resolver Profitability Section */}
-      <div className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-        <h3 className="text-lg font-semibold mb-3">Resolver Analysis</h3>
-        <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 rounded-lg p-6 border border-purple-500/20">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h4 className="text-lg font-medium text-purple-300 mb-1">
-                🤖 Resolver Profitability
-              </h4>
-              <p className="text-sm text-gray-400">Analysis for resolver: 0xf39F...2266</p>
-            </div>
-            {order.status === 'pending' && (
-              <div className="flex space-x-3">
-                <button
-                  type="button"
+            
+            <div className="flex items-center gap-3">
+              <Badge className={cn("gap-2 px-4 py-2", statusConfig.color)}>
+                <StatusIcon className="w-4 h-4" />
+                {statusConfig.label}
+              </Badge>
+              {order.status === 'pending' && (
+                <Button 
                   onClick={cancelOrder}
                   disabled={cancelling}
-                  className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                    cancelling
-                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  }`}
+                  variant="outline"
+                  className="border-red-500 text-red-400 hover:bg-red-500/10"
                 >
-                  {cancelling ? '⏳ Cancelling...' : '❌ Cancel Order'}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="text-sm text-gray-400 mb-1">Estimated Profit</div>
-              <div className="text-xl font-bold text-green-400">+0.0245 ETH</div>
-              <div className="text-xs text-gray-500">~$82.50 USD</div>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="text-sm text-gray-400 mb-1">Gas Cost</div>
-              <div className="text-xl font-bold text-yellow-400">~0.0021 ETH</div>
-              <div className="text-xs text-gray-500">~$7.10 USD</div>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-4">
-              <div className="text-sm text-gray-400 mb-1">Net Profit</div>
-              <div className="text-xl font-bold text-blue-400">+0.0224 ETH</div>
-              <div className="text-xs text-gray-500">~$75.40 USD</div>
+                  {cancelling ? 'Cancelling...' : 'Cancel Order'}
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-4 text-sm">
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-green-400"></div>
-              <span className="text-green-400">Profitable</span>
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            {/* Left Column - Main Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Order Overview */}
+              <Card className={cn("border-gray-800 bg-gradient-to-br", statusConfig.bgColor)}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ArrowUpDown className="w-5 h-5" />
+                    Trade Overview
+                  </CardTitle>
+                  <CardDescription>
+                    Created on {new Date(order.createDateTime).toLocaleString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* You Pay */}
+                    <div>
+                      <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium mb-3">
+                        <ArrowUpDown className="w-4 h-4" />
+                        You Pay
+                      </div>
+                      <Card className="bg-gray-800/50 border-gray-700">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full flex items-center justify-center">
+                              <span className="text-emerald-400 font-bold text-sm">
+                                {getTokenDisplay(order.data.makerAsset).symbol.slice(0, 3)}
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xl font-bold">
+                                {formatAmount(order.data.makingAmount, order.data.makerAsset)}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                {getTokenDisplay(order.data.makerAsset).symbol}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {getTokenDisplay(order.data.makerAsset).name}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* You Get */}
+                    <div>
+                      <div className="flex items-center gap-2 text-cyan-400 text-sm font-medium mb-3">
+                        <ArrowUpDown className="w-4 h-4 rotate-180" />
+                        You Get
+                      </div>
+                      <Card className="bg-gray-800/50 border-gray-700">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full flex items-center justify-center">
+                              <span className="text-cyan-400 font-bold text-sm">
+                                {getTokenDisplay(order.data.takerAsset).symbol.slice(0, 3)}
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-xl font-bold">
+                                {formatAmount(order.data.takingAmount, order.data.takerAsset)}
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                {getTokenDisplay(order.data.takerAsset).symbol}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {getTokenDisplay(order.data.takerAsset).name}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Order Progress */}
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Order Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">Progress</span>
+                    <span className="font-medium">{fillPercentage.toFixed(2)}% Filled</span>
+                  </div>
+                  <Progress value={fillPercentage} className="h-3" />
+                  
+                  <div className="grid grid-cols-3 gap-4 pt-4">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-gray-300">
+                        {formatAmount(order.data.makingAmount, order.data.makerAsset)}
+                      </div>
+                      <div className="text-xs text-gray-500">Total Amount</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-400">
+                        {formatAmount((BigInt(order.data.makingAmount) - BigInt(order.remainingMakerAmount)).toString(), order.data.makerAsset)}
+                      </div>
+                      <div className="text-xs text-gray-500">Filled</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-yellow-400">
+                        {formatAmount(order.remainingMakerAmount, order.data.makerAsset)}
+                      </div>
+                      <div className="text-xs text-gray-500">Remaining</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Exchange Rate */}
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5" />
+                    Exchange Rate
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <div className="text-2xl font-bold mb-2">
+                      1 {getTokenDisplay(order.data.makerAsset).symbol} = {' '}
+                      {(
+                        Number(formatAmount(order.data.takingAmount, order.data.takerAsset).replace(/[^\d.-]/g, '')) /
+                        Number(formatAmount(order.data.makingAmount, order.data.makerAsset).replace(/[^\d.-]/g, ''))
+                      ).toFixed(6)} {getTokenDisplay(order.data.takerAsset).symbol}
+                    </div>
+                    <div className="text-sm text-gray-400">
+                      Rate based on order amounts
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="text-gray-400">
-              ROI: <span className="text-white font-medium">1,067%</span>
-            </div>
-            <div className="text-gray-400">
-              Profit Margin: <span className="text-white font-medium">91.4%</span>
+
+            {/* Right Column - Sidebar */}
+            <div className="space-y-6">
+              {/* Order Information */}
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Hash className="w-5 h-5" />
+                    Order Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Order Hash</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm flex-1">{formatAddress(order.orderHash)}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => copyToClipboard(order.orderHash)}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Copy full hash</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Maker</div>
+                    <div className="flex items-center gap-2">
+                      <User className="w-3 h-3 text-gray-500" />
+                      <span className="font-mono text-sm flex-1">{formatAddress(order.data.maker)}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => copyToClipboard(order.data.maker)}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Copy address</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Chain ID</div>
+                    <div className="text-sm">{order.chainId || chainId}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Is Contract</div>
+                    <Badge variant={order.isMakerContract ? "default" : "secondary"}>
+                      {order.isMakerContract ? 'Yes' : 'No'}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Balance & Allowance */}
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5" />
+                    Balance Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Maker Balance</div>
+                    <div className="text-sm font-medium">
+                      {formatAmount(order.makerBalance, order.data.makerAsset)} {getTokenDisplay(order.data.makerAsset).symbol}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Allowance</div>
+                    <div className="text-sm font-medium">
+                      {formatAmount(order.makerAllowance, order.data.makerAsset)} {getTokenDisplay(order.data.makerAsset).symbol}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Maker Rate</div>
+                    <div className="text-sm font-medium">{parseFloat(order.makerRate).toFixed(6)}</div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Taker Rate</div>
+                    <div className="text-sm font-medium">{parseFloat(order.takerRate).toFixed(6)}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Order Issues */}
+              {order.orderInvalidReason && (
+                <Card className="bg-red-900/20 border-red-500/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-400">
+                      <AlertTriangle className="w-5 h-5" />
+                      Order Issue
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-red-300 text-sm">{order.orderInvalidReason}</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
 
-          {order.status !== 'pending' && (
-            <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/20 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <span className="text-yellow-400">⚠️</span>
-                <span className="text-yellow-200 text-sm">
-                  Order Status: {getStatusText(order)}
-                </span>
-              </div>
-            </div>
-          )}
+          {/* Technical Details Tabs */}
+          <Tabs defaultValue="technical" className="mb-6">
+            <TabsList className="grid w-full grid-cols-4 bg-gray-900/50">
+              <TabsTrigger value="technical">Technical</TabsTrigger>
+              <TabsTrigger value="signature">Signature</TabsTrigger>
+              <TabsTrigger value="typed-data">Typed Data</TabsTrigger>
+              <TabsTrigger value="resolver">Resolver</TabsTrigger>
+            </TabsList>
 
-          {cancelResult && (
-            <div
-              className={`mt-4 p-4 rounded-lg border ${
-                cancelResult.success
-                  ? 'bg-orange-900/30 border-orange-500/50'
-                  : 'bg-red-900/30 border-red-500/50'
-              }`}
-            >
-              <div className="flex items-start space-x-3">
-                <span
-                  className={`text-xl ${cancelResult.success ? 'text-orange-400' : 'text-red-400'}`}
-                >
-                  {cancelResult.success ? '🚫' : '❌'}
-                </span>
-                <div className="flex-1">
-                  <p
-                    className={`font-medium ${cancelResult.success ? 'text-orange-100' : 'text-red-100'}`}
-                  >
-                    {cancelResult.success ? 'Order Cancelled!' : 'Cancel Failed'}
-                  </p>
-                  <p
-                    className={`text-sm mt-1 ${cancelResult.success ? 'text-orange-200' : 'text-red-200'}`}
-                  >
-                    {cancelResult.message}
-                  </p>
-                </div>
+            <TabsContent value="technical" className="mt-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                {order.makerTraits && (
+                  <Card className="bg-gray-900/50 border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Shield className="w-5 h-5" />
+                        Maker Traits
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-gray-800 rounded-lg p-4">
+                        <code className="text-sm text-gray-300 break-all">{order.makerTraits}</code>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {order.extension && (
+                  <Card className="bg-gray-900/50 border-gray-800">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Code className="w-5 h-5" />
+                        Extension Data
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-gray-800 rounded-lg p-4">
+                        <div className="text-xs text-gray-400 mb-2">Length: {order.extension.length} chars</div>
+                        <code className="text-sm text-gray-300 break-all">
+                          {order.extension.slice(0, 100)}{order.extension.length > 100 ? '...' : ''}
+                        </code>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
-            </div>
-          )}
+            </TabsContent>
+
+            <TabsContent value="signature" className="mt-6">
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Digital Signature
+                  </CardTitle>
+                  <CardDescription>
+                    Cryptographic proof of order authorization
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-800 rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs text-gray-400">Signature Hash</span>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => copyToClipboard(order.signature)}
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <code className="text-sm text-gray-300 break-all">{order.signature}</code>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="typed-data" className="mt-6">
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    EIP-712 Typed Data
+                  </CardTitle>
+                  <CardDescription>
+                    Structured data used for signature generation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {order.typedData ? (
+                    <div className="bg-gray-800 rounded-lg p-4">
+                      <pre className="text-sm text-gray-300 overflow-x-auto">
+                        {JSON.stringify(order.typedData, null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      No typed data available for this order
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="resolver" className="mt-6">
+              <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-purple-300">
+                    <Bot className="w-5 h-5" />
+                    Resolver Analysis
+                  </CardTitle>
+                  <CardDescription>
+                    Automated execution profitability analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-400 mb-1">+0.0245 ETH</div>
+                      <div className="text-xs text-gray-400">Estimated Profit</div>
+                      <div className="text-xs text-gray-500">~$82.50 USD</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-400 mb-1">0.0021 ETH</div>
+                      <div className="text-xs text-gray-400">Gas Cost</div>
+                      <div className="text-xs text-gray-500">~$7.10 USD</div>
+                    </div>
+                    <div className="bg-gray-800/50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-400 mb-1">+0.0224 ETH</div>
+                      <div className="text-xs text-gray-400">Net Profit</div>
+                      <div className="text-xs text-gray-500">~$75.40 USD</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                      <span className="text-green-400">Profitable</span>
+                    </div>
+                    <div className="text-gray-400">
+                      ROI: <span className="text-white font-medium">1,067%</span>
+                    </div>
+                    <div className="text-gray-400">
+                      Margin: <span className="text-white font-medium">91.4%</span>
+                    </div>
+                  </div>
+
+                  {cancelResult && (
+                    <Alert className={cn("mt-4", cancelResult.success ? "border-green-500/50 bg-green-500/10" : "border-red-500/50 bg-red-500/10")}>
+                      <AlertCircle className="w-4 h-4" />
+                      <AlertDescription>
+                        <span className="font-semibold">
+                          {cancelResult.success ? 'Order Cancelled!' : 'Cancel Failed'}
+                        </span>
+                        <br />
+                        {cancelResult.message}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

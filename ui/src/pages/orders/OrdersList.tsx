@@ -1,9 +1,34 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useChainId } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Alert, AlertDescription } from '../../components/ui/alert';
 import { Button } from '../../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Skeleton } from '../../components/ui/skeleton';
+import { Progress } from '../../components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/tooltip';
 import { navigationHelpers } from '../../router/navigation';
+import { 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  AlertCircle,
+  ArrowRight,
+  ArrowUpDown,
+  Calendar,
+  User,
+  Wallet,
+  TrendingUp,
+  Sparkles,
+  Plus,
+  Filter,
+  RefreshCw,
+  Eye
+} from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface Order {
   orderHash: string;
@@ -82,6 +107,7 @@ export default function OrdersList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tokenCache, setTokenCache] = useState<Record<string, TokenInfo>>({});
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'filled' | 'cancelled' | 'expired'>('all');
 
   // Get token info from cache or common tokens
   const getTokenInfo = useCallback(
@@ -101,52 +127,27 @@ export default function OrdersList() {
         return tokenInfo;
       }
 
-      // Fetch from API as fallback
-      try {
-        const response = await fetch(
-          `https://api.1inch.dev/token/v1.4/${chainId}/custom/${tokenAddress}`,
-          {
-            headers: {
-              Authorization: `Bearer ${process.env.REACT_APP_ONE_INCH_API_KEY || ''}`,
-              accept: 'application/json',
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const tokenInfo: TokenInfo = {
-            symbol: data.symbol || 'UNKNOWN',
-            name: data.name || 'Unknown Token',
-            decimals: data.decimals || 18,
-            logoURI: data.logoURI,
-          };
-          setTokenCache((prev) => ({ ...prev, [normalizedAddress]: tokenInfo }));
-          return tokenInfo;
-        }
-      } catch (error) {
-        console.warn(`Failed to fetch token info for ${tokenAddress}:`, error);
-      }
-
       // Default fallback
-      const defaultInfo: TokenInfo = {
-        symbol: 'UNKNOWN',
+      const defaultTokenInfo: TokenInfo = {
+        symbol: `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`,
         name: 'Unknown Token',
         decimals: 18,
       };
-      setTokenCache((prev) => ({ ...prev, [normalizedAddress]: defaultInfo }));
-      return defaultInfo;
+
+      setTokenCache((prev) => ({ ...prev, [normalizedAddress]: defaultTokenInfo }));
+      return defaultTokenInfo;
     },
-    [chainId, tokenCache]
+    [tokenCache, chainId]
   );
 
   const fetchOrders = useCallback(async () => {
-    // Don't fetch orders if wallet is not connected
     if (!isConnected || !address) {
-      setOrders([]);
       setLoading(false);
       return;
     }
+
+    setLoading(true);
+    setError(null);
 
     try {
       const url = new URL(
@@ -185,118 +186,43 @@ export default function OrdersList() {
     fetchOrders();
   }, [fetchOrders]);
 
-  const getStatusText = (order: Order) => {
-    switch (order.status) {
+  const getStatusConfig = (status: Order['status']) => {
+    switch (status) {
       case 'pending':
-        return 'Pending';
+        return {
+          icon: Clock,
+          label: 'Pending',
+          color: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
+          progress: 0
+        };
       case 'filled':
-        return 'Filled';
+        return {
+          icon: CheckCircle,
+          label: 'Filled',
+          color: 'bg-green-500/10 text-green-500 border-green-500/20',
+          progress: 100
+        };
       case 'cancelled':
-        return 'Cancelled';
+        return {
+          icon: XCircle,
+          label: 'Cancelled',
+          color: 'bg-red-500/10 text-red-500 border-red-500/20',
+          progress: 0
+        };
       case 'expired':
-        return 'Expired';
+        return {
+          icon: AlertCircle,
+          label: 'Expired',
+          color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+          progress: 0
+        };
       default:
-        return 'Unknown';
-    }
-  };
-
-  const getStatusColor = (order: Order) => {
-    switch (order.status) {
-      case 'pending':
-        return 'text-green-400 bg-green-900/20 border-green-500';
-      case 'filled':
-        return 'text-blue-400 bg-blue-900/20 border-blue-500';
-      case 'cancelled':
-        return 'text-red-400 bg-red-900/20 border-red-500';
-      case 'expired':
-        return 'text-yellow-400 bg-yellow-900/20 border-yellow-500';
-      default:
-        return 'text-gray-400 bg-gray-900/20 border-gray-500';
-    }
-  };
-
-  const getStatusIcon = (order: Order) => {
-    switch (order.status) {
-      case 'pending':
-        return (
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Pending order"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
-      case 'filled':
-        return (
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Filled order"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        );
-      case 'cancelled':
-        return (
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Cancelled order"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        );
-      case 'expired':
-        return (
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Expired order"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
-      default:
-        return (
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Unknown order status"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        );
+        return {
+          icon: AlertCircle,
+          label: 'Unknown',
+          color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+          progress: 0
+        };
     }
   };
 
@@ -347,32 +273,63 @@ export default function OrdersList() {
     [tokenCache]
   );
 
+  const filteredOrders = orders.filter(order => 
+    activeFilter === 'all' || order.status === activeFilter
+  );
+
+  const orderStats = {
+    total: orders.length,
+    pending: orders.filter(o => o.status === 'pending').length,
+    filled: orders.filter(o => o.status === 'filled').length,
+    cancelled: orders.filter(o => o.status === 'cancelled').length,
+    expired: orders.filter(o => o.status === 'expired').length,
+  };
+
   if (!isConnected) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center py-12">
-          <h1 className="text-3xl font-bold mb-6">Orders</h1>
-          <Alert className="bg-yellow-900/20 border-yellow-500 max-w-md mx-auto">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-label="Warning"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <AlertDescription className="text-yellow-300">
-              <span className="font-semibold text-yellow-400">Wallet Not Connected</span>
-              <br />
-              Please connect your wallet to view your orders.
-            </AlertDescription>
-          </Alert>
+      <div className="relative min-h-screen">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/10 via-gray-900 to-purple-900/10" />
+        
+        <div className="relative max-w-6xl mx-auto px-4 py-20">
+          <div className="text-center">
+            <div className="mb-8">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center">
+                <Wallet className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                Your Orders
+              </h1>
+              <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+                Track all your limit orders in one beautiful dashboard
+              </p>
+            </div>
+            
+            <Card className="max-w-md mx-auto bg-gray-900/50 border-gray-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-yellow-500" />
+                  Wallet Not Connected
+                </CardTitle>
+                <CardDescription>
+                  Connect your wallet to view and manage your orders
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ConnectButton.Custom>
+                  {({ openConnectModal }) => (
+                    <Button 
+                      onClick={openConnectModal}
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                    >
+                      <Wallet className="mr-2 w-4 h-4" />
+                      Connect Wallet
+                    </Button>
+                  )}
+                </ConnectButton.Custom>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -380,9 +337,19 @@ export default function OrdersList() {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <Skeleton className="h-10 w-48 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
         </div>
       </div>
     );
@@ -390,242 +357,304 @@ export default function OrdersList() {
 
   if (error) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <Alert variant="destructive" className="max-w-md mx-auto mt-12">
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-label="Error"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <AlertDescription>
-            <span className="font-semibold">Error</span>
-            <br />
-            {error}
-          </AlertDescription>
-        </Alert>
+      <div className="max-w-6xl mx-auto px-4 py-20">
+        <Card className="max-w-md mx-auto bg-red-900/20 border-red-500/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-400">
+              <XCircle className="w-5 h-5" />
+              Error Loading Orders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-300 mb-4">{error}</p>
+            <Button 
+              onClick={fetchOrders} 
+              variant="outline" 
+              className="w-full border-red-500 text-red-400 hover:bg-red-500/10"
+            >
+              <RefreshCw className="mr-2 w-4 h-4" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex items-center mb-3">
-        <h1 className="text-2xl font-bold">Orders</h1>
-      </div>
-
-      {orders.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="bg-gray-800 rounded-lg p-8 max-w-md mx-auto">
-            <svg
-              className="w-16 h-16 text-gray-400 mx-auto mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-label="No orders"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <p className="text-gray-400 text-lg">No orders found for your wallet</p>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-gray-400">
-              You have {orders.length} order{orders.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-
-          <div className="grid gap-4">
-            {orders.map((order) => (
-              <div
-                key={order.orderHash}
-                className="bg-gray-800 rounded-lg border border-gray-600 hover:border-gray-500 transition-all duration-200 hover:shadow-lg"
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <div
-                          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order)}`}
-                        >
-                          {getStatusIcon(order)}
-                          {getStatusText(order)}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white mb-1">
-                          Order #{formatAddress(order.orderHash)}
-                        </h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-400">
-                          <span className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-label="Maker address"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                              />
-                            </svg>
-                            {formatAddress(order.data.maker)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              aria-label="Creation date"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                            {new Date(order.createDateTime).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to={navigationHelpers.toOrderDetails(order.orderHash)}>
-                        View Details
-                        <svg
-                          className="w-4 h-4 ml-1"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-label="Arrow right"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 5l7 7-7 7"
-                          />
-                        </svg>
-                      </Link>
-                    </Button>
-                  </div>
-
-                  <div className="border border-gray-600 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-label="You pay"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                            />
-                          </svg>
-                          You pay
-                        </div>
-                        <div className="bg-gray-700 rounded-lg p-3">
-                          <div className="text-lg font-semibold text-white mb-1">
-                            {formatAmount(order.data.makingAmount, order.data.makerAsset)}{' '}
-                            {getTokenDisplay(order.data.makerAsset).symbol}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {getTokenDisplay(order.data.makerAsset).name}
-                          </div>
-                          <div className="text-xs text-gray-500 font-mono">
-                            {formatAddress(order.data.makerAsset)}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                            aria-label="You get"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 10l7-7m0 0l7 7m-7-7v18"
-                            />
-                          </svg>
-                          You get
-                        </div>
-                        <div className="bg-gray-700 rounded-lg p-3">
-                          <div className="text-lg font-semibold text-white mb-1">
-                            {formatAmount(order.data.takingAmount, order.data.takerAsset)}{' '}
-                            {getTokenDisplay(order.data.takerAsset).symbol}
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {getTokenDisplay(order.data.takerAsset).name}
-                          </div>
-                          <div className="text-xs text-gray-500 font-mono">
-                            {formatAddress(order.data.takerAsset)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {order.orderInvalidReason && (
-                      <Alert variant="destructive" className="mt-4">
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          aria-label="Order issue"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        <AlertDescription>
-                          <span className="font-semibold">Order Issue:</span>{' '}
-                          {order.orderInvalidReason}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </div>
+    <TooltipProvider>
+      <div className="relative min-h-screen">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/5 via-gray-900 to-purple-900/5" />
+        
+        <div className="relative max-w-6xl mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                  Your Orders
+                </h1>
+                <p className="text-gray-400">
+                  Manage and track your limit orders across all supported protocols
+                </p>
               </div>
-            ))}
+              
+              <div className="flex gap-3">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={fetchOrders} 
+                      variant="outline" 
+                      size="sm"
+                      className="border-gray-700"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Refresh orders</TooltipContent>
+                </Tooltip>
+                
+                <Button asChild className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                  <Link to={navigationHelpers.toCreateOrder()}>
+                    <Plus className="mr-2 w-4 h-4" />
+                    New Order
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-400">Total</span>
+                  </div>
+                  <p className="text-2xl font-bold">{orderStats.total}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-yellow-500" />
+                    <span className="text-sm text-gray-400">Pending</span>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-500">{orderStats.pending}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span className="text-sm text-gray-400">Filled</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-500">{orderStats.filled}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm text-gray-400">Cancelled</span>
+                  </div>
+                  <p className="text-2xl font-bold text-red-500">{orderStats.cancelled}</p>
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-gray-900/50 border-gray-800">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm text-gray-400">Expired</span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-500">{orderStats.expired}</p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
+
+          {orders.length === 0 ? (
+            <div className="text-center py-20">
+              <Card className="max-w-md mx-auto bg-gray-900/50 border-gray-800">
+                <CardContent className="p-12">
+                  <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-emerald-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No Orders Yet</h3>
+                  <p className="text-gray-400 mb-6">
+                    You haven't created any orders yet. Start crafting your perfect trade!
+                  </p>
+                  <Button asChild className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                    <Link to={navigationHelpers.toCreateOrder()}>
+                      <Plus className="mr-2 w-4 h-4" />
+                      Create Your First Order
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <>
+              {/* Filter Tabs */}
+              <Tabs value={activeFilter} onValueChange={(value: any) => setActiveFilter(value)} className="mb-6">
+                <TabsList className="grid w-full grid-cols-5 bg-gray-900/50">
+                  <TabsTrigger value="all">All ({orderStats.total})</TabsTrigger>
+                  <TabsTrigger value="pending">Pending ({orderStats.pending})</TabsTrigger>
+                  <TabsTrigger value="filled">Filled ({orderStats.filled})</TabsTrigger>
+                  <TabsTrigger value="cancelled">Cancelled ({orderStats.cancelled})</TabsTrigger>
+                  <TabsTrigger value="expired">Expired ({orderStats.expired})</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {/* Orders List */}
+              <div className="space-y-4">
+                {filteredOrders.map((order) => {
+                  const statusConfig = getStatusConfig(order.status);
+                  const StatusIcon = statusConfig.icon;
+                  
+                  return (
+                    <Card 
+                      key={order.orderHash}
+                      className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-all duration-200 hover:-translate-y-1 group"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                          <div className="flex items-center gap-4">
+                            <div className="flex-shrink-0">
+                              <Badge className={cn("gap-2 px-3 py-1", statusConfig.color)}>
+                                <StatusIcon className="w-3 h-3" />
+                                {statusConfig.label}
+                              </Badge>
+                            </div>
+                            
+                            <div>
+                              <h3 className="font-semibold text-lg">
+                                Order #{formatAddress(order.orderHash)}
+                              </h3>
+                              <div className="flex items-center gap-4 text-sm text-gray-400">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3 h-3" />
+                                  {formatAddress(order.data.maker)}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(order.createDateTime).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            variant="outline" 
+                            asChild 
+                            className="border-gray-700 hover:bg-gray-800 group-hover:border-emerald-500/50"
+                          >
+                            <Link to={navigationHelpers.toOrderDetails(order.orderHash)}>
+                              <Eye className="mr-2 w-4 h-4" />
+                              View Details
+                              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </Link>
+                          </Button>
+                        </div>
+
+                        {/* Progress Bar for Filled Orders */}
+                        {order.status === 'filled' && (
+                          <div className="mb-4">
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="text-gray-400">Progress</span>
+                              <span className="text-green-400">100% Filled</span>
+                            </div>
+                            <Progress value={100} className="h-2" />
+                          </div>
+                        )}
+
+                        {/* Order Details */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                          {/* You Pay */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
+                              <ArrowUpDown className="w-4 h-4" />
+                              You Pay
+                            </div>
+                            <Card className="bg-gray-800/50 border-gray-700">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-lg font-semibold">
+                                      {formatAmount(order.data.makingAmount, order.data.makerAsset)}
+                                    </div>
+                                    <div className="text-sm text-gray-400">
+                                      {getTokenDisplay(order.data.makerAsset).symbol}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs text-gray-500">
+                                      {getTokenDisplay(order.data.makerAsset).name}
+                                    </div>
+                                    <div className="text-xs text-gray-600 font-mono">
+                                      {formatAddress(order.data.makerAsset)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* You Get */}
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-cyan-400 text-sm font-medium">
+                              <ArrowUpDown className="w-4 h-4 rotate-180" />
+                              You Get
+                            </div>
+                            <Card className="bg-gray-800/50 border-gray-700">
+                              <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="text-lg font-semibold">
+                                      {formatAmount(order.data.takingAmount, order.data.takerAsset)}
+                                    </div>
+                                    <div className="text-sm text-gray-400">
+                                      {getTokenDisplay(order.data.takerAsset).symbol}
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-xs text-gray-500">
+                                      {getTokenDisplay(order.data.takerAsset).name}
+                                    </div>
+                                    <div className="text-xs text-gray-600 font-mono">
+                                      {formatAddress(order.data.takerAsset)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+                        </div>
+
+                        {/* Order Issues */}
+                        {order.orderInvalidReason && (
+                          <Alert className="mt-4 border-red-500/50 bg-red-500/10">
+                            <AlertCircle className="w-4 h-4" />
+                            <AlertDescription>
+                              <span className="font-semibold text-red-400">Order Issue:</span>{' '}
+                              <span className="text-red-300">{order.orderInvalidReason}</span>
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
