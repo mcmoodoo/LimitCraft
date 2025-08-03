@@ -328,7 +328,7 @@ const app = new Elysia()
           // Get token addresses from query params
           const token1 = query.token1 as string;
           const token2 = query.token2 as string;
-          const chainId = parseInt(query.chainId as string) || 42161; // Default to Arbitrum
+          const chainId = parseInt(query.chainId as string) || 42161; // Default chain ID
 
           // Validate inputs
           if (!token1 || !token2) {

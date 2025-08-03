@@ -13,7 +13,7 @@ export const config = {
     ARB: '0x912ce59144191c1204e64559fe8253a0e49e6548',
   },
 
-  // Top 10 tokens for Arbitrum (shown immediately on page load)
+  // Top 10 tokens (example configuration for supported chains)
   topTokens: [
     {
       token_address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
@@ -51,7 +51,7 @@ export const config = {
     {
       token_address: '0x912ce59144191c1204e64559fe8253a0e49e6548',
       symbol: 'ARB',
-      name: 'Arbitrum',
+      name: 'ARB Token',
       decimals: 18,
       balance: '0',
       balance_formatted: '0',
@@ -62,7 +62,7 @@ export const config = {
     {
       token_address: '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
       symbol: 'USDC',
-      name: 'USD Coin (Arb1)',
+      name: 'USD Coin',
       decimals: 6,
       balance: '0',
       balance_formatted: '0',
@@ -149,8 +149,8 @@ export const config = {
 
   // Blockchain Configuration
   blockchain: {
-    networkId: 42161, // Arbitrum
-    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    networkId: 42161, // Example chain ID
+    rpcUrl: 'https://rpc.example.com', // Configure based on selected chain
   },
 
   // Contract Addresses

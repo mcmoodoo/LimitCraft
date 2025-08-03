@@ -1,7 +1,7 @@
 {
   "name": "limitcraft",
   "version": "1.0.0",
-  "description": "LimitCraft - Advanced Limit Order Crafting Platform for DeFi on Arbitrum",
+  "description": "LimitCraft - Advanced Multi-Chain Limit Order Crafting Platform for DeFi",
   "private": true,
   "workspaces": [
     "api",
@@ -33,12 +33,13 @@
   "keywords": [
     "limitcraft",
     "limit-orders",
-    "arbitrum",
+    "multi-chain",
     "defi",
     "orderbook",
     "dex",
     "crafting",
-    "advanced-trading"
+    "advanced-trading",
+    "cross-chain"
   ],
   "author": "",
   "license": "ISC",

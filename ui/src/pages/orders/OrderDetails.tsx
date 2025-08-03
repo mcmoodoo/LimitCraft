@@ -41,14 +41,14 @@ interface TokenInfo {
   logoURI?: string;
 }
 
-// Common token registry for Arbitrum (chainId: 42161)
+// Common token registry (example for chain ID: 42161)
 const COMMON_TOKENS: Record<number, Record<string, TokenInfo>> = {
   42161: {
-    // Arbitrum
+    // Chain-specific tokens
     '0xaf88d065e77c8cc2239327c5edb3a432268e5831': { symbol: 'USDC', name: 'USD Coin', decimals: 6 },
     '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8': {
       symbol: 'USDC.e',
-      name: 'USD Coin (Arb1)',
+      name: 'USD Coin',
       decimals: 6,
     },
     '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9': {
@@ -72,7 +72,7 @@ const COMMON_TOKENS: Record<number, Record<string, TokenInfo>> = {
       decimals: 18,
     },
     '0x17fc002b466eec40dae837fc4be5c67993ddbd6f': { symbol: 'FRAX', name: 'Frax', decimals: 18 },
-    '0x912ce59144191c1204e64559fe8253a0e49e6548': { symbol: 'ARB', name: 'Arbitrum', decimals: 18 },
+    '0x912ce59144191c1204e64559fe8253a0e49e6548': { symbol: 'ARB', name: 'ARB Token', decimals: 18 },
     '0xf97f4df75117a78c1a5a0dbb814af92458539fb4': {
       symbol: 'LINK',
       name: 'ChainLink Token',

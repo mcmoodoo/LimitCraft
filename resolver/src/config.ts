@@ -10,8 +10,8 @@ export const config = {
 
   // Blockchain
   chain: {
-    networkId: 42161, // Arbitrum
-    rpcUrl: process.env.ARBITRUM_RPC || 'https://arb1.arbitrum.io/rpc',
+    networkId: Number(process.env.CHAIN_ID) || 42161, // Default chain ID
+    rpcUrl: process.env.RPC_URL || 'https://rpc.example.com',
     privateKey: process.env.RESOLVER_PRIVATE_KEY || '',
   },
 
@@ -25,10 +25,10 @@ export const config = {
   resolver: {
     pollIntervalMs: 30000, // 30 seconds
     minProfitWei: '100000000000000000', // 0.1 ETH
-    maxGasPrice: '100000000', // 0.1 gwei (Arbitrum-optimized)
+    maxGasPrice: '100000000', // 0.1 gwei
   },
 
-  // Tokens (Arbitrum addresses)
+  // Tokens (example addresses - configure based on chain)
   tokens: {
     USDC: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     WETH: '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',

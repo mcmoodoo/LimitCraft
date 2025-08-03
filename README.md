@@ -3,9 +3,9 @@
 <div align="center">
   <img src="ui/public/limitcraft.svg" alt="LimitCraft Logo" width="120" height="120">
   
-  **Craft Your Perfect Trade with Advanced Limit Orders on Arbitrum**
+  **Craft Your Perfect Trade with Advanced Multi-Chain Limit Orders**
   
-  [![Built on Arbitrum](https://img.shields.io/badge/Built%20on-Arbitrum-28A0F0?style=for-the-badge)](https://arbitrum.io/)
+  [![Multi-Chain](https://img.shields.io/badge/Multi--Chain-Supported-28A0F0?style=for-the-badge)](https://limitcraft.app)
   [![Powered by 1inch](https://img.shields.io/badge/Powered%20by-1inch-1B314F?style=for-the-badge)](https://1inch.io/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 </div>
@@ -14,11 +14,11 @@
 
 **Project**: LimitCraft  
 **Track**: DeFi Innovation / Trading Infrastructure  
-**Demo**: [Live on Arbitrum](https://limitcraft.app)  
+**Demo**: [Live Demo](https://limitcraft.app)  
 
 ## 🚀 Overview
 
-LimitCraft revolutionizes DeFi trading by providing an advanced limit order platform that seamlessly integrates with lending protocols. Built on Arbitrum for lightning-fast and cost-effective trades, LimitCraft empowers traders to craft sophisticated trading strategies with unprecedented control and efficiency.
+LimitCraft revolutionizes DeFi trading by providing an advanced multi-chain limit order platform that seamlessly integrates with lending protocols. With support for multiple blockchains, LimitCraft empowers traders to craft sophisticated trading strategies with unprecedented control and efficiency across the entire DeFi ecosystem.
 
 ### 🌟 Key Innovation: Yield-Generating Limit Orders
 
@@ -62,7 +62,7 @@ User now earns yield on ETH position
 - **Wallet Integration**: RainbowKit + Wagmi v2
 - **Backend**: Bun + Elysia.js (Ultra-fast TypeScript runtime)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Blockchain**: Arbitrum One
+- **Blockchain**: Multi-chain support (Ethereum L2s, EVM-compatible chains)
 - **Order Protocol**: 1inch Limit Order Protocol v4
 - **Smart Contracts**: Solidity + Foundry + OpenZeppelin
 - **Order Resolution**: Custom automated resolver service
@@ -82,7 +82,7 @@ User now earns yield on ETH position
          │                       │
          ▼                       ▼
 ┌─────────────────────────────────────────┐
-│        Arbitrum Blockchain               │
+│        Multi-Chain Infrastructure        │
 │  ┌─────────────┐    ┌─────────────┐    │
 │  │ 1inch Orders│    │Lending Proto│    │
 │  └─────────────┘    └─────────────┘    │
@@ -122,7 +122,7 @@ User now earns yield on ETH position
 - Node.js 18+ or Bun 1.0+
 - PostgreSQL 14+
 - MetaMask wallet
-- Arbitrum ETH for gas
+- Native tokens for gas fees
 
 ### Installation
 
@@ -156,7 +156,7 @@ API_PORT=3001
 # Resolver (.env)
 PRIVATE_KEY=your_private_key_here
 ONEINCH_API_KEY=your_1inch_api_key
-ARBITRUM_RPC_URL=https://arb1.arbitrum.io/rpc
+RPC_URL=your_preferred_chain_rpc_url
 
 # UI (.env)
 VITE_API_URL=http://localhost:3001
@@ -232,7 +232,7 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 🗺️ Future Roadmap
 
 ### Phase 1 (Q1 2024)
-- [ ] Cross-chain order support (Optimism, Base)
+- [ ] Expand to additional chains (Polygon, BNB Chain, Avalanche)
 - [ ] Advanced charting with TradingView
 - [ ] Mobile application (iOS/Android)
 - [ ] Limit order NFTs for composability
@@ -259,7 +259,7 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 🙏 Acknowledgments
 
 - 1inch Protocol team for the limit order framework
-- Arbitrum for the scalable infrastructure
+- All supported blockchain ecosystems
 - Aave and Compound for lending integrations
 - The DeFi community for invaluable feedback
 
