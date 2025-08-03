@@ -36,7 +36,7 @@ interface Order {
   remainingMakerAmount: string;
   makerBalance: string;
   makerAllowance: string;
-  status: 'pending' | 'filled' | 'cancelled' | 'expired';
+  status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'partialFilled';
   data: {
     makerAsset: string;
     takerAsset: string;
@@ -46,6 +46,7 @@ interface Order {
   };
   orderInvalidReason?: string;
   signature: string;
+  number_of_orders?: number;
 }
 
 interface TokenInfo {
@@ -216,6 +217,13 @@ export default function OrdersList() {
           color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
           progress: 0
         };
+      case 'partialFilled':
+        return {
+          icon: CheckCircle,
+          label: 'Partial Fill',
+          color: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+          progress: 50
+        };
       default:
         return {
           icon: AlertCircle,
@@ -283,6 +291,7 @@ export default function OrdersList() {
     filled: orders.filter(o => o.status === 'filled').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length,
     expired: orders.filter(o => o.status === 'expired').length,
+    partialFilled: orders.filter(o => o.status === 'partialFilled').length,
   };
 
   if (!isConnected) {
@@ -533,9 +542,17 @@ export default function OrdersList() {
                             </div>
                             
                             <div>
-                              <h3 className="font-semibold text-lg">
-                                Order #{formatAddress(order.orderHash)}
-                              </h3>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-lg">
+                                  Order #{formatAddress(order.orderHash)}
+                                </h3>
+                                {order.number_of_orders != null && (
+                                  <Badge className="gap-1 px-2 py-1 bg-purple-900/30 text-purple-300 border border-purple-500/30">
+                                    <Sparkles className="w-3 h-3" />
+                                    TWAP
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="flex items-center gap-4 text-sm text-gray-400">
                                 <span className="flex items-center gap-1">
                                   <User className="w-3 h-3" />

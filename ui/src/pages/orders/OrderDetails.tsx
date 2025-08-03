@@ -41,7 +41,7 @@ interface OrderDetails {
   remainingMakerAmount: string;
   makerBalance: string;
   makerAllowance: string;
-  status: 'pending' | 'filled' | 'cancelled' | 'expired';
+  status: 'pending' | 'filled' | 'cancelled' | 'expired' | 'partialFilled';
   data: {
     makerAsset: string;
     takerAsset: string;
@@ -61,6 +61,7 @@ interface OrderDetails {
   extension?: string;
   chainId?: number;
   typedData?: any;
+  number_of_orders?: number;
 }
 
 interface TokenInfo {
@@ -217,6 +218,13 @@ export default function OrderDetails() {
           label: 'Expired',
           color: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
           bgColor: 'from-gray-900/20 to-gray-800/10'
+        };
+      case 'partialFilled':
+        return {
+          icon: CheckCircle,
+          label: 'Partial Fill',
+          color: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+          bgColor: 'from-orange-900/20 to-orange-800/10'
         };
       default:
         return {
@@ -426,7 +434,20 @@ export default function OrderDetails() {
                 </Link>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold">Order Details</h1>
+                <div className="flex items-center gap-3 mb-1">
+                  <h1 className="text-2xl font-bold">Order Details</h1>
+                  {order.number_of_orders != null && (
+                    <Badge className="gap-2 px-3 py-1 bg-purple-900/30 text-purple-300 border border-purple-500/30">
+                      <Zap className="w-4 h-4" />
+                      TWAP Order
+                      {order.number_of_orders && (
+                        <span className="text-xs bg-purple-800/50 px-1.5 py-0.5 rounded">
+                          {order.number_of_orders} orders
+                        </span>
+                      )}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-gray-400">#{formatAddress(order.orderHash)}</p>
               </div>
             </div>

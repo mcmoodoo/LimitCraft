@@ -137,6 +137,7 @@ const app = new Elysia()
             },
             orderInvalidReason: order.status === 'expired' ? 'Expired' : undefined,
             signature: order.signature,
+            number_of_orders: order.numberOfOrders,
           };
 
           return {
@@ -186,6 +187,7 @@ const app = new Elysia()
             },
             orderInvalidReason: order.status === 'expired' ? 'Expired' : undefined,
             signature: order.signature,
+            number_of_orders: order.numberOfOrders,
           }));
 
           return {
