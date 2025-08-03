@@ -1,6 +1,8 @@
 # LimitCraft - Advanced Limit Order Crafting Platform for DeFi
 
 <div align="center">
+  <img src="ui/public/LimitCraftHome.png" alt="LimitCraft Platform" width="800">
+  
   <img src="ui/public/limitcraft.svg" alt="LimitCraft Logo" width="120" height="120">
   
   **Craft Your Perfect Trade with Advanced Multi-Chain Limit Orders**
