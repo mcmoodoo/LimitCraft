@@ -40,9 +40,9 @@ export default function HomePage() {
       color: "from-blue-500 to-cyan-500"
     },
     {
-      icon: <Globe className="w-6 h-6" />,
-      title: "Multi-Chain Support",
-      description: "Trade seamlessly across all major EVM-compatible chains",
+      icon: <Layers className="w-6 h-6" />,
+      title: "Smart Order Routing",
+      description: "Intelligent routing finds the best prices across multiple DEXs",
       color: "from-purple-500 to-pink-500"
     },
     {
@@ -54,10 +54,10 @@ export default function HomePage() {
   ];
 
   const stats = [
-    { value: "$2.5M+", label: "Total Volume", icon: <DollarSign className="w-4 h-4" /> },
-    { value: "15K+", label: "Orders Filled", icon: <ChartBar className="w-4 h-4" /> },
-    { value: "0.5s", label: "Avg Fill Time", icon: <Clock className="w-4 h-4" /> },
-    { value: "98%", label: "Success Rate", icon: <Target className="w-4 h-4" /> }
+    { value: "$0", label: "Total Volume", icon: <DollarSign className="w-4 h-4" /> },
+    { value: "0", label: "Orders Filled", icon: <ChartBar className="w-4 h-4" /> },
+    { value: "∞", label: "Potential", icon: <Sparkles className="w-4 h-4" /> },
+    { value: "100%", label: "Ambition", icon: <Target className="w-4 h-4" /> }
   ];
 
   return (
@@ -78,7 +78,7 @@ export default function HomePage() {
             className="mb-8 px-4 py-2 border-emerald-500/50 bg-emerald-500/10 animate-fade-in"
           >
             <Sparkles className="w-4 h-4 mr-2 text-emerald-400" />
-            <span className="text-emerald-300">Now Live on 10+ Chains</span>
+            <span className="text-emerald-300">Just Launched - Be Our First User!</span>
           </Badge>
 
           {/* Main Headline */}
@@ -89,7 +89,7 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto animate-fade-in-up delay-100">
-            The first multi-chain limit order platform where your tokens earn yield while waiting to trade
+            The most innovative limit order platform where your tokens earn yield while waiting to trade
           </p>
 
           {/* CTA Buttons */}
@@ -279,7 +279,7 @@ export default function HomePage() {
                 Ready to Trade Smarter?
               </h2>
               <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-                Join thousands of traders who are already earning yield on their limit orders
+                Be our first user and help us revolutionize DeFi trading!
               </p>
               {isConnected ? (
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
