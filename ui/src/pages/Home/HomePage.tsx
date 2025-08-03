@@ -19,7 +19,10 @@ import {
   Sparkles,
   Target,
   Clock,
-  DollarSign
+  DollarSign,
+  Coins,
+  BarChart3,
+  Repeat
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -58,6 +61,24 @@ export default function HomePage() {
     { value: "0", label: "Orders Filled", icon: <ChartBar className="w-4 h-4" /> },
     { value: "∞", label: "Potential", icon: <Sparkles className="w-4 h-4" /> },
     { value: "100%", label: "Ambition", icon: <Target className="w-4 h-4" /> }
+  ];
+
+  const benefits = [
+    {
+      icon: <Coins className="w-5 h-5" />,
+      title: "Auto Asset Unwrap",
+      description: "Automatically withdraw from AAVE/Compound just before order fills"
+    },
+    {
+      icon: <Zap className="w-5 h-5" />,
+      title: "Instant Yield Deployment", 
+      description: "Deposit received tokens into lending markets right after fills"
+    },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      title: "TWAP Execution",
+      description: "Fill large orders gradually over customizable time intervals"
+    }
   ];
 
   return (
@@ -142,6 +163,45 @@ export default function HomePage() {
                   <p className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                     {stat.value}
                   </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Key Benefits Section */}
+      <section className="relative py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Revolutionary Features
+            </h2>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Advanced trading capabilities that maximize your capital efficiency
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {benefits.map((benefit, index) => (
+              <Card 
+                key={index}
+                className="bg-gray-900/50 border-gray-800 hover:border-emerald-500/50 transition-all duration-300 hover:-translate-y-1 group"
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {benefit.icon}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2 text-white">
+                        {benefit.title}
+                      </h3>
+                      <p className="text-gray-400 text-sm leading-relaxed">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}

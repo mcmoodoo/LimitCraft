@@ -5,9 +5,9 @@
   
   <img src="ui/public/limitcraft.svg" alt="LimitCraft Logo" width="120" height="120">
   
-  **Craft Your Perfect Trade with Advanced Multi-Chain Limit Orders**
+  **Craft Your Perfect Trade with Advanced Limit Orders**
   
-  [![Multi-Chain](https://img.shields.io/badge/Multi--Chain-Supported-28A0F0?style=for-the-badge)](https://limitcraft.app)
+  [![DeFi](https://img.shields.io/badge/DeFi-Innovation-28A0F0?style=for-the-badge)](https://limitcraft.app)
   [![Powered by 1inch](https://img.shields.io/badge/Powered%20by-1inch-1B314F?style=for-the-badge)](https://1inch.io/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 </div>
@@ -20,7 +20,7 @@
 
 ## 🚀 Overview
 
-LimitCraft revolutionizes DeFi trading by providing an advanced multi-chain limit order platform that seamlessly integrates with lending protocols. With support for multiple blockchains, LimitCraft empowers traders to craft sophisticated trading strategies with unprecedented control and efficiency across the entire DeFi ecosystem.
+LimitCraft revolutionizes DeFi trading by providing an advanced limit order platform that seamlessly integrates with lending protocols. LimitCraft empowers traders to craft sophisticated trading strategies with unprecedented control and efficiency in the DeFi ecosystem.
 
 ### 🌟 Key Innovation: Yield-Generating Limit Orders
 
@@ -66,7 +66,7 @@ User now earns yield on ETH position
 - **Wallet Integration**: RainbowKit + Wagmi v2
 - **Backend**: Bun + Elysia.js (Ultra-fast TypeScript runtime)
 - **Database**: PostgreSQL + Drizzle ORM
-- **Blockchain**: Multi-chain support (Ethereum L2s, EVM-compatible chains)
+- **Blockchain**: EVM-compatible blockchain support
 - **Order Protocol**: 1inch Limit Order Protocol v4
 - **Smart Contracts**: Solidity + Foundry + OpenZeppelin
 - **Order Resolution**: Custom automated resolver service
@@ -218,13 +218,13 @@ EmergencyPause.sol     // Circuit breaker mechanism
 - ✅ Supports 10,000+ concurrent orders
 - ✅ Processes 500+ orders per second
 - ✅ Horizontal scaling architecture
-- ✅ Multi-region deployment ready
+- ✅ Production deployment ready
 
 ## 🗺️ Future Roadmap
 
 ### Phase 1 (Q1 2024)
 
-- [ ] Expand to additional chains (Polygon, BNB Chain, Avalanche)
+- [ ] Enhanced DeFi protocol integrations
 - [ ] Advanced charting with TradingView
 - [ ] Mobile application (iOS/Android)
 - [ ] Limit order NFTs for composability
@@ -253,7 +253,7 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 🙏 Acknowledgments
 
 - 1inch Protocol team for the limit order framework
-- All supported blockchain ecosystems
+- The broader DeFi ecosystem
 - Aave and Compound for lending integrations
 - The DeFi community for invaluable feedback
 
