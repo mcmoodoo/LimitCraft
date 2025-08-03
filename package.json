@@ -10,6 +10,8 @@
     "ui"
   ],
   "scripts": {
+    "start": "cd api && bun run src/index.ts",
+    "build": "bun install",
     "dev": "concurrently 'cd api && bun dev' 'cd ui && bun dev'",
     "dev:host": "concurrently 'cd api && bun dev' 'cd ui && bun dev --host'",
     "dev:all": "concurrently 'cd api && bun dev' 'cd ui && bun dev' 'cd resolver && bun dev'",
