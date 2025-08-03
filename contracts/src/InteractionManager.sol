@@ -36,20 +36,27 @@ contract InteractionManager is IPreInteraction, IPostInteraction {
     error TakingAmountTooHigh();
     error IncorrectTakingAmount();
     error TwapMakingAmountExceedsAvailable();
+    error OnlyLimitOrderProtocol();
 
     event PreInteractionCalled(uint256 makingAmount, bytes extension); 
     event PostInteractionCalled(uint256 takingAmount, bytes extension);
+
+    address public immutable _LIMIT_ORDER_PROTOCOL;
     
     IPoolV3 public immutable AAVE_POOL;
     TwapCalculator public immutable TWAP_CALCULATOR;
 
-    constructor(address _aavePool, address _twapCalculator) {
-        AAVE_POOL = IPoolV3(_aavePool);
-        TWAP_CALCULATOR = TwapCalculator(_twapCalculator);
+    /// @dev Modifier to check if the caller is the limit order protocol contract.
+    modifier onlyLimitOrderProtocol {
+        if (msg.sender != _LIMIT_ORDER_PROTOCOL) revert OnlyLimitOrderProtocol();
+        _;
     }
 
-    function copyArg(uint256 arg) external pure returns (uint256) {
-        return arg;
+
+    constructor(address _aavePool, address _twapCalculator, address _limitOrderProtocol) {
+        AAVE_POOL = IPoolV3(_aavePool);
+        TWAP_CALCULATOR = TwapCalculator(_twapCalculator);
+        _LIMIT_ORDER_PROTOCOL = _limitOrderProtocol;
     }
 
     function preInteraction(
@@ -61,7 +68,7 @@ contract InteractionManager is IPreInteraction, IPostInteraction {
         uint256 /* takingAmount */,
         uint256 remainingMakingAmount,
         bytes calldata extraData
-    ) external {
+    ) external onlyLimitOrderProtocol {
         (OrderType orderType, InteractionProtocol protocol) = abi.decode(extraData, (OrderType, InteractionProtocol));
 
         // TWAP validation using TwapCalculator
@@ -101,7 +108,7 @@ contract InteractionManager is IPreInteraction, IPostInteraction {
         uint256 takingAmount,
         uint256 /* remainingMakingAmount */,
         bytes calldata extraData
-    ) external {
+    ) external onlyLimitOrderProtocol {
         (OrderType orderType, InteractionProtocol protocol) = abi.decode(extraData, (OrderType, InteractionProtocol));
 
         if (protocol == InteractionProtocol.AAVE) {

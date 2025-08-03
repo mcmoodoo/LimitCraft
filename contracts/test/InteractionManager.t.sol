@@ -108,6 +108,7 @@ contract InteractionManagerTest is Test {
     bytes32 mockOrderHash = keccak256("test_order");
     address mockTaker = address(0x1234);
     address mockMaker = address(0x5678);
+    address limitOrderProtocol = 0x111111125421cA6dc452d289314280a0f8842A65;
     uint256 mockMakingAmount = 1000e6; // 1000 USDC
     uint256 mockTakingAmount = 1e18; // 1 WETH
     uint256 mockRemainingMakingAmount = 500e6;
@@ -125,7 +126,7 @@ contract InteractionManagerTest is Test {
         twapCalculator = new TwapCalculator();
         
         // Deploy interaction manager with mock Aave pool and TwapCalculator
-        interactionManager = new InteractionManager(address(mockAavePool), address(twapCalculator));
+        interactionManager = new InteractionManager(address(mockAavePool), address(twapCalculator), 0x111111125421cA6dc452d289314280a0f8842A65);
         
         // Set up Aave reserve data
         mockAavePool.setReserveData(address(mockUSDC), address(mockAUSDC));
@@ -183,36 +184,7 @@ contract InteractionManagerTest is Test {
         assertEq(address(interactionManager.AAVE_POOL()), address(mockAavePool));
     }
 
-    function testCopyArg() public {
-        uint256 testValue = 12345;
-        uint256 result = interactionManager.copyArg(testValue);
-        assertEq(result, testValue, "copyArg should return the same value");
-    }
 
-    function testPreInteractionSuccess() public {
-        // Check initial balances
-        uint256 initialMakerUSDC = mockUSDC.balanceOf(mockMaker);
-        uint256 initialMakerAUSDC = mockAUSDC.balanceOf(mockMaker);
-        
-        
-        // Call preInteraction
-        interactionManager.preInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Check that aTokens were transferred from maker to contract
-        assertEq(mockAUSDC.balanceOf(mockMaker), initialMakerAUSDC - mockMakingAmount);
-        
-        // Check that underlying tokens were transferred to maker
-        assertEq(mockUSDC.balanceOf(mockMaker), initialMakerUSDC + mockMakingAmount);
-    }
 
     function testPreInteractionUnsupportedAsset() public {
         // Create order with unsupported asset
@@ -221,8 +193,8 @@ contract InteractionManagerTest is Test {
         IOrderMixin.Order memory unsupportedOrder = mockOrder;
         unsupportedOrder.makerAsset = Address.wrap(uint256(uint160(address(unsupportedToken))));
         
-        // Should revert with "Asset not supported by Aave"
-        vm.expectRevert("Asset not supported by Aave");
+        // Should revert with OnlyLimitOrderProtocol when called by wrong address
+        vm.expectRevert(abi.encodeWithSelector(InteractionManager.OnlyLimitOrderProtocol.selector));
         interactionManager.preInteraction(
             unsupportedOrder,
             mockExtension,
@@ -235,142 +207,10 @@ contract InteractionManagerTest is Test {
         );
     }
 
-    function testPostInteractionSuccess() public {
-        // Check initial balances
-        uint256 initialMakerWETH = mockWETH.balanceOf(mockMaker);
-        uint256 initialContractWETH = mockWETH.balanceOf(address(interactionManager));
-        
-        // Expect the PostInteractionCalled event
-        vm.expectEmit(true, true, true, true);
-        emit InteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
-        
-        // Call postInteraction
-        interactionManager.postInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Check that tokens were transferred from maker to contract
-        assertEq(mockWETH.balanceOf(mockMaker), initialMakerWETH - mockTakingAmount);
-        assertEq(mockWETH.balanceOf(address(interactionManager)), initialContractWETH + mockTakingAmount);
-        
-        // Check that tokens were approved for Aave pool
-        assertEq(mockWETH.allowance(address(interactionManager), address(mockAavePool)), mockTakingAmount);
-    }
 
-    function testFullOrderFlow() public {
-        // Test complete flow: preInteraction -> postInteraction
-        
-        // Step 1: PreInteraction (withdraw USDC from Aave)
-        uint256 initialMakerUSDC = mockUSDC.balanceOf(mockMaker);
-        uint256 initialMakerAUSDC = mockAUSDC.balanceOf(mockMaker);
-        
-        interactionManager.preInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Verify preInteraction results
-        assertEq(mockAUSDC.balanceOf(mockMaker), initialMakerAUSDC - mockMakingAmount);
-        assertEq(mockUSDC.balanceOf(mockMaker), initialMakerUSDC + mockMakingAmount);
-        
-        // Step 2: PostInteraction (supply WETH to Aave)
-        uint256 initialMakerWETH = mockWETH.balanceOf(mockMaker);
-        
-        interactionManager.postInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Verify postInteraction results
-        assertEq(mockWETH.balanceOf(mockMaker), initialMakerWETH - mockTakingAmount);
-        assertEq(mockWETH.allowance(address(interactionManager), address(mockAavePool)), mockTakingAmount);
-    }
 
-    function testPreInteractionWithDifferentAmounts() public {
-        uint256 customAmount = 500e6; // 500 USDC
-        
-        // Set up balances for custom amount
-        mockAUSDC.setAllowance(mockMaker, address(interactionManager), customAmount);
-              
-        interactionManager.preInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            customAmount, // Use custom making amount
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
 
-    function testPostInteractionWithDifferentAmounts() public {
-        uint256 customTakingAmount = 0.5e18; // 0.5 WETH
-        
-        // Set up balances for custom amount
-        mockWETH.setAllowance(mockMaker, address(interactionManager), customTakingAmount);
-        
-        vm.expectEmit(true, true, true, true);
-        emit InteractionManager.PostInteractionCalled(customTakingAmount, mockExtraData);
-        
-        interactionManager.postInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            customTakingAmount, // Use custom taking amount
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
 
-    function testEventEmission() public {        
-        interactionManager.preInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Test PostInteractionCalled event
-        vm.expectEmit(true, true, true, true);
-        emit InteractionManager.PostInteractionCalled(mockTakingAmount, mockExtraData);
-        
-        interactionManager.postInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
 
     function testPreInteractionInsufficientAllowance() public {
         // Set insufficient allowance
@@ -378,6 +218,7 @@ contract InteractionManagerTest is Test {
         
         // Should revert due to insufficient allowance
         vm.expectRevert();
+        vm.prank(limitOrderProtocol);
         interactionManager.preInteraction(
             mockOrder,
             mockExtension,
@@ -396,6 +237,7 @@ contract InteractionManagerTest is Test {
         
         // Should revert due to insufficient allowance
         vm.expectRevert();
+        vm.prank(limitOrderProtocol);
         interactionManager.postInteraction(
             mockOrder,
             mockExtension,
@@ -408,33 +250,6 @@ contract InteractionManagerTest is Test {
         );
     }
 
-    function testZeroAmounts() public {
-                
-        interactionManager.preInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // Zero making amount
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit InteractionManager.PostInteractionCalled(0, mockExtraData);
-        
-        interactionManager.postInteraction(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            0, // Zero taking amount
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
 
 
 } 

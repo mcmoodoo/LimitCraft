@@ -2,9 +2,11 @@
 pragma solidity ^0.8.23;
 
 import "@1inch/limit-order-protocol/interfaces/IAmountGetter.sol";
+import "@1inch/limit-order-protocol/interfaces/IOrderMixin.sol";
 import "@1inch/solidity-utils/contracts/libraries/AddressLib.sol";
 import "@1inch/limit-order-protocol/libraries/ExtensionLib.sol";
 import "./interfaces/chainlink/AggregatorV3Interface.sol";
+import "./interfaces/IERC20.sol";
 
 contract TwapCalculator is IAmountGetter {
     using AddressLib for Address;
@@ -74,11 +76,20 @@ contract TwapCalculator is IAmountGetter {
         // Convert price to uint256 and handle decimals
         uint256 ethPriceUSD = uint256(price); // Price has 8 decimals from Chainlink
         
+        // Get token addresses from order
+        address makerAssetAddress = order.makerAsset.get();
+        address takerAssetAddress = order.takerAsset.get();
+        
+        // Fetch decimals for both tokens
+        uint8 makerAssetDecimals = IERC20(makerAssetAddress).decimals();
+        uint8 takerAssetDecimals = IERC20(takerAssetAddress).decimals();
+        
         // Calculate taking amount based on ETH price
-        // Assuming makingAmount is in USDC (6 decimals) and we want WETH (18 decimals)
-        // takingAmount = makingAmount * 1e18 / (ethPriceUSD * 1e2) 
-        // The 1e2 adjusts for Chainlink's 8 decimals vs USDC's 6 decimals
-        uint256 takingAmount = (makingAmount * 1e20) / ethPriceUSD;
+        // Formula: takingAmount = (makingAmount * 10^(takerAssetDecimals + chainlinkDecimals)) / (ethPriceUSD * 10^makerAssetDecimals)
+        // This handles arbitrary token decimals correctly
+        uint256 numerator = makingAmount * (10 ** (takerAssetDecimals + 8)); // 8 is Chainlink decimals
+        uint256 denominator = ethPriceUSD * (10 ** makerAssetDecimals);
+        uint256 takingAmount = numerator / denominator;
         
         return takingAmount;
     }

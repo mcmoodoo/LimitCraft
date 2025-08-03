@@ -19,7 +19,7 @@ contract DeployInteractionManager is Script {
         TwapCalculator twapCalculator = new TwapCalculator();
         console.log("TwapCalculator deployed to:", address(twapCalculator));
         
-        InteractionManager interactionManager = new InteractionManager(aavePoolAddress, address(twapCalculator));
+        InteractionManager interactionManager = new InteractionManager(aavePoolAddress, address(twapCalculator), 0x111111125421cA6dc452d289314280a0f8842A65);
         
         vm.stopBroadcast();
         

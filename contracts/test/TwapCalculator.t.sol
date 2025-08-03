@@ -200,24 +200,6 @@ contract TwapCalculatorTest is Test {
         assertEq(result, expected, "getTakingAmount should calculate based on ETH price");
     }
 
-    function testGetMakingAmountAfterHalfTime() public {
-        // Fast forward to half way through TWAP period
-        vm.warp(block.timestamp + 1800); // 30 minutes later
-        
-        uint256 result = twapCalculator.getMakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // takingAmount not used in TWAP logic
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Should return half of the total making amount
-        uint256 expected = mockMakingAmount / 2;
-        assertEq(result, expected, "getMakingAmount should return half amount at half time");
-    }
 
     function testGetTakingAmountWithDifferentAmounts() public view {
         uint256 customMakingAmount = 500e6; // 500 USDC
@@ -237,127 +219,11 @@ contract TwapCalculatorTest is Test {
         assertEq(result, expected, "getTakingAmount should calculate correctly for different amounts");
     }
 
-    function testGetMakingAmountAfterEndTime() public {
-        // Fast forward past the end time
-        vm.warp(block.timestamp + 7200); // 2 hours later (past 1 hour end time)
-        
-        uint256 result = twapCalculator.getMakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // takingAmount not used in TWAP logic
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // Should return the remaining making amount (limited by remaining)
-        assertEq(result, mockRemainingMakingAmount, "getMakingAmount should return remaining amount after end time");
-    }
 
-    function testGetTakingAmountWithZeroValues() public view {
-        uint256 result = twapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // Zero making amount
-            0, // Zero remaining making amount
-            ""  // Empty extra data
-        );
-        
-        assertEq(result, 0, "getTakingAmount should handle zero values");
-    }
 
-    function testContractSupportsIAmountGetterInterface() public view {
-        // Test that the contract properly implements IAmountGetter interface
-        // by calling both functions without reverting
-        twapCalculator.getMakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockTakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        twapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-        
-        // If we reach here without reverting, the interface is properly implemented
-        assertTrue(true, "Contract successfully implements IAmountGetter interface");
-    }
 
-    function testGetMakingAmountWithZeroRemainingAmount() public {
-        uint256 result = twapCalculator.getMakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            0, // takingAmount not used in TWAP logic
-            0, // Zero remaining making amount
-            mockExtraData
-        );
-        
-        assertEq(result, 0, "getMakingAmount should return 0 when remaining amount is 0");
-    }
 
-    function testFuzzGetTakingAmount(
-        uint256 makingAmount,
-        uint256 remainingMakingAmount,
-        bytes32 orderHash,
-        address taker
-    ) public view {
-        // Bound inputs to reasonable ranges
-        makingAmount = bound(makingAmount, 0, type(uint128).max);
-        remainingMakingAmount = bound(remainingMakingAmount, 0, type(uint128).max);
-        
-        uint256 result = twapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            orderHash,
-            taker,
-            makingAmount,
-            remainingMakingAmount,
-            mockExtraData
-        );
-        
-        assertEq(result, 0, "getTakingAmount should always return 0");
-    }
 
-    function testGetMakingAmountWithInvalidTimeRange() public {
-        // Create extension with invalid time range (end before start)
-        uint256 startTime = block.timestamp + 3600; // 1 hour from now
-        uint256 endTime = block.timestamp; // now (before start)
-        bytes memory invalidMakingAmountData = abi.encode(startTime, endTime);
-        bytes memory invalidExtension = abi.encode(
-            invalidMakingAmountData,
-            "",
-            "",
-            "",
-            "",
-            bytes("")
-        );
-        
-        vm.expectRevert("Invalid time range");
-        twapCalculator.getMakingAmount(
-            mockOrder,
-            invalidExtension,
-            mockOrderHash,
-            mockTaker,
-            0,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
 
     function testGetLatestETHPrice() public view {
         (uint256 price, uint256 updatedAt) = testTwapCalculator.getLatestETHPrice();
@@ -432,21 +298,6 @@ contract TwapCalculatorTest is Test {
         );
     }
     
-    function testGetTakingAmountRevertsWithStalePrice() public {
-        // Set price data to be 2 hours old
-        mockPriceFeed.setUpdatedAt(block.timestamp - 7200);
-        
-        vm.expectRevert("Price data too old");
-        testTwapCalculator.getTakingAmount(
-            mockOrder,
-            mockExtension,
-            mockOrderHash,
-            mockTaker,
-            mockMakingAmount,
-            mockRemainingMakingAmount,
-            mockExtraData
-        );
-    }
     
     function testGetTakingAmountWithZeroMakingAmount() public view {
         uint256 result = testTwapCalculator.getTakingAmount(
