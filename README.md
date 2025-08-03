@@ -14,7 +14,7 @@
 
 **Project**: LimitCraft  
 **Track**: DeFi Innovation / Trading Infrastructure  
-**Demo**: [Live Demo](https://limitcraft.app)  
+**Demo**: [Live Demo](https://github.com/mcmoodoo/LimitCraft)
 
 ## 🚀 Overview
 
@@ -27,6 +27,7 @@ Our breakthrough feature allows traders to earn lending yield on their tokens wh
 ## 💡 Problem Statement
 
 Traditional limit order systems force traders to choose between:
+
 - Setting limit orders and having capital sit idle
 - Earning yield in lending protocols but missing trading opportunities
 
@@ -42,6 +43,7 @@ LimitCraft introduces **Smart Limit Orders** with integrated lending:
 4. **Zero Friction**: All happens in a single transaction with no manual intervention
 
 ### Example Flow
+
 ```
 User has 10,000 USDC earning 5% APY on Aave
      ↓
@@ -77,52 +79,46 @@ User now earns yield on ETH position
          │                       │                         │
          ▼                       ▼                         │
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Smart Wallet   │     │ Order Resolver  │────▶│  Order Status   │
+│  Wagmi  Wallet  │     │ Order Resolver  │────▶│  Order Status   │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
          │                       │
          ▼                       ▼
-┌─────────────────────────────────────────┐
-│        Multi-Chain Infrastructure        │
-│  ┌─────────────┐    ┌─────────────┐    │
-│  │ 1inch Orders│    │Lending Proto│    │
-│  └─────────────┘    └─────────────┘    │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│        On-Chain Infrastructure                                                              │
+│  ┌─────────────┐    ┌─────────────┐   ┌─────────────┐    ┌───────────────┐                  │
+│  │  1inch LOP  │    │ LimitCraft  │   │AAVE/Compound│    │Uniswap Permit2│                  │
+│  └─────────────┘    └─────────────┘   └─────────────┘    └───────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## 🛠️ Core Components
 
 ### 1. Order Creation Engine
+
 - Real-time price feeds from 1inch API
-- Advanced order types (limit, stop-loss, take-profit)
-- Gas estimation and optimization
-- Slippage protection
+- Advanced order types (limit, with pre-interaction lending position unwrapping, with post-interaction lending position deposit)
 
 ### 2. Lending Integration Manager
-- Multi-protocol support (Aave, Compound)
-- Automatic yield optimization
-- Risk management parameters
-- Emergency withdrawal mechanisms
+
+- Multi-protocol support:
+  - Aave
+  - Compound (coming soon)
 
 ### 3. Order Matching System
+
 - Off-chain order book for gas efficiency
 - MEV-resistant order execution
 - Fair ordering with timestamp priority
 - Partial fill support
 
-### 4. Analytics Dashboard
-- Real-time P&L tracking
-- Historical order performance
-- Yield earnings visualization
-- Market depth charts
-
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ or Bun 1.0+
-- PostgreSQL 14+
-- MetaMask wallet
-- Native tokens for gas fees
+- Bun 1.0+
+- PostgreSQL 15+
+- wallet
+- Maker token balances
 
 ### Installation
 
@@ -163,27 +159,16 @@ VITE_API_URL=http://localhost:3001
 VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_id
 ```
 
-## 📊 Performance Metrics
-
-- **Gas Savings**: 60% reduction through batching and optimization
-- **Execution Speed**: <2 second order processing time
-- **Yield Efficiency**: 95%+ capital utilization
-- **Uptime**: 99.9% resolver availability
-
 ## 🔐 Security Features
 
 - Non-custodial architecture - users retain full control
-- Audited smart contracts with formal verification
-- Multi-signature emergency pause mechanism
-- Rate limiting and DDoS protection
-- Secure key management with hardware wallet support
 
 ## 🎮 How to Use
 
 1. **Connect Wallet**: Link your MetaMask to LimitCraft
 2. **Select Trading Pair**: Choose from 100+ token pairs
 3. **Set Order Parameters**:
-   - Order type (limit/stop/take-profit)
+   - Order type (limit/)
    - Price levels
    - Amount to trade
    - Enable lending integration
@@ -197,13 +182,14 @@ VITE_WALLETCONNECT_PROJECT_ID=your_walletconnect_id
 
 ```solidity
 OrderManager.sol        // Main order lifecycle management
-LendingIntegration.sol  // Aave/Compound protocol interactions  
+LendingIntegration.sol  // Aave/Compound protocol interactions
 OrderResolver.sol       // Automated execution logic
 PriceOracle.sol        // Chainlink price feed integration
 EmergencyPause.sol     // Circuit breaker mechanism
 ```
 
 ### Key Features
+
 - EIP-712 typed signatures for orders
 - Permit2 integration for gasless approvals
 - Upgradeable proxy pattern for future improvements
@@ -212,18 +198,21 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 📈 Hackathon Achievements
 
 ### Technical Innovation
+
 - ✅ First platform to integrate lending yields with limit orders
 - ✅ 60% gas cost reduction through innovative batching
 - ✅ Sub-second order matching algorithm
 - ✅ Cross-protocol yield optimization engine
 
 ### User Experience
+
 - ✅ One-click order creation with lending
 - ✅ Real-time portfolio analytics
 - ✅ Mobile-responsive design
 - ✅ Intuitive order management interface
 
 ### Scalability
+
 - ✅ Supports 10,000+ concurrent orders
 - ✅ Processes 500+ orders per second
 - ✅ Horizontal scaling architecture
@@ -232,18 +221,21 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 🗺️ Future Roadmap
 
 ### Phase 1 (Q1 2024)
+
 - [ ] Expand to additional chains (Polygon, BNB Chain, Avalanche)
 - [ ] Advanced charting with TradingView
 - [ ] Mobile application (iOS/Android)
 - [ ] Limit order NFTs for composability
 
 ### Phase 2 (Q2 2024)
+
 - [ ] DAO governance implementation
 - [ ] Revenue sharing for LMT token holders
 - [ ] Institutional API access
 - [ ] Advanced order types (TWAPs, Icebergs)
 
 ### Phase 3 (Q3 2024)
+
 - [ ] Perpetual futures integration
 - [ ] Options trading support
 - [ ] Social trading features
@@ -252,7 +244,7 @@ EmergencyPause.sol     // Circuit breaker mechanism
 ## 👥 Team
 
 - **Lead Developer**: [Your Name] - Smart Contract Architect
-- **Frontend Engineer**: [Name] - UI/UX Specialist  
+- **Frontend Engineer**: [Name] - UI/UX Specialist
 - **Backend Engineer**: [Name] - Infrastructure Expert
 - **Product Designer**: [Name] - Experience Designer
 
