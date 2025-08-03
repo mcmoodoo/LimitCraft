@@ -2,8 +2,6 @@
 
 <div align="center">
   
-  [![LimitCraft Demo Video](https://img.youtube.com/vi/u4W0Jr8DTOQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=u4W0Jr8DTOQ)
-  
   <img src="ui/public/LimitCraftHome.png" alt="LimitCraft Platform" width="800">
   
   <img src="ui/public/limitcraft.svg" alt="LimitCraft Logo" width="120" height="120">
@@ -24,14 +22,15 @@
 2. Build a full Application using 1inch APIs
 
 **Demo**: [Live Demo](https://limit-craft-ui-ochy.vercel.app/)
+**Video**: [LimitCraft Demo Video](https://www.youtube.com/watch?v=u4W0Jr8DTOQ)
 
 #### Sample transactions(Live Demo Trace):
+
 - PreInteraction + PostInteraction
-https://arbiscan.io/tx/0x3671c60f1aa96e61c8f984404cbf117c773ca8a257780e652593a9278ea393cc
+  https://arbiscan.io/tx/0x3671c60f1aa96e61c8f984404cbf117c773ca8a257780e652593a9278ea393cc
 
 - TWAP Order(partial fill) + PreInteraction + PostInteraction
-https://arbiscan.io/tx/0x62e9e33f8502c4447b232b01bc65fe6df1b07ae68d436045a8cb7c37bce64de4
-
+  https://arbiscan.io/tx/0x62e9e33f8502c4447b232b01bc65fe6df1b07ae68d436045a8cb7c37bce64de4
 
 ## 🚀 Overview
 
@@ -134,65 +133,72 @@ LimitCraft leverages multiple 1inch API endpoints to provide a seamless trading 
 
 ### Core API Endpoints Used
 
-| API Service | Endpoint | Purpose | Implementation |
-|-------------|----------|---------|----------------|
-| **Balance API** | `GET /balance/v1.2/{chainId}/balances/{address}` | Fetch user token balances | Real-time wallet balance display in UI dropdowns |
-| **Token API** | `GET /token/v1.4/{chainId}/custom/{tokenAddress}` | Resolve token metadata | Token symbols, names, decimals, logos for all assets |
-| **Price API** | `GET /price/v1.1/{chainId}/{tokenAddress}` | Live market prices | Market rate calculations and USD conversions |
-| **Price API (Bulk)** | `POST /price/v1.1/{chainId}` | Multiple token prices | Batch price fetching for trading pairs |
-| **Limit Order Protocol SDK** | Smart Contract Integration | Order management | EIP-712 signatures, extensions, Permit2 |
+| API Service                  | Endpoint                                          | Purpose                   | Implementation                                       |
+| ---------------------------- | ------------------------------------------------- | ------------------------- | ---------------------------------------------------- |
+| **Balance API**              | `GET /balance/v1.2/{chainId}/balances/{address}`  | Fetch user token balances | Real-time wallet balance display in UI dropdowns     |
+| **Token API**                | `GET /token/v1.4/{chainId}/custom/{tokenAddress}` | Resolve token metadata    | Token symbols, names, decimals, logos for all assets |
+| **Price API**                | `GET /price/v1.1/{chainId}/{tokenAddress}`        | Live market prices        | Market rate calculations and USD conversions         |
+| **Price API (Bulk)**         | `POST /price/v1.1/{chainId}`                      | Multiple token prices     | Batch price fetching for trading pairs               |
+| **Limit Order Protocol SDK** | Smart Contract Integration                        | Order management          | EIP-712 signatures, extensions, Permit2              |
 
 ### Detailed Implementation
 
 **Balance API** (`https://api.1inch.dev/balance/v1.2/{chainId}/balances/{address}`)
+
 ```typescript
 // Fetches all token balances for a wallet address
 const balancesResponse = await fetch(balancesUrl, {
   headers: {
     Authorization: `Bearer ${oneInchApiKey}`,
-    accept: 'application/json',
+    accept: "application/json",
   },
 });
 ```
+
 - Filters tokens with non-zero balances
 - Displays available amounts in order creation form
 - Sorts tokens by balance value for better UX
 
 **Token Details API** (`https://api.1inch.dev/token/v1.4/{chainId}/custom/{tokenAddress}`)
+
 ```typescript
 // Fetches metadata for each token with balances
 const detailsResponse = await fetch(detailsUrl, {
   headers: {
     Authorization: `Bearer ${oneInchApiKey}`,
-    accept: 'application/json',
+    accept: "application/json",
   },
 });
 ```
+
 - Resolves token symbols, names, decimals, and logos
 - Validates token addresses for order creation
 - Handles edge cases (e.g., USDC_1 → USDC symbol fix)
 
 **Price API** (`https://api.1inch.dev/price/v1.1/{chainId}/{tokenAddress}?currency=USD`)
+
 ```typescript
 // Single token price (GET)
 const response = await fetch(
-  `https://api.1inch.dev/price/v1.1/${chainId}/${tokenAddress}?currency=USD`
+  `https://api.1inch.dev/price/v1.1/${chainId}/${tokenAddress}?currency=USD`,
 );
 
 // Multiple token prices (POST)
 const response = await fetch(`https://api.1inch.dev/price/v1.1/${chainId}`, {
-  method: 'POST',
+  method: "POST",
   body: JSON.stringify({
     tokens: tokenAddresses,
-    currency: 'USD',
+    currency: "USD",
   }),
 });
 ```
+
 - Powers market rate spectrum slider in order creation
 - Calculates USD values for portfolio display
 - Implements fallback from GET to POST for reliability
 
 **Backend Proxy Architecture**
+
 - All 1inch API calls are proxied through our Elysia.js backend
 - Secure API key management with `Bearer` authentication
 - Rate limiting and error handling for production reliability
@@ -202,11 +208,11 @@ const response = await fetch(`https://api.1inch.dev/price/v1.1/${chainId}`, {
 
 Our backend exposes these endpoints that utilize 1inch APIs:
 
-| Endpoint | 1inch API Used | Description |
-|----------|----------------|-------------|
-| `GET /api/v1/tokens/{address}?chainId={id}` | Balance + Token APIs | Combined token balances and metadata |
-| `GET /api/v1/prices?token1={addr}&token2={addr}` | Price API | Trading pair price data |
-| `POST /api/v1/orders` | LOP SDK | Order creation and storage |
+| Endpoint                                         | 1inch API Used       | Description                          |
+| ------------------------------------------------ | -------------------- | ------------------------------------ |
+| `GET /api/v1/tokens/{address}?chainId={id}`      | Balance + Token APIs | Combined token balances and metadata |
+| `GET /api/v1/prices?token1={addr}&token2={addr}` | Price API            | Trading pair price data              |
+| `POST /api/v1/orders`                            | LOP SDK              | Order creation and storage           |
 
 This architecture ensures secure, efficient access to 1inch services while maintaining optimal performance for our users.
 
