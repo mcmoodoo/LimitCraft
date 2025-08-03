@@ -15,7 +15,11 @@
 ## 🏆 Hackathon Submission
 
 **Project**: LimitCraft  
-**Track**: DeFi Innovation / Trading Infrastructure  
+**Tracks**:
+
+1. Extend Limit Order Protocol
+2. Build a full Application using 1inch APIs
+
 **Demo**: [Live Demo](https://github.com/mcmoodoo/LimitCraft)
 
 ## 🚀 Overview
