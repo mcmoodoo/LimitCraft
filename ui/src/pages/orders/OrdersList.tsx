@@ -238,7 +238,7 @@ export default function OrdersList() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  // Format amount with proper decimals
+  // Format amount with proper decimals - exact display without rounding
   const formatAmount = useCallback(
     (amount: string, tokenAddress: string): string => {
       const normalizedAddress = tokenAddress.toLowerCase();
@@ -247,21 +247,32 @@ export default function OrdersList() {
       if (!tokenInfo) {
         // If we don't have token info yet, use 18 decimals as default
         const num = BigInt(amount);
-        return (Number(num) / 1e18).toFixed(6);
+        const divisor = BigInt(10 ** 18);
+        const quotient = num / divisor;
+        const remainder = num % divisor;
+        
+        if (remainder === 0n) {
+          return quotient.toString();
+        }
+        
+        const remainderStr = remainder.toString().padStart(18, '0');
+        const trimmedRemainder = remainderStr.replace(/0+$/, '');
+        return `${quotient}.${trimmedRemainder}`;
       }
 
       const decimals = tokenInfo.decimals;
-      const divisor = 10 ** decimals;
       const num = BigInt(amount);
-      const result = Number(num) / divisor;
+      const divisor = BigInt(10 ** decimals);
+      const quotient = num / divisor;
+      const remainder = num % divisor;
 
-      // Format based on the size of the number
-      if (result === 0) return '0';
-      if (result < 0.000001) return '<0.000001';
-      if (result < 1) return result.toFixed(Math.min(6, decimals));
-      if (result < 1000) return result.toFixed(Math.min(4, decimals));
-      if (result < 1000000) return `${(result / 1000).toFixed(2)}K`;
-      return `${(result / 1000000).toFixed(2)}M`;
+      if (remainder === 0n) {
+        return quotient.toString();
+      }
+
+      const remainderStr = remainder.toString().padStart(decimals, '0');
+      const trimmedRemainder = remainderStr.replace(/0+$/, '');
+      return `${quotient}.${trimmedRemainder}`;
     },
     [tokenCache]
   );

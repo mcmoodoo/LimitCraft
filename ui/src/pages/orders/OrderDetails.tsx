@@ -246,21 +246,34 @@ export default function OrderDetails() {
       const tokenInfo = tokenCache[normalizedAddress];
 
       if (!tokenInfo) {
+        // If we don't have token info yet, use 18 decimals as default
         const num = BigInt(amount);
-        return (Number(num) / 1e18).toFixed(6);
+        const divisor = BigInt(10 ** 18);
+        const quotient = num / divisor;
+        const remainder = num % divisor;
+        
+        if (remainder === 0n) {
+          return quotient.toString();
+        }
+        
+        const remainderStr = remainder.toString().padStart(18, '0');
+        const trimmedRemainder = remainderStr.replace(/0+$/, '');
+        return `${quotient}.${trimmedRemainder}`;
       }
 
       const decimals = tokenInfo.decimals;
-      const divisor = 10 ** decimals;
       const num = BigInt(amount);
-      const result = Number(num) / divisor;
+      const divisor = BigInt(10 ** decimals);
+      const quotient = num / divisor;
+      const remainder = num % divisor;
 
-      if (result === 0) return '0';
-      if (result < 0.000001) return '<0.000001';
-      if (result < 1) return result.toFixed(Math.min(6, decimals));
-      if (result < 1000) return result.toFixed(Math.min(4, decimals));
-      if (result < 1000000) return `${(result / 1000).toFixed(2)}K`;
-      return `${(result / 1000000).toFixed(2)}M`;
+      if (remainder === 0n) {
+        return quotient.toString();
+      }
+
+      const remainderStr = remainder.toString().padStart(decimals, '0');
+      const trimmedRemainder = remainderStr.replace(/0+$/, '');
+      return `${quotient}.${trimmedRemainder}`;
     },
     [tokenCache]
   );
@@ -600,10 +613,12 @@ export default function OrderDetails() {
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <div className="text-2xl font-bold mb-2">
                       1 {getTokenDisplay(order.data.makerAsset).symbol} = {' '}
-                      {(
-                        Number(formatAmount(order.data.takingAmount, order.data.takerAsset).replace(/[^\d.-]/g, '')) /
-                        Number(formatAmount(order.data.makingAmount, order.data.makerAsset).replace(/[^\d.-]/g, ''))
-                      ).toFixed(6)} {getTokenDisplay(order.data.takerAsset).symbol}
+                      {(() => {
+                        const takingAmount = parseFloat(formatAmount(order.data.takingAmount, order.data.takerAsset));
+                        const makingAmount = parseFloat(formatAmount(order.data.makingAmount, order.data.makerAsset));
+                        const rate = takingAmount / makingAmount;
+                        return rate.toString();
+                      })()} {getTokenDisplay(order.data.takerAsset).symbol}
                     </div>
                     <div className="text-sm text-gray-400">
                       Rate based on order amounts

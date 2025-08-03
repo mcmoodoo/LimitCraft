@@ -822,9 +822,12 @@ export default function CreateOrder() {
             ['address', 'uint256', 'uint256'],
             [twapCalculatorAddress, startTime, endTime]
           );
+
+          // TODO: make this dynamic for each token. use ETH/USD price feed for now.
+          const chainlinkPriceFeed = '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612';
           extensionData.takingAmountData = ethers.solidityPacked(
-            ['address'],
-            [twapCalculatorAddress]
+            ['address', 'address'],
+            [twapCalculatorAddress, chainlinkPriceFeed]
           );
           
         }
