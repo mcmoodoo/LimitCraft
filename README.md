@@ -1,6 +1,9 @@
 # LimitCraft - Advanced Limit Order Crafting Platform for DeFi
 
 <div align="center">
+  
+  [![LimitCraft Demo Video](https://img.youtube.com/vi/u4W0Jr8DTOQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=u4W0Jr8DTOQ)
+  
   <img src="ui/public/LimitCraftHome.png" alt="LimitCraft Platform" width="800">
   
   <img src="ui/public/limitcraft.svg" alt="LimitCraft Logo" width="120" height="120">
