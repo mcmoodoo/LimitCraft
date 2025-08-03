@@ -1104,13 +1104,13 @@ export default function CreateOrder() {
 
   return (
     <div>
-      <div className="flex items-center mb-3">
-        <h1 className="text-2xl font-bold">Create Order</h1>
+      <div className="flex items-center justify-center mb-6">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Create Order</h1>
       </div>
 
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-center">
+          <div className="w-full max-w-2xl">
             <div className="bg-gray-800 rounded-lg p-4">
               <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="space-y-3">
